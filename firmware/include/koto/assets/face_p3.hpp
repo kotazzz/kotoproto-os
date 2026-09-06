@@ -15,6 +15,7 @@ struct FaceFrame {
   int duration_ms;
   const std::uint8_t* data;
   std::size_t size;
+  bool flip_mouth = false;
 };
 
 extern const FaceFrame kFaceFrames[];

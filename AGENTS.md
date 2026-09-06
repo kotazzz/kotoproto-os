@@ -21,7 +21,7 @@ Upstream inspiration: [Toaster Blaster](https://github.com/diodeface/ToasterBlas
 | `platforms/sim/` | HTTP on `:8080`, `www/` UI, HID inject `/api/hid` |
 | `platforms/esp32/` | IDF skeleton; `hal_esp32.cpp` logs only |
 | `tools/import_toasterblaster.py` | Parse original sequences → catalog |
-| `tools/adapt_p3_face.py` | Scale parts to P3 C++ + `flip_mouth` **baked into** frames |
+| `tools/adapt_p3_face.py` | Scale parts to P3 C++. `flip_mouth` is a **runtime** Rotate180, not baked into pixels |
 | `tools/face/` | Pixel editor; keep it |
 
 ## Do not delete
@@ -55,8 +55,8 @@ Bits: A=1 B=2 X=4 Y=8 OK=16 ESC=32 SELECT=64.
 - OK starts blink only if stick is near center; displaced stick + OK = cancel pending face, no blink
 - Header name follows the **hovered** octant while the stick is out
 - Microphone default **on** (`mouth_enabled`); bars only, never changes Sequence
-- Angry / Annoyed `flipMouth` is **in the P3 bitmap** (`adapt_p3_face.py`). Do **not** `rotate_rect_180` the mouth again at runtime — that undoes the frown
-- HUD ring uses native 16×8 eye + 8×8 nose + 32×8 mouth (Toaster Blaster cell 42×16). Angry/Annoyed HUD mouth is rotated 180 to match the baked P3 frown
+- Angry / Annoyed `flipMouth` is **runtime**: native 32×8 mouth drawn 2× with Rotate180, then a snarl pulse. Do **not** bake 180° into the P3 bitmap
+- HUD ring uses native 16×8 eye + 8×8 nose + 32×8 mouth (Toaster Blaster cell 42×16). Angry/Annoyed HUD mouth is rotated 180 to match runtime P3 `flipMouth`
 - Auto HUD: original `visor` 54×38 at (0,26) plus parts at (15,40)/(44,40)/(18,51)
 - Blink covers **left eye 32×16 only**; do not paint over the nose
 - Right P3 panel is not drawn in the sim; comment in `face_p3.hpp` still describes the mirror plan

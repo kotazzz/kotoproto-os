@@ -263,7 +263,22 @@ int main() {
   angry_stick.y = 255;
   app.handle_report(koto::encode_mocute_report(angry_stick).data(), koto::kReportSize);
   app.handle_report(center_report.data(), center_report.size());
-  require(app.state().face == "Angry", "stick octant 5 maps to Angry with baked flipMouth");
+  require(app.state().face == "Angry", "stick octant 5 maps to Angry");
+  clock.advance(33);
+  app.tick();
+  {
+    const koto::Color* px = app.matrix_buffer().data();
+    int mouth_lit = 0;
+    for (int y = 16; y < 32; ++y) {
+      for (int x = 0; x < 64; ++x) {
+        const koto::Color c = px[y * 64 + x];
+        if ((c.r | c.g | c.b) != 0) {
+          ++mouth_lit;
+        }
+      }
+    }
+    require(mouth_lit > 40, "Angry mouth is drawn");
+  }
 
   koto::PadState esc_faceset;
   esc_faceset.buttons = koto::kBtnEsc;

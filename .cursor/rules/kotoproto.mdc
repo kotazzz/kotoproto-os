@@ -9,7 +9,7 @@ alwaysApply: true
 - License is AGPL-3.0 because of Toaster Blaster. Keep LICENSE, NOTICE, AUTHORS. Credit Kotaz and https://github.com/diodeface/ToasterBlaster.
 - Answer the user in Russian.
 - Config: `firmware/include/koto/config.hpp`. Do not invent GPIO; pins stay -1.
-- Angry/Annoyed mouth frown is baked into P3 frames. Never apply a second 180° mouth rotate at runtime.
+- Angry/Annoyed `flipMouth` is a runtime 180° rotate of the 64×16 mouth. Do not bake that rotate into P3 frames.
 - HUD set icons: native 16×8 / 8×8 / 32×8 parts in a 42×16 cell, not a cropped 64×32 scale.
 - Keep `tools/` and `assets/` — they regenerate faces.
 - C++ includes only at file top. No commits unless asked. Ignore `.tools/` and `build/`.

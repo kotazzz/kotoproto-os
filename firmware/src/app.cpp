@@ -1160,12 +1160,25 @@ void App::render_face(std::uint32_t now_ms) {
     }
     if (frame != nullptr) {
       matrix_fb_.blit_bitmap_1bpp(0, 0, kFaceW, kFaceH, frame->data, frame->size, visor_color());
+      if (frame->flip_mouth) {
+        const HudFaceParts* parts = hud_parts_for(draw_name);
+        if (parts != nullptr && parts->mouth != nullptr &&
+            (std::strcmp(draw_name, "Angry") == 0 || std::strcmp(draw_name, "Annoyed") == 0)) {
+          matrix_fb_.fill_rect(0, kMouthY0, kFaceW, kMouthH, Color::black());
+          blit_mouth_2x(parts->mouth, true);
+        } else {
+          matrix_fb_.rotate_rect_180(0, kMouthY0, kFaceW, kMouthH);
+        }
+      }
     }
     if (std::strcmp(sequence_, "Dizzy") == 0) {
       apply_dizzy_motion(now_ms);
     }
     if (std::strcmp(sequence_, "Wink") == 0) {
       apply_wink_motion(now_ms);
+    }
+    if (std::strcmp(sequence_, "Angry") == 0 || std::strcmp(sequence_, "Annoyed") == 0) {
+      apply_angry_motion(now_ms);
     }
     apply_mouth_effect();
     apply_blink_overlay();
@@ -1293,6 +1306,47 @@ void App::apply_wink_motion(std::uint32_t now_ms) {
   matrix_fb_.draw_hline(kEyeLX + 2, lid, kEyeW - 4, visor_color());
 }
 
+void App::blit_mouth_2x(const char* id, bool rot180) {
+  const assets::Bitmap* mouth = assets::find_part("mouth", id);
+  if (mouth == nullptr || mouth->data == nullptr) {
+    return;
+  }
+  const int mw = mouth->width;
+  const int mh = mouth->height;
+  const int bytes_per_row = (mw + 7) / 8;
+  const Color on = visor_color();
+  for (int row = 0; row < mh; ++row) {
+    for (int col = 0; col < mw; ++col) {
+      const int sx = rot180 ? mw - 1 - col : col;
+      const int sy = rot180 ? mh - 1 - row : row;
+      const std::size_t index = static_cast<std::size_t>(sy * bytes_per_row + (sx / 8));
+      if (index >= mouth->size) {
+        continue;
+      }
+      const std::uint8_t bit = static_cast<std::uint8_t>(0x80 >> (sx & 7));
+      if ((mouth->data[index] & bit) == 0) {
+        continue;
+      }
+      matrix_fb_.fill_rect(col * 2, kMouthY0 + row * 2, 2, 2, on);
+    }
+  }
+}
+
+void App::apply_angry_motion(std::uint32_t now_ms) {
+  const float wave = 0.5f + 0.5f * std::sin(static_cast<float>(now_ms) / 140.0f);
+  const float peak = wave * 5.0f;
+  // Triangle open: tip near the middle, base on the right. Left side stays put.
+  const int origin = kFaceW / 2 - 8;
+  const int span = kFaceW - 1 - origin;
+  for (int x = origin; x < kFaceW; ++x) {
+    const float t = static_cast<float>(x - origin) / static_cast<float>(span);
+    const int amount = static_cast<int>(peak * t + 0.5f);
+    if (amount > 0) {
+      matrix_fb_.expand_column_y(x, kMouthY0, kMouthH, amount);
+    }
+  }
+}
+
 void App::apply_mouth_effect() {
   if (!state_.mouth_enabled || mouth_level_ <= 0.02f) {
     return;
@@ -1355,8 +1409,8 @@ void App::blit_oled_face_parts(int eye_x, int eye_y, int nose_x, int nose_y, int
   if (parts->mouth != nullptr) {
     const assets::Bitmap* mouth = assets::find_part("mouth", parts->mouth);
     if (mouth != nullptr && mouth->data != nullptr) {
-      const bool rot180 =
-          std::strcmp(sequence, "Angry") == 0 || std::strcmp(sequence, "Annoyed") == 0;
+      const assets::FaceFrame* face = assets::find_face_frame(sequence, 0);
+      const bool rot180 = face != nullptr && face->flip_mouth;
       const int bytes_per_row = (mouth->width + 7) / 8;
       for (int row = 0; row < mouth->height; ++row) {
         for (int col = 0; col < mouth->width; ++col) {

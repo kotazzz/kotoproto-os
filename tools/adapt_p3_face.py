@@ -165,7 +165,8 @@ def compose_face(frame: dict, scaled: dict[str, dict[str, Image.Image]]) -> Imag
 
     eye = take("eye", frame.get("eye_r") or frame.get("eye"))
     nose = take("nose", frame.get("nose_r") or frame.get("nose"))
-    mouth = take("mouth", frame.get("mouth_r") or frame.get("mouth"), bool(frame.get("flip_mouth")))
+    # flipMouth is a runtime Rotate180 on the mouth band, like Toaster Blaster.
+    mouth = take("mouth", frame.get("mouth_r") or frame.get("mouth"), False)
     if eye:
         blit_on(canvas, eye, *REGIONS["eye"][:2])
     if mouth:
@@ -193,7 +194,7 @@ def cpp_bytes(data: list[int], indent: str = "    ") -> str:
     return "\n".join(lines)
 
 
-def emit_cpp(frames: list[tuple[str, int, int, list[int]]]) -> None:
+def emit_cpp(frames: list[tuple[str, int, int, list[int], bool]]) -> None:
     hdr = ROOT / "firmware" / "include" / "koto" / "assets" / "face_p3.hpp"
     src = ROOT / "firmware" / "src" / "assets" / "face_p3.cpp"
     hdr.parent.mkdir(parents=True, exist_ok=True)
@@ -216,6 +217,7 @@ struct FaceFrame {
   int duration_ms;
   const std::uint8_t* data;
   std::size_t size;
+  bool flip_mouth = false;
 };
 
 extern const FaceFrame kFaceFrames[];
@@ -238,14 +240,15 @@ const FaceFrame* find_face_frame(std::string_view sequence, int index);
         "",
     ]
     table: list[str] = []
-    for seq, idx, duration, data in frames:
+    for seq, idx, duration, data, flip_mouth in frames:
         ident = f"kFace_{seq}_{idx:02d}"
         chunks.append(f"const std::uint8_t {ident}[] = {{")
         chunks.append(cpp_bytes(data))
         chunks.append("};")
         chunks.append("")
+        flip = ", true" if flip_mouth else ""
         table.append(
-            f'    {{"{seq}", {idx}, {duration}, {ident}, sizeof({ident})}}'
+            f'    {{"{seq}", {idx}, {duration}, {ident}, sizeof({ident}){flip}}}'
         )
     chunks.append("}  // namespace")
     chunks.append("")
@@ -362,7 +365,7 @@ def main() -> None:
         "animations": [],
     }
     seq_meta = []
-    cpp_frames: list[tuple[str, int, int, list[int]]] = []
+    cpp_frames: list[tuple[str, int, int, list[int], bool]] = []
     sheet_items: list[tuple[str, Image.Image]] = []
 
     for seq in catalog["sequences"]:
@@ -377,7 +380,15 @@ def main() -> None:
             frames_js.append(grid_to_modules(im))
             names.append(filename)
             durations.append(int(frame.get("duration_ms", 500)))
-            cpp_frames.append((seq["id"], idx, int(frame.get("duration_ms", 500)), pack_rows(im)))
+            cpp_frames.append(
+                (
+                    seq["id"],
+                    idx,
+                    int(frame.get("duration_ms", 500)),
+                    pack_rows(im),
+                    bool(frame.get("flip_mouth")),
+                )
+            )
             item = dict(frame)
             item["file"] = f"face/p3/sequences/{seq['id']}/{filename}"
             out_frames.append(item)

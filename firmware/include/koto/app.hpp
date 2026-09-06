@@ -94,6 +94,8 @@ class App {
   void draw_toggle(int x, int y, bool on);
   void apply_dizzy_motion(std::uint32_t now_ms);
   void apply_wink_motion(std::uint32_t now_ms);
+  void apply_angry_motion(std::uint32_t now_ms);
+  void blit_mouth_2x(const char* id, bool rot180);
   void apply_mouth_effect();
   void apply_blink_overlay();
   void apply_boop_overlay(std::uint32_t now_ms);
