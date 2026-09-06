@@ -119,8 +119,9 @@ async function sendHid() {
 }
 
 function setKnob(x, y) {
-  const dx = ((x - 128) / 128) * 32;
-  const dy = ((y - 128) / 128) * 32;
+  const range = Math.max(16, stickEl.clientWidth / 2 - 22);
+  const dx = ((x - 128) / 128) * range;
+  const dy = ((y - 128) / 128) * range;
   knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
 }
 
@@ -267,7 +268,12 @@ async function refresh() {
     document.getElementById("pad-mode-label").textContent =
       (state.pad && state.pad.mode === "key") ? "KEY" : "GAME";
     playing = state.playing;
-    playBtn.textContent = playing ? "Пауза" : "Пуск";
+    const playIcon = playBtn.querySelector("i");
+    if (playIcon) {
+      playIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+    }
+    playBtn.title = playing ? "Пауза" : "Пуск";
+    playBtn.setAttribute("aria-label", playing ? "Пауза" : "Пуск");
     ledEl.classList.toggle("on", Boolean(state.pad && (state.pad.a || state.pad.ok)));
     drawMatrix(decodeBase64(state.matrix.rgb), state.matrix.w, state.matrix.h);
     drawOled(decodeBase64(state.oled.bits), state.oled.w, state.oled.h);
@@ -419,12 +425,20 @@ function syncSensorLabels() {
   proxVal.textContent = `${Math.round(sensors.prox * 100)}%`;
 }
 
+function syncRangeFill(el) {
+  const min = Number(el.min);
+  const max = Number(el.max);
+  const val = Number(el.value);
+  el.style.setProperty("--fill", `${((val - min) / (max - min)) * 100}%`);
+}
+
 function readSensorInputs() {
   sensors.mic = Number(micEl.value) / 100;
   sensors.prox = Number(proxEl.value) / 100;
   sensors.pitch = Number(pitchEl.value);
   sensors.roll = Number(rollEl.value);
   sensors.yaw = Number(yawEl.value);
+  [micEl, proxEl, pitchEl, rollEl, yawEl].forEach(syncRangeFill);
   syncSensorLabels();
 }
 
@@ -434,6 +448,7 @@ function readSensorInputs() {
     sendSensors();
   });
 });
+readSensorInputs();
 
 const boopBtn = document.getElementById("boop");
 boopBtn.addEventListener("pointerdown", (event) => {
