@@ -1,0 +1,21 @@
+kotoproto-os
+Copyright (C) 2026 Kotaz
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Inspiration, 1-bit artwork, face sequences, HUD layout, Mocute mapping,
+and several overlay behaviours were taken from Toaster Blaster:
+
+  https://github.com/diodeface/ToasterBlaster
+  Copyright (C) diodeface and contributors
+  Licensed under GNU AGPL v3.0
+
+This firmware is a personal adaptation: retargeted from MAX7219 modules
+to a P3 RGB 64x32 visor, with behaviour changed for this helmet. A
+substantial part of the new implementation was written with AI
+assistance in Cursor. It is not an official Toaster Blaster release.
+
+Full license text: LICENSE

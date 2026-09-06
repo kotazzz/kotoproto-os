@@ -1,0 +1,19 @@
+idf_component_register(
+  SRCS
+    "main.cpp"
+    "hal_esp32.cpp"
+    "../../../firmware/src/app.cpp"
+    "../../../firmware/src/assets/bitmaps.cpp"
+    "../../../firmware/src/assets/face_p3.cpp"
+    "../../../firmware/src/face/transition.cpp"
+    "../../../firmware/src/gfx/framebuffer.cpp"
+    "../../../firmware/src/gfx/oled_canvas.cpp"
+    "../../../firmware/src/gfx/font5x7.cpp"
+    "../../../firmware/src/protocol/mocute.cpp"
+  INCLUDE_DIRS
+    "."
+    "../../../firmware/include"
+  REQUIRES
+    nvs_flash
+    bt
+)

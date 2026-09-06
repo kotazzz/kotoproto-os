@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Калибровка визора — 4 угла</title>
+  <style>
+    :root {
+      --bg: #12141a;
+      --panel: #1b1e27;
+      --border: #2c3140;
+      --text: #c8ceda;
+      --muted: #7b8494;
+      --accent: #3c8cff;
+      --led: #3cf0ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+    .toolbar {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      padding: 10px 12px; background: var(--panel); border-bottom: 1px solid var(--border);
+    }
+    button {
+      background: #2a3040; color: #fff; border: 1px solid #3d4458;
+      padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;
+    }
+    button:hover { background: #343b4e; }
+    button.ok { background: #287440; border-color: #2e8a4c; }
+    .main { display: flex; flex: 1; min-height: 0; }
+    .workspace {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 20px; overflow: auto;
+    }
+    #photo {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: #820075 url("photo.jpg") center / contain no-repeat;
+      box-shadow: 0 0 40px rgba(130, 0, 117, 0.35);
+      overflow: hidden;
+    }
+    #board {
+      position: absolute; inset: 0;
+    }
+    #panel {
+      position: absolute;
+      left: 0; top: 0;
+      width: 320px; height: 160px;
+      transform-origin: 0 0;
+      image-rendering: pixelated;
+      pointer-events: none;
+    }
+    #edges {
+      position: absolute; inset: 0;
+      width: 400px; height: 400px;
+      pointer-events: none;
+    }
+    .handle {
+      position: absolute;
+      width: 16px; height: 16px;
+      margin: -8px 0 0 -8px;
+      border-radius: 50%;
+      background: var(--led);
+      border: 2px solid #fff;
+      box-shadow: 0 0 8px rgba(60, 240, 255, 0.7);
+      cursor: grab;
+      z-index: 3;
+    }
+    .handle:active { cursor: grabbing; }
+    .handle::after {
+      content: attr(data-id);
+      position: absolute;
+      left: 18px; top: -2px;
+      font-size: 11px;
+      color: #fff;
+      text-shadow: 0 0 4px #000;
+      pointer-events: none;
+    }
+    .side {
+      width: 280px; background: var(--panel); border-left: 1px solid var(--border);
+      padding: 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .side h1 { font-size: 15px; margin: 0 0 4px; }
+    .hint { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .row {
+      display: grid; grid-template-columns: 28px 1fr 1fr; gap: 6px; align-items: center;
+      font-size: 13px;
+    }
+    .row b { color: var(--led); }
+    input[type="number"] {
+      width: 100%; background: #11141b; color: #fff; border: 1px solid #3d4458;
+      padding: 5px; border-radius: 4px; font-family: ui-monospace, Consolas, monospace;
+    }
+    textarea {
+      flex: 1; min-height: 140px; background: #10131a; color: #8cdcfe;
+      border: 1px solid var(--border); font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px; padding: 8px; border-radius: 6px; resize: none;
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button onclick="resetCorners()">Сброс к текущему предпросмотру</button>
+    <button class="ok" onclick="copyJson()">Копировать JSON</button>
+    <button onclick="copyLines()">Копировать строки</button>
+    <span style="flex:1"></span>
+    <a href="index.html">← редактор лица</a>
+  </div>
+  <div class="main">
+    <section class="workspace">
+      <div id="photo">
+        <canvas id="panel" width="64" height="32"></canvas>
+        <svg id="edges" viewBox="0 0 400 400"></svg>
+        <div class="handle" data-id="tl"></div>
+        <div class="handle" data-id="tr"></div>
+        <div class="handle" data-id="br"></div>
+        <div class="handle" data-id="bl"></div>
+      </div>
+    </section>
+    <aside class="side">
+      <h1>4 угла полотна 32×64</h1>
+      <p class="hint">
+        Тяните углы по фото. Координаты — в системе предпросмотра 400×400
+        (как <code>#photo</code> в редакторе лица). Скопируйте JSON и пришлите в чат.
+      </p>
+      <div class="row"><b>tl</b><input id="tlx" type="number" step="0.1"><input id="tly" type="number" step="0.1"></div>
+      <div class="row"><b>tr</b><input id="trx" type="number" step="0.1"><input id="try" type="number" step="0.1"></div>
+      <div class="row"><b>br</b><input id="brx" type="number" step="0.1"><input id="bry" type="number" step="0.1"></div>
+      <div class="row"><b>bl</b><input id="blx" type="number" step="0.1"><input id="bly" type="number" step="0.1"></div>
+      <textarea id="out" readonly></textarea>
+    </aside>
+  </div>
+  <script>
+    const PHOTO = 400;
+    const CSS_W = 320;
+    const CSS_H = 160;
+    const PANEL_QUAD = {
+      tl: [209.5, 211],
+      tr: [303, 252.5],
+      br: [288, 323],
+      bl: [202.5, 282],
+    };
+    const ORDER = ["tl", "tr", "br", "bl"];
+    const corners = {
+      tl: { x: PANEL_QUAD.tl[0], y: PANEL_QUAD.tl[1] },
+      tr: { x: PANEL_QUAD.tr[0], y: PANEL_QUAD.tr[1] },
+      br: { x: PANEL_QUAD.br[0], y: PANEL_QUAD.br[1] },
+      bl: { x: PANEL_QUAD.bl[0], y: PANEL_QUAD.bl[1] },
+    };
+
+    function adj(m) {
+      return [
+        m[4] * m[8] - m[5] * m[7], m[2] * m[7] - m[1] * m[8], m[1] * m[5] - m[2] * m[4],
+        m[5] * m[6] - m[3] * m[8], m[0] * m[8] - m[2] * m[6], m[2] * m[3] - m[0] * m[5],
+        m[3] * m[7] - m[4] * m[6], m[1] * m[6] - m[0] * m[7], m[0] * m[4] - m[1] * m[3]
+      ];
+    }
+    function mul(a, b) {
+      if (b.length === 3) {
+        return [
+          a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+          a[3] * b[0] + a[4] * b[1] + a[5] * b[2],
+          a[6] * b[0] + a[7] * b[1] + a[8] * b[2]
+        ];
+      }
+      const c = new Array(9);
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          c[3 * i + j] = a[3 * i] * b[j] + a[3 * i + 1] * b[3 + j] + a[3 * i + 2] * b[6 + j];
+        }
+      }
+      return c;
+    }
+    function basisToPoints(x1, y1, x2, y2, x3, y3, x4, y4) {
+      const m = [x1, x2, x3, y1, y2, y3, 1, 1, 1];
+      const v = mul(adj(m), [x4, y4, 1]);
+      return mul(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]);
+    }
+    function general2DProjection(s, d) {
+      return mul(basisToPoints(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]),
+        adj(basisToPoints(s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7])));
+    }
+    function matrix3dForQuad() {
+      const tl = corners.tl, tr = corners.tr, br = corners.br, bl = corners.bl;
+      const t = general2DProjection(
+        [0, 0, CSS_W, 0, 0, CSS_H, CSS_W, CSS_H],
+        [tl.x, tl.y, tr.x, tr.y, bl.x, bl.y, br.x, br.y]
+      );
+      const n = t[8] || 1;
+      for (let i = 0; i < 9; i++) t[i] /= n;
+      return `matrix3d(${t[0]}, ${t[3]}, 0, ${t[6]}, ${t[1]}, ${t[4]}, 0, ${t[7]}, 0, 0, 1, 0, ${t[2]}, ${t[5]}, 0, ${t[8]})`;
+    }
+    function paintGrid() {
+      const c = document.getElementById("panel");
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#820075";
+      ctx.fillRect(0, 0, 64, 32);
+      ctx.strokeStyle = "rgba(60,240,255,0.35)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= 64; x += 8) {
+        ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, 32); ctx.stroke();
+      }
+      for (let y = 0; y <= 32; y += 8) {
+        ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(64, y + 0.5); ctx.stroke();
+      }
+      ctx.fillStyle = "#3cf0ff";
+      ctx.fillRect(1, 1, 30, 14);
+      ctx.fillStyle = "#f0b429";
+      ctx.fillRect(49, 1, 14, 14);
+      ctx.fillStyle = "#ff5d8f";
+      ctx.fillRect(1, 17, 62, 14);
+      ctx.fillStyle = "#10131a";
+      ctx.font = "6px sans-serif";
+      ctx.fillText("EYE", 10, 11);
+      ctx.fillText("N", 53, 11);
+      ctx.fillText("MOUTH 32x64", 14, 27);
+    }
+    function cornersFromPreviewTransform() {
+      ORDER.forEach((id) => {
+        corners[id] = { x: PANEL_QUAD[id][0], y: PANEL_QUAD[id][1] };
+      });
+    }
+    function fmt(n) { return Math.round(n * 10) / 10; }
+    function payload() {
+      const q = {};
+      ORDER.forEach((id) => { q[id] = [fmt(corners[id].x), fmt(corners[id].y)]; });
+      return {
+        photo: { width: PHOTO, height: PHOTO },
+        panel: { width: 64, height: 32 },
+        quad: q
+      };
+    }
+    function render() {
+      ORDER.forEach((id) => {
+        const h = document.querySelector(`.handle[data-id="${id}"]`);
+        h.style.left = corners[id].x + "px";
+        h.style.top = corners[id].y + "px";
+        document.getElementById(id + "x").value = fmt(corners[id].x);
+        document.getElementById(id + "y").value = fmt(corners[id].y);
+      });
+      const tl = corners.tl, tr = corners.tr, br = corners.br, bl = corners.bl;
+      document.getElementById("edges").innerHTML =
+        `<polygon points="${tl.x},${tl.y} ${tr.x},${tr.y} ${br.x},${br.y} ${bl.x},${bl.y}"
+          fill="none" stroke="#3cf0ff" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+      document.getElementById("panel").style.transform = matrix3dForQuad();
+      document.getElementById("out").value = JSON.stringify(payload(), null, 2);
+    }
+    function clamp(v) { return Math.max(0, Math.min(PHOTO, v)); }
+    function resetCorners() {
+      cornersFromPreviewTransform();
+      render();
+    }
+    function copyJson() {
+      navigator.clipboard.writeText(JSON.stringify(payload()));
+    }
+    function copyLines() {
+      const p = payload().quad;
+      const text = ORDER.map((id) => `${id}: ${p[id][0]}, ${p[id][1]}`).join("\n");
+      navigator.clipboard.writeText(text);
+    }
+
+    let drag = null;
+    document.querySelectorAll(".handle").forEach((h) => {
+      h.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        h.setPointerCapture(e.pointerId);
+        drag = h.dataset.id;
+      });
+    });
+    window.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const box = document.getElementById("photo").getBoundingClientRect();
+      corners[drag].x = clamp(e.clientX - box.left);
+      corners[drag].y = clamp(e.clientY - box.top);
+      render();
+    });
+    window.addEventListener("pointerup", () => { drag = null; });
+    ORDER.forEach((id) => {
+      ["x", "y"].forEach((axis) => {
+        document.getElementById(id + axis).addEventListener("change", (e) => {
+          corners[id][axis] = clamp(parseFloat(e.target.value) || 0);
+          render();
+        });
+      });
+    });
+
+    paintGrid();
+    cornersFromPreviewTransform();
+    render();
+  </script>
+</body>
+</html>

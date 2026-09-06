@@ -1,0 +1,259 @@
+#include "koto/gfx/framebuffer.hpp"
+
+#include <vector>
+
+#include "koto/gfx/font5x7.hpp"
+
+namespace koto {
+namespace gfx {
+
+Framebuffer::Framebuffer(int width, int height)
+    : width_(width), height_(height), pixels_(static_cast<std::size_t>(width * height)) {}
+
+void Framebuffer::clear(Color color) {
+  for (Color& pixel : pixels_) {
+    pixel = color;
+  }
+}
+
+void Framebuffer::set_pixel(int x, int y, Color color) {
+  if (x < 0 || y < 0 || x >= width_ || y >= height_) {
+    return;
+  }
+  pixels_[static_cast<std::size_t>(y * width_ + x)] = color;
+}
+
+Color Framebuffer::get_pixel(int x, int y) const {
+  if (x < 0 || y < 0 || x >= width_ || y >= height_) {
+    return Color::black();
+  }
+  return pixels_[static_cast<std::size_t>(y * width_ + x)];
+}
+
+void Framebuffer::fill_rect(int x, int y, int w, int h, Color color) {
+  for (int row = y; row < y + h; ++row) {
+    for (int col = x; col < x + w; ++col) {
+      set_pixel(col, row, color);
+    }
+  }
+}
+
+void Framebuffer::draw_rect(int x, int y, int w, int h, Color color) {
+  draw_hline(x, y, w, color);
+  draw_hline(x, y + h - 1, w, color);
+  for (int row = y; row < y + h; ++row) {
+    set_pixel(x, row, color);
+    set_pixel(x + w - 1, row, color);
+  }
+}
+
+void Framebuffer::draw_hline(int x, int y, int w, Color color) {
+  for (int col = 0; col < w; ++col) {
+    set_pixel(x + col, y, color);
+  }
+}
+
+void Framebuffer::blit_bitmap_1bpp(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* data,
+                                   std::size_t size, Color on) {
+  if (data == nullptr || bitmap_w <= 0 || bitmap_h <= 0) {
+    return;
+  }
+  const int bytes_per_row = (bitmap_w + 7) / 8;
+  for (int row = 0; row < bitmap_h; ++row) {
+    for (int col = 0; col < bitmap_w; ++col) {
+      const std::size_t index = static_cast<std::size_t>(row * bytes_per_row + (col / 8));
+      if (index >= size) {
+        return;
+      }
+      const std::uint8_t bit = static_cast<std::uint8_t>(0x80 >> (col & 7));
+      if ((data[index] & bit) != 0) {
+        set_pixel(x + col, y + row, on);
+      }
+    }
+  }
+}
+
+void Framebuffer::expand_column_y(int x, int y0, int h, int amount) {
+  if (amount <= 0 || h <= 0) {
+    return;
+  }
+  std::vector<Color> col(static_cast<std::size_t>(h), Color::black());
+  for (int i = 0; i < h; ++i) {
+    col[static_cast<std::size_t>(i)] = get_pixel(x, y0 + i);
+  }
+  const int above = amount / 2;
+  const int below = amount - above;
+  auto lit = [](Color c) { return (c.r | c.g | c.b) != 0; };
+  for (int i = 0; i < h; ++i) {
+    if (!lit(col[static_cast<std::size_t>(i)])) {
+      continue;
+    }
+    const Color c = col[static_cast<std::size_t>(i)];
+    for (int j = 1; j <= above; ++j) {
+      if (i - j < 0) {
+        break;
+      }
+      set_pixel(x, y0 + i - j, c);
+    }
+    for (int j = 1; j <= below; ++j) {
+      if (i + j >= h) {
+        break;
+      }
+      set_pixel(x, y0 + i + j, c);
+    }
+  }
+}
+
+void Framebuffer::rotate_square_cw(int x, int y, int size, int turns) {
+  turns %= 4;
+  if (turns < 0) {
+    turns += 4;
+  }
+  if (turns == 0 || size <= 1) {
+    return;
+  }
+  std::vector<Color> tmp(static_cast<std::size_t>(size * size));
+  for (int row = 0; row < size; ++row) {
+    for (int col = 0; col < size; ++col) {
+      tmp[static_cast<std::size_t>(row * size + col)] = get_pixel(x + col, y + row);
+    }
+  }
+  auto src = [&](int col, int row) { return tmp[static_cast<std::size_t>(row * size + col)]; };
+  for (int row = 0; row < size; ++row) {
+    for (int col = 0; col < size; ++col) {
+      Color c = Color::black();
+      if (turns == 1) {
+        c = src(size - 1 - row, col);
+      } else if (turns == 2) {
+        c = src(size - 1 - col, size - 1 - row);
+      } else {
+        c = src(row, size - 1 - col);
+      }
+      set_pixel(x + col, y + row, c);
+    }
+  }
+}
+
+void Framebuffer::rotate_rect_180(int x, int y, int w, int h) {
+  if (w <= 1 || h <= 1) {
+    return;
+  }
+  std::vector<Color> tmp(static_cast<std::size_t>(w * h));
+  for (int row = 0; row < h; ++row) {
+    for (int col = 0; col < w; ++col) {
+      tmp[static_cast<std::size_t>(row * w + col)] = get_pixel(x + col, y + row);
+    }
+  }
+  for (int row = 0; row < h; ++row) {
+    for (int col = 0; col < w; ++col) {
+      set_pixel(x + col, y + row, tmp[static_cast<std::size_t>((h - 1 - row) * w + (w - 1 - col))]);
+    }
+  }
+}
+
+void Framebuffer::translate_rect(int x, int y, int w, int h, int dx, int dy) {
+  if (dx == 0 && dy == 0) {
+    return;
+  }
+  std::vector<Color> tmp(static_cast<std::size_t>(w * h));
+  for (int row = 0; row < h; ++row) {
+    for (int col = 0; col < w; ++col) {
+      tmp[static_cast<std::size_t>(row * w + col)] = get_pixel(x + col, y + row);
+      set_pixel(x + col, y + row, Color::black());
+    }
+  }
+  for (int row = 0; row < h; ++row) {
+    for (int col = 0; col < w; ++col) {
+      set_pixel(x + col + dx, y + row + dy, tmp[static_cast<std::size_t>(row * w + col)]);
+    }
+  }
+}
+
+void Framebuffer::glitch_rows(int y0, int h, int amplitude, std::uint32_t seed) {
+  if (amplitude <= 0 || h <= 0) {
+    return;
+  }
+  auto hash = [](std::uint32_t x) {
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    return x;
+  };
+  std::vector<Color> row(static_cast<std::size_t>(width_));
+  for (int y = y0; y < y0 + h && y < height_; ++y) {
+    const int shift = static_cast<int>(hash(seed + static_cast<std::uint32_t>(y * 17)) % (amplitude * 2 + 1)) - amplitude;
+    for (int x = 0; x < width_; ++x) {
+      row[static_cast<std::size_t>(x)] = get_pixel(x, y);
+    }
+    for (int x = 0; x < width_; ++x) {
+      const int sx = x - shift;
+      Color c = Color::black();
+      if (sx >= 0 && sx < width_) {
+        c = row[static_cast<std::size_t>(sx)];
+      }
+      set_pixel(x, y, c);
+    }
+  }
+}
+
+int Framebuffer::draw_char(int x, int y, char ch, Color color) {
+  const char* glyph = glyph5x7(ch);
+  if (glyph == nullptr) {
+    glyph = glyph5x7('?');
+  }
+  if (glyph == nullptr) {
+    return kFontWidth + kFontSpacing;
+  }
+  for (int row = 0; row < kFontHeight; ++row) {
+    for (int col = 0; col < kFontWidth; ++col) {
+      if (glyph[row * kFontWidth + col] == 'X') {
+        set_pixel(x + col, y + row, color);
+      }
+    }
+  }
+  return kFontWidth + kFontSpacing;
+}
+
+int Framebuffer::draw_text(int x, int y, std::string_view text, Color color) {
+  int cursor = x;
+  for (char ch : text) {
+    cursor += draw_char(cursor, y, ch, color);
+  }
+  return cursor - x;
+}
+
+int Framebuffer::text_width(std::string_view text) const {
+  if (text.empty()) {
+    return 0;
+  }
+  return static_cast<int>(text.size()) * (kFontWidth + kFontSpacing) - kFontSpacing;
+}
+
+Color hue(int angle_deg) {
+  int hue_val = angle_deg % 360;
+  if (hue_val < 0) {
+    hue_val += 360;
+  }
+  const int region = hue_val / 60;
+  const int remainder = hue_val % 60;
+  const std::uint8_t rising = static_cast<std::uint8_t>((remainder * 255) / 60);
+  const std::uint8_t falling = static_cast<std::uint8_t>(255 - rising);
+
+  switch (region) {
+    case 0:
+      return Color{255, rising, 0};
+    case 1:
+      return Color{falling, 255, 0};
+    case 2:
+      return Color{0, 255, rising};
+    case 3:
+      return Color{0, falling, 255};
+    case 4:
+      return Color{rising, 0, 255};
+    default:
+      return Color{255, 0, falling};
+  }
+}
+
+}  // namespace gfx
+}  // namespace koto

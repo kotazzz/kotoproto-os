@@ -1,0 +1,16 @@
+---
+description: kotoproto-os visor firmware — simulator-first, AGPL, Toaster Blaster credit
+alwaysApply: true
+---
+
+# kotoproto-os
+
+- Firmware for a Protogen visor. Simulator in the browser is the test bed. ESP32 HAL is stubs; no real hardware yet.
+- License is AGPL-3.0 because of Toaster Blaster. Keep LICENSE, NOTICE, AUTHORS. Credit Kotaz and https://github.com/diodeface/ToasterBlaster.
+- Answer the user in Russian.
+- Config: `firmware/include/koto/config.hpp`. Do not invent GPIO; pins stay -1.
+- Angry/Annoyed mouth frown is baked into P3 frames. Never apply a second 180° mouth rotate at runtime.
+- HUD set icons: native 16×8 / 8×8 / 32×8 parts in a 42×16 cell, not a cropped 64×32 scale.
+- Keep `tools/` and `assets/` — they regenerate faces.
+- C++ includes only at file top. No commits unless asked. Ignore `.tools/` and `build/`.
+- Full notes: `AGENTS.md`.

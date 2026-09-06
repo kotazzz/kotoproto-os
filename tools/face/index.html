@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>kotoproto — P3 visor 64×32</title>
+  <style>
+    :root {
+      --bg: #12141a;
+      --panel: #1b1e27;
+      --border: #2c3140;
+      --led-off: #1a1d24;
+      --led-on: #3cf0ff;
+      --led-glow: rgba(60, 240, 255, 0.45);
+      --text: #c8ceda;
+      --muted: #7b8494;
+      --accent: #3c8cff;
+      --eye: #5b8cff;
+      --nose: #f0b429;
+      --mouth: #ff5d8f;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .toolbar {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      padding: 10px 12px; background: var(--panel); border-bottom: 1px solid var(--border);
+    }
+    button {
+      background: #2a3040; color: #fff; border: 1px solid #3d4458;
+      padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;
+    }
+    button:hover { background: #343b4e; }
+    button.active { background: var(--accent); border-color: var(--accent); }
+    button.danger { background: #6b1d2a; }
+    label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    input[type="number"], input[type="color"] {
+      background: #11141b; color: #fff; border: 1px solid #3d4458; padding: 3px; border-radius: 4px;
+    }
+    input[type="range"] {
+      width: 140px; accent-color: var(--accent);
+    }
+    #photoStage { overflow: auto; max-width: 100%; max-height: min(72vh, 760px); }
+    #photoSizer { width: 400px; height: 400px; }
+    .sep { width: 1px; height: 22px; background: var(--border); }
+    .grow { flex: 1; }
+    .main { display: flex; flex: 1; min-height: 0; }
+    .sidebar {
+      width: 300px; background: var(--panel); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 10px; gap: 8px;
+    }
+    .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tabs button { padding: 4px 8px; font-size: 11px; }
+    .list { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+    .item {
+      padding: 7px 9px; background: #222733; border: 1px solid var(--border);
+      border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px;
+      font-size: 13px; width: 100%; text-align: left; color: inherit;
+    }
+    .item.selected { border-color: var(--accent); background: #2a3348; }
+    .item small { color: var(--muted); }
+    .workspace {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 14px; overflow: auto; padding: 16px;
+    }
+    .visors { display: flex; gap: 18px; align-items: flex-start; }
+    .visor {
+      background: #0b0d12; border: 8px solid #2a303c; border-radius: 18px;
+      padding: 10px; box-shadow: 0 0 40px rgba(60, 240, 255, 0.08);
+    }
+    .visor.master { border-color: #3a4a5c; }
+    .visor-cap {
+      text-align: center; font-size: 11px; color: var(--muted);
+      margin-bottom: 6px; letter-spacing: 0.04em;
+    }
+    .matrix {
+      display: grid; grid-template-columns: repeat(8, auto); gap: 2px;
+    }
+    .unit {
+      display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+      gap: 1px; width: 48px; height: 48px; background: #000; padding: 1px; position: relative;
+    }
+    .unit[data-region="eye"] { outline: 1px dashed color-mix(in srgb, var(--eye) 50%, transparent); }
+    .unit[data-region="nose"] { outline: 1px dashed color-mix(in srgb, var(--nose) 70%, transparent); }
+    .unit[data-region="mouth"] { outline: 1px dashed color-mix(in srgb, var(--mouth) 50%, transparent); }
+    .unit[data-region="pad"] { outline: 1px dashed #333; }
+    body.hide-regions .unit { outline: none; }
+    .led {
+      width: 100%; height: 100%; border-radius: 50%;
+      background: var(--led-off); cursor: pointer;
+    }
+    .led.on {
+      background: var(--led-on);
+      box-shadow: 0 0 5px var(--led-glow);
+    }
+    body.invert-view .led { background: var(--led-on); box-shadow: 0 0 5px var(--led-glow); }
+    body.invert-view .led.on { background: var(--led-off); box-shadow: none; }
+    .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
+    .hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
+    #codeModal {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      display: none; align-items: center; justify-content: center; z-index: 20;
+    }
+    .modal {
+      background: var(--panel); width: min(900px, 92vw); height: min(80vh, 720px);
+      border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    textarea {
+      flex: 1; background: #10131a; color: #8cdcfe; border: 1px solid var(--border);
+      font-family: ui-monospace, Consolas, monospace; font-size: 12px; padding: 10px;
+    }
+    .drop {
+      display: none; position: fixed; inset: 0; background: rgba(60,140,255,.18);
+      border: 2px dashed var(--accent); z-index: 10; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    body.drag-over .drop { display: flex; }
+    .meta { font-size: 12px; color: var(--muted); }
+    .render-bar { display: flex; gap: 6px; }
+    #viewPreview { display: none; flex-direction: column; align-items: center; gap: 10px; }
+    body.mode-preview #viewFlat { display: none; }
+    body.mode-preview #viewPreview { display: flex; }
+    #photo {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      border-radius: 8px;
+      background: #820075 url("photo.jpg") center / contain no-repeat;
+      box-shadow: 0 0 40px rgba(130, 0, 117, 0.35);
+      overflow: hidden;
+      transform-origin: 0 0;
+    }
+    .preview {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      image-rendering: pixelated;
+    }
+    .preview canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <div class="drop">Отпустите PNG-папку, чтобы загрузить анимации</div>
+  <div class="toolbar">
+    <button onclick="addFrame()">+ Кадр</button>
+    <button onclick="duplicateFrame()">Дублировать</button>
+    <button class="danger" onclick="deleteFrame()">Удалить кадр</button>
+    <button onclick="clearCurrentFrame()">Очистить</button>
+    <button onclick="invertCurrentFrame()">Инвертировать</button>
+    <label><input type="checkbox" id="invertView" onchange="setInvertView(this.checked)"> Инверсия вида</label>
+    <span class="sep"></span>
+    <label><input type="checkbox" id="showRegions" checked onchange="document.body.classList.toggle('hide-regions', !this.checked)"> Зоны</label>
+    <label>LED <input type="color" id="ledColor" value="#3cf0ff" onchange="setLedColor(this.value)"></label>
+    <span class="sep"></span>
+    <span class="render-bar">
+      <button id="modeFlatBtn" class="active" onclick="setRenderMode('flat')">Развёртка</button>
+      <button id="modePreviewBtn" onclick="setRenderMode('preview')">Предпросмотр</button>
+      <button onclick="window.open('quad.html','_blank')">Калибровка углов</button>
+    </span>
+    <span class="sep"></span>
+    <button id="playBtn" onclick="togglePlay()">▶ Анимация</button>
+    <label>FPS <input type="number" id="fpsInput" value="5" min="1" max="30" style="width:48px"></label>
+    <label><input type="checkbox" id="useDur" checked> длительности</label>
+    <span class="grow"></span>
+    <button onclick="document.getElementById('folderInput').click()">📂 Папка</button>
+    <input type="file" id="folderInput" webkitdirectory multiple accept="image/*" hidden onchange="importFolder(this.files); this.value='';">
+    <button onclick="downloadPng()">PNG кадр</button>
+    <button style="background:#287440" onclick="exportCode()">Экспорт C++</button>
+  </div>
+  <div class="main">
+    <aside class="sidebar">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <b>Эмоции / анимации</b>
+        <button onclick="addAnimation()">+</button>
+      </div>
+      <div class="tabs" id="groupTabs"></div>
+      <div class="list" id="animList"></div>
+      <div class="meta" id="animMeta"></div>
+      <hr style="border-color:var(--border); width:100%;">
+      <div style="display:flex; justify-content:space-between;">
+        <b>Кадры</b>
+        <span class="meta" id="frameCountLbl"></span>
+      </div>
+      <div class="list" id="frameList" style="flex:0 0 160px;"></div>
+      <p class="hint">
+        Две P3 64×32: левая — мастер, правая — зеркало.
+        Глаз: первые 8 модулей (32×16), нос: последние 4 в верхней половине (16×16), рот: низ 64×16.
+      </p>
+    </aside>
+    <section class="workspace">
+      <div class="visors" id="viewFlat">
+        <div class="visor master">
+          <div class="visor-cap">L · мастер</div>
+          <div class="matrix" id="matrixL"></div>
+        </div>
+        <div class="visor">
+          <div class="visor-cap">R · зеркало</div>
+          <div class="matrix" id="matrixR"></div>
+        </div>
+      </div>
+      <div id="viewPreview">
+        <label>Масштаб
+          <input type="range" id="photoZoom" min="1" max="4" step="0.05" value="1" oninput="setPhotoZoom(this.value)">
+          <span id="photoZoomLbl">100%</span>
+        </label>
+        <div id="photoStage">
+          <div id="photoSizer">
+            <div id="photo">
+              <div class="preview" id="wrap-panel"><canvas id="prev-panel"></canvas></div>
+            </div>
+          </div>
+        </div>
+        <p class="hint">Предпросмотр: одно полотно 32×64 на фото ToasterPaint (вместо отдельных блоков глаз/нос/рот).</p>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--eye)"></i>глаз 32×16 · 8 модулей</span>
+        <span><i style="background:var(--nose)"></i>нос 16×16 · 4 модуля</span>
+        <span><i style="background:var(--mouth)"></i>рот 64×16</span>
+        <span id="xyHint">64×32 ×2</span>
+      </div>
+    </section>
+  </div>
+  <div id="codeModal">
+    <div class="modal">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <b>C++ половина 64×32; правая матрица = flip X</b>
+        <button onclick="closeModal()">✕</button>
+      </div>
+      <textarea id="codeArea" readonly></textarea>
+      <button style="background:var(--accent)" onclick="copyCode()">Копировать</button>
+    </div>
+  </div>
+  <script src="project.js"></script>
+  <script>
+    const MODULES = 32;
+    const PANEL_W = 64;
+    const PANEL_H = 32;
+    const PREVIEW_BG = "#820075";
+    const PREVIEW_SCALE = 5;
+    const PANEL_QUAD = {
+      tl: [209.5, 211],
+      tr: [303, 252.5],
+      br: [288, 323],
+      bl: [202.5, 282],
+    };
+    const GROUPS = [
+      { id: "all", label: "все" },
+      { id: "basic", label: "эмоции" },
+      { id: "animated", label: "анимации" },
+      { id: "misc", label: "служебные" },
+      { id: "overlay", label: "оверлеи" },
+    ];
+
+    let project = (window.PRELOADED_PROJECT && window.PRELOADED_PROJECT.animations)
+      ? window.PRELOADED_PROJECT
+      : { animations: [{ name: "Neutral", group: "basic", frames: [createEmptyFrame()], frameNames: ["00"], durations: [500] }] };
+    let curAnimIdx = 0;
+    let curFrameIdx = 0;
+    let groupFilter = "all";
+    let isDrawing = false;
+    let drawMode = true;
+    let playTimer = null;
+
+    function createEmptyFrame() {
+      return Array.from({ length: MODULES }, () => Array(8).fill(0));
+    }
+    function cloneFrame(src) {
+      return src.map(row => row.slice());
+    }
+    function regionOf(m, side) {
+      let col = m % 8, row = Math.floor(m / 8);
+      if (side === "R") col = 7 - col;
+      if (row < 2 && col <= 3) return "eye";
+      if (row < 2 && col >= 6) return "nose";
+      if (row >= 2) return "mouth";
+      return "pad";
+    }
+    function xyOf(m, r, c) {
+      return { x: (m % 8) * 8 + c, y: Math.floor(m / 8) * 8 + r };
+    }
+    function moduleOf(x, y) {
+      return { m: Math.floor(y / 8) * 8 + Math.floor(x / 8), r: y % 8, c: x % 8 };
+    }
+    function mirrorX(x) { return 63 - x; }
+    function buildMatrix(root, side) {
+      root.innerHTML = "";
+      for (let m = 0; m < MODULES; m++) {
+        const u = document.createElement("div");
+        u.className = "unit";
+        u.dataset.region = regionOf(m, side);
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const led = document.createElement("div");
+            led.className = "led";
+            led.dataset.side = side;
+            led.dataset.m = m;
+            led.dataset.r = r;
+            led.dataset.c = c;
+            led.addEventListener("mousedown", (e) => {
+              e.preventDefault();
+              isDrawing = true;
+              const { m: mm, r: rr, c: cc } = masterCell(side, m, r, c);
+              drawMode = !getPixel(mm, rr, cc);
+              setPixelDirect(mm, rr, cc, drawMode);
+              updateMatrixDisplay();
+            });
+            led.addEventListener("mouseenter", () => {
+              const { x, y } = xyOf(m, r, c);
+              if (isDrawing) {
+                const { m: mm, r: rr, c: cc } = masterCell(side, m, r, c);
+                setPixelDirect(mm, rr, cc, drawMode);
+                updateMatrixDisplay();
+              }
+              document.getElementById("xyHint").textContent =
+                `${side} ${x},${y}  ${regionOf(m, side)}`;
+            });
+            u.appendChild(led);
+          }
+        }
+        root.appendChild(u);
+      }
+    }
+    function masterCell(side, m, r, c) {
+      if (side === "L") return { m, r, c };
+      const { x, y } = xyOf(m, r, c);
+      return moduleOf(mirrorX(x), y);
+    }
+    function adj3(m) {
+      return [
+        m[4] * m[8] - m[5] * m[7], m[2] * m[7] - m[1] * m[8], m[1] * m[5] - m[2] * m[4],
+        m[5] * m[6] - m[3] * m[8], m[0] * m[8] - m[2] * m[6], m[2] * m[3] - m[0] * m[5],
+        m[3] * m[7] - m[4] * m[6], m[1] * m[6] - m[0] * m[7], m[0] * m[4] - m[1] * m[3]
+      ];
+    }
+    function mul3(a, b) {
+      if (b.length === 3) {
+        return [
+          a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+          a[3] * b[0] + a[4] * b[1] + a[5] * b[2],
+          a[6] * b[0] + a[7] * b[1] + a[8] * b[2]
+        ];
+      }
+      const c = new Array(9);
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          c[3 * i + j] = a[3 * i] * b[j] + a[3 * i + 1] * b[3 + j] + a[3 * i + 2] * b[6 + j];
+        }
+      }
+      return c;
+    }
+    function basisToPoints(x1, y1, x2, y2, x3, y3, x4, y4) {
+      const m = [x1, x2, x3, y1, y2, y3, 1, 1, 1];
+      const v = mul3(adj3(m), [x4, y4, 1]);
+      return mul3(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]);
+    }
+    function matrix3dForQuad(quad, w, h) {
+      const tl = quad.tl, tr = quad.tr, br = quad.br, bl = quad.bl;
+      const t = mul3(
+        basisToPoints(tl[0], tl[1], tr[0], tr[1], bl[0], bl[1], br[0], br[1]),
+        adj3(basisToPoints(0, 0, w, 0, 0, h, w, h))
+      );
+      const n = t[8] || 1;
+      for (let i = 0; i < 9; i++) t[i] /= n;
+      return `matrix3d(${t[0]}, ${t[3]}, 0, ${t[6]}, ${t[1]}, ${t[4]}, 0, ${t[7]}, 0, 0, 1, 0, ${t[2]}, ${t[5]}, 0, ${t[8]})`;
+    }
+    function initPreview() {
+      const wrap = document.getElementById("wrap-panel");
+      const cssW = PANEL_W * PREVIEW_SCALE;
+      const cssH = PANEL_H * PREVIEW_SCALE;
+      wrap.style.transform = matrix3dForQuad(PANEL_QUAD, cssW, cssH);
+      const canvas = document.getElementById("prev-panel");
+      canvas.width = PANEL_W;
+      canvas.height = PANEL_H;
+      canvas.style.width = cssW + "px";
+      canvas.style.height = cssH + "px";
+    }
+    function hexToRgb(hex) {
+      const h = hex.replace("#", "").trim();
+      return [
+        parseInt(h.slice(0, 2), 16),
+        parseInt(h.slice(2, 4), 16),
+        parseInt(h.slice(4, 6), 16),
+      ];
+    }
+    function framePixel(x, y) {
+      const { m, r, c } = moduleOf(x, y);
+      return getPixel(m, r, c);
+    }
+    function drawPreview() {
+      const canvas = document.getElementById("prev-panel");
+      if (!canvas) return;
+      const led = getComputedStyle(document.documentElement).getPropertyValue("--led-on").trim() || "#3cf0ff";
+      const invert = document.body.classList.contains("invert-view");
+      const [lr, lg, lb] = hexToRgb(led);
+      const [br, bg, bb] = hexToRgb(PREVIEW_BG);
+      const ctx = canvas.getContext("2d");
+      const img = ctx.createImageData(PANEL_W, PANEL_H);
+      for (let y = 0; y < PANEL_H; y++) {
+        for (let x = 0; x < PANEL_W; x++) {
+          let on = framePixel(x, y);
+          if (invert) on = !on;
+          const i = (y * PANEL_W + x) * 4;
+          img.data[i] = on ? lr : br;
+          img.data[i + 1] = on ? lg : bg;
+          img.data[i + 2] = on ? lb : bb;
+          img.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+    function setPhotoZoom(z) {
+      const zoom = Math.max(1, Math.min(4, parseFloat(z) || 1));
+      const photo = document.getElementById("photo");
+      const sizer = document.getElementById("photoSizer");
+      photo.style.transform = `scale(${zoom})`;
+      sizer.style.width = (400 * zoom) + "px";
+      sizer.style.height = (400 * zoom) + "px";
+      document.getElementById("photoZoomLbl").textContent = Math.round(zoom * 100) + "%";
+    }
+    function setRenderMode(mode) {
+      document.body.classList.toggle("mode-preview", mode === "preview");
+      document.getElementById("modeFlatBtn").classList.toggle("active", mode === "flat");
+      document.getElementById("modePreviewBtn").classList.toggle("active", mode === "preview");
+      if (mode === "preview") drawPreview();
+    }
+    function initDOM() {
+      buildMatrix(document.getElementById("matrixL"), "L");
+      buildMatrix(document.getElementById("matrixR"), "R");
+      initPreview();
+      window.addEventListener("mouseup", () => { isDrawing = false; });
+      setupDnD();
+      renderGroups();
+      renderUI();
+    }
+    function getPixel(m, r, c) {
+      const frame = project.animations[curAnimIdx].frames[curFrameIdx];
+      return (frame[m][r] & (1 << (7 - c))) !== 0;
+    }
+    function setPixelDirect(m, r, c, val) {
+      const frame = project.animations[curAnimIdx].frames[curFrameIdx];
+      if (val) frame[m][r] |= (1 << (7 - c));
+      else frame[m][r] &= ~(1 << (7 - c));
+    }
+    function updateMatrixDisplay() {
+      document.querySelectorAll(".led").forEach((led) => {
+        const side = led.dataset.side;
+        const m = +led.dataset.m, r = +led.dataset.r, c = +led.dataset.c;
+        const cell = side === "L" ? { m, r, c } : masterCell("R", m, r, c);
+        led.classList.toggle("on", getPixel(cell.m, cell.r, cell.c));
+      });
+      drawPreview();
+    }
+    function setInvertView(on) {
+      document.body.classList.toggle("invert-view", !!on);
+      drawPreview();
+    }
+    function setLedColor(hex) {
+      document.documentElement.style.setProperty("--led-on", hex);
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      document.documentElement.style.setProperty("--led-glow", `rgba(${r},${g},${b},0.45)`);
+      drawPreview();
+    }
+    function visibleAnims() {
+      return project.animations
+        .map((a, idx) => ({ a, idx }))
+        .filter((x) => groupFilter === "all" || x.a.group === groupFilter);
+    }
+    function renderGroups() {
+      const tabs = document.getElementById("groupTabs");
+      tabs.innerHTML = "";
+      GROUPS.forEach((g) => {
+        const b = document.createElement("button");
+        b.textContent = g.label;
+        b.className = groupFilter === g.id ? "active" : "";
+        b.onclick = () => { groupFilter = g.id; renderGroups(); renderUI(); };
+        tabs.appendChild(b);
+      });
+    }
+    function renderUI() {
+      const animList = document.getElementById("animList");
+      animList.innerHTML = "";
+      visibleAnims().forEach(({ a, idx }) => {
+        const d = document.createElement("button");
+        d.type = "button";
+        d.className = `item ${idx === curAnimIdx ? "selected" : ""}`;
+        d.innerHTML = `<span>${escapeHtml(a.name)}</span><small>${a.frames.length}к</small>`;
+        d.onclick = () => { curAnimIdx = idx; curFrameIdx = 0; renderUI(); };
+        animList.appendChild(d);
+      });
+      const anim = project.animations[curAnimIdx];
+      document.getElementById("animMeta").textContent =
+        `${anim.group || "basic"}${anim.transition ? " · " + anim.transition : ""}`;
+      const frameList = document.getElementById("frameList");
+      frameList.innerHTML = "";
+      document.getElementById("frameCountLbl").textContent = String(anim.frames.length);
+      anim.frames.forEach((_, idx) => {
+        const d = document.createElement("button");
+        d.type = "button";
+        d.className = `item ${idx === curFrameIdx ? "selected" : ""}`;
+        const label = (anim.frameNames && anim.frameNames[idx]) || `кадр ${idx}`;
+        const ms = (anim.durations && anim.durations[idx]) || 500;
+        d.innerHTML = `<span>${escapeHtml(String(label))}</span><small>${ms}мс</small>`;
+        d.onclick = () => { curFrameIdx = idx; renderUI(); };
+        frameList.appendChild(d);
+      });
+      updateMatrixDisplay();
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+    function ensureFrameNames(anim) {
+      if (!anim.frameNames) anim.frameNames = [];
+      if (!anim.durations) anim.durations = [];
+      while (anim.frameNames.length < anim.frames.length) {
+        anim.frameNames.push(String(anim.frameNames.length).padStart(2, "0"));
+      }
+      while (anim.durations.length < anim.frames.length) anim.durations.push(500);
+    }
+    function addFrame() {
+      const anim = project.animations[curAnimIdx];
+      anim.frames.push(createEmptyFrame());
+      ensureFrameNames(anim);
+      curFrameIdx = anim.frames.length - 1;
+      renderUI();
+    }
+    function duplicateFrame() {
+      const anim = project.animations[curAnimIdx];
+      anim.frames.splice(curFrameIdx + 1, 0, cloneFrame(anim.frames[curFrameIdx]));
+      ensureFrameNames(anim);
+      anim.frameNames.splice(curFrameIdx + 1, 0, (anim.frameNames[curFrameIdx] || "") + " копия");
+      anim.durations.splice(curFrameIdx + 1, 0, anim.durations[curFrameIdx] || 500);
+      curFrameIdx++;
+      renderUI();
+    }
+    function deleteFrame() {
+      const anim = project.animations[curAnimIdx];
+      if (anim.frames.length <= 1) return alert("Нельзя удалить единственный кадр");
+      anim.frames.splice(curFrameIdx, 1);
+      anim.frameNames && anim.frameNames.splice(curFrameIdx, 1);
+      anim.durations && anim.durations.splice(curFrameIdx, 1);
+      if (curFrameIdx >= anim.frames.length) curFrameIdx = anim.frames.length - 1;
+      renderUI();
+    }
+    function clearCurrentFrame() {
+      project.animations[curAnimIdx].frames[curFrameIdx] = createEmptyFrame();
+      updateMatrixDisplay();
+    }
+    function invertCurrentFrame() {
+      const frame = project.animations[curAnimIdx].frames[curFrameIdx];
+      for (let m = 0; m < MODULES; m++) {
+        for (let r = 0; r < 8; r++) frame[m][r] = (~frame[m][r]) & 0xFF;
+      }
+      updateMatrixDisplay();
+    }
+    function addAnimation() {
+      const name = prompt("Название:", `Anim ${project.animations.length + 1}`);
+      if (!name) return;
+      project.animations.push({
+        name, group: "basic", frames: [createEmptyFrame()], frameNames: ["00"], durations: [500]
+      });
+      curAnimIdx = project.animations.length - 1;
+      curFrameIdx = 0;
+      renderUI();
+    }
+    function togglePlay() {
+      const btn = document.getElementById("playBtn");
+      if (playTimer) {
+        clearTimeout(playTimer);
+        playTimer = null;
+        btn.textContent = "▶ Анимация";
+        btn.classList.remove("active");
+        return;
+      }
+      btn.textContent = "⏸ Пауза";
+      btn.classList.add("active");
+      const tick = () => {
+        const anim = project.animations[curAnimIdx];
+        curFrameIdx = (curFrameIdx + 1) % anim.frames.length;
+        renderUI();
+        const fps = Math.max(1, +document.getElementById("fpsInput").value || 5);
+        let ms = 1000 / fps;
+        if (document.getElementById("useDur").checked) {
+          const d = (anim.durations && anim.durations[curFrameIdx]) || 0;
+          if (d > 0) ms = d;
+        }
+        playTimer = setTimeout(tick, ms);
+      };
+      tick();
+    }
+    function frameToImageData(frame) {
+      const data = new Uint8ClampedArray(64 * 32 * 4);
+      for (let y = 0; y < 32; y++) {
+        for (let x = 0; x < 64; x++) {
+          const m = Math.floor(y / 8) * 8 + Math.floor(x / 8);
+          const on = (frame[m][y % 8] & (1 << (7 - (x % 8)))) !== 0;
+          const i = (y * 64 + x) * 4;
+          const v = on ? 255 : 0;
+          data[i] = data[i + 1] = data[i + 2] = v;
+          data[i + 3] = 255;
+        }
+      }
+      return new ImageData(data, 64, 32);
+    }
+    function downloadPng() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 64; canvas.height = 32;
+      canvas.getContext("2d").putImageData(
+        frameToImageData(project.animations[curAnimIdx].frames[curFrameIdx]), 0, 0
+      );
+      const a = document.createElement("a");
+      const anim = project.animations[curAnimIdx];
+      a.download = `${anim.name}_${String(curFrameIdx).padStart(2, "0")}.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    }
+    function exportCode() {
+      let c = `// P3 left half-face 64x32. Right panel = this bitmap flipped on X.\n`;
+      project.animations.forEach((anim, aIdx) => {
+        const varName = `face_${anim.name.replace(/[^A-Za-z0-9_]/g, "_")}`;
+        c += `\n// ${anim.name} (${anim.frames.length} frames)\n`;
+        c += `const uint8_t ${varName}[${anim.frames.length}][32][8] = {\n`;
+        anim.frames.forEach((frame, fIdx) => {
+          c += `  { // ${anim.frameNames ? anim.frameNames[fIdx] : fIdx}\n`;
+          for (let y = 0; y < 32; y++) {
+            const row = [];
+            for (let s = 0; s < 8; s++) {
+              let byte = 0;
+              for (let b = 0; b < 8; b++) {
+                const x = s * 8 + b;
+                const m = Math.floor(y / 8) * 8 + Math.floor(x / 8);
+                if (frame[m][y % 8] & (1 << (7 - (x % 8)))) byte |= (1 << (7 - b));
+              }
+              row.push("0x" + byte.toString(16).padStart(2, "0").toUpperCase());
+            }
+            c += `    { ${row.join(", ")} }${y < 31 ? "," : ""}\n`;
+          }
+          c += `  }${fIdx < anim.frames.length - 1 ? "," : ""}\n`;
+        });
+        c += `};\n`;
+      });
+      document.getElementById("codeArea").value = c;
+      document.getElementById("codeModal").style.display = "flex";
+    }
+    function closeModal() { document.getElementById("codeModal").style.display = "none"; }
+    function copyCode() {
+      document.getElementById("codeArea").select();
+      document.execCommand("copy");
+    }
+    function pixelsToFrame(sample) {
+      const frame = createEmptyFrame();
+      for (let y = 0; y < 32; y++) {
+        for (let x = 0; x < 64; x++) {
+          if (!sample(x, y)) continue;
+          const m = Math.floor(y / 8) * 8 + Math.floor(x / 8);
+          frame[m][y % 8] |= (1 << (7 - (x % 8)));
+        }
+      }
+      return frame;
+    }
+    function imageToFrame(img) {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width; canvas.height = img.height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0);
+      const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const sample = (x, y) => {
+        const sx = Math.min(width - 1, Math.floor((x + 0.5) * (width / 64)));
+        const sy = Math.min(height - 1, Math.floor((y + 0.5) * (height / 32)));
+        const i = (sy * width + sx) * 4;
+        if (data[i + 3] < 128) return false;
+        return (data[i] + data[i + 1] + data[i + 2]) / 3 >= 128;
+      };
+      return pixelsToFrame(sample);
+    }
+    function loadImageFile(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error(file.name)); };
+        img.src = url;
+      });
+    }
+    function naturalCompare(a, b) {
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+    }
+    async function importFolder(fileList) {
+      const files = [...fileList].filter((f) => /\.(png|bmp|gif|webp|jpg|jpeg)$/i.test(f.name));
+      if (!files.length) return alert("Нет изображений");
+      const groups = new Map();
+      for (const file of files) {
+        const rel = (file.webkitRelativePath || file.name).replace(/\\/g, "/");
+        const parts = rel.split("/").filter(Boolean);
+        const animName = parts.length >= 2 ? parts[parts.length - 2] : "Импорт";
+        const frameName = file.name.replace(/\.[^.]+$/, "");
+        if (!groups.has(animName)) groups.set(animName, []);
+        groups.get(animName).push({ file, frameName });
+      }
+      const animations = [];
+      for (const name of [...groups.keys()].sort(naturalCompare)) {
+        const items = groups.get(name).sort((a, b) => naturalCompare(a.frameName, b.frameName));
+        const frames = [];
+        const frameNames = [];
+        for (const item of items) {
+          try {
+            frames.push(imageToFrame(await loadImageFile(item.file)));
+            frameNames.push(item.frameName);
+          } catch (err) { console.warn(err); }
+        }
+        if (frames.length) {
+          animations.push({
+            name, group: "basic", frames, frameNames, durations: frames.map(() => 500)
+          });
+        }
+      }
+      if (!animations.length) return alert("Не удалось прочитать изображения");
+      project = { animations };
+      curAnimIdx = 0; curFrameIdx = 0;
+      renderUI();
+    }
+    function setupDnD() {
+      let depth = 0;
+      window.addEventListener("dragenter", (e) => { e.preventDefault(); depth++; document.body.classList.add("drag-over"); });
+      window.addEventListener("dragleave", (e) => { e.preventDefault(); depth = Math.max(0, depth - 1); if (!depth) document.body.classList.remove("drag-over"); });
+      window.addEventListener("dragover", (e) => e.preventDefault());
+      window.addEventListener("drop", (e) => {
+        e.preventDefault(); depth = 0; document.body.classList.remove("drag-over");
+        if (e.dataTransfer.files.length) importFolder(e.dataTransfer.files);
+      });
+    }
+    initDOM();
+  </script>
+</body>
+</html>

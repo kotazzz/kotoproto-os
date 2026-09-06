@@ -1,0 +1,1237 @@
+{
+  "source": "ToasterBlaster",
+  "source_path": "C:\\Users\\NewLi\\Downloads\\ToasterBlaster-main\\ToasterBlaster-main",
+  "pixel_format": "1-bit, on=white",
+  "layout": {
+    "canvas": {
+      "width": 64,
+      "height": 16
+    },
+    "matrix": {
+      "width": 64,
+      "height": 32,
+      "place_y": 8
+    },
+    "mirror_default": "LEFT_SIDE (eye_l, nose_l, mouth_l)",
+    "modules": [
+      {
+        "id": "eye_r",
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 8
+      },
+      {
+        "id": "nose_r",
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      {
+        "id": "nose_l",
+        "x": 24,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      {
+        "id": "eye_l",
+        "x": 32,
+        "y": 0,
+        "w": 16,
+        "h": 8
+      },
+      {
+        "id": "mouth_r",
+        "x": 0,
+        "y": 8,
+        "w": 32,
+        "h": 8
+      },
+      {
+        "id": "mouth_l",
+        "x": 32,
+        "y": 8,
+        "w": 32,
+        "h": 8
+      }
+    ]
+  },
+  "parts": {
+    "eye": [
+      {
+        "id": "angry",
+        "file": "face/parts/eye/angry.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "annoyed",
+        "file": "face/parts/eye/annoyed.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "batteryCheck",
+        "file": "face/parts/eye/batteryCheck.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      },
+      {
+        "id": "blushing",
+        "file": "face/parts/eye/blushing.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "boop",
+        "file": "face/parts/eye/boop.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "crying0",
+        "file": "face/parts/eye/crying0.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "crying1",
+        "file": "face/parts/eye/crying1.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      },
+      {
+        "id": "dead",
+        "file": "face/parts/eye/dead.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "dizzy0",
+        "file": "face/parts/eye/dizzy0.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "dizzy1",
+        "file": "face/parts/eye/dizzy1.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      },
+      {
+        "id": "exclamationPoint",
+        "file": "face/parts/eye/exclamationPoint.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "flushed",
+        "file": "face/parts/eye/flushed.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "heart0",
+        "file": "face/parts/eye/heart0.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      },
+      {
+        "id": "heart1",
+        "file": "face/parts/eye/heart1.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      },
+      {
+        "id": "heart2",
+        "file": "face/parts/eye/heart2.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "joy",
+        "file": "face/parts/eye/joy.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "joyBlush",
+        "file": "face/parts/eye/joyBlush.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "neutral",
+        "file": "face/parts/eye/neutral.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "o",
+        "file": "face/parts/eye/o.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "questionMark",
+        "file": "face/parts/eye/questionMark.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "u",
+        "file": "face/parts/eye/u.png",
+        "width": 16,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      }
+    ],
+    "mouth": [
+      {
+        "id": "batteryCheck",
+        "file": "face/parts/mouth/batteryCheck.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      },
+      {
+        "id": "happy",
+        "file": "face/parts/mouth/happy.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "neutral",
+        "file": "face/parts/mouth/neutral.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "nope",
+        "file": "face/parts/mouth/nope.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      },
+      {
+        "id": "sad",
+        "file": "face/parts/mouth/sad.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "shaking0",
+        "file": "face/parts/mouth/shaking0.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "shaking1",
+        "file": "face/parts/mouth/shaking1.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      },
+      {
+        "id": "shaking2",
+        "file": "face/parts/mouth/shaking2.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      },
+      {
+        "id": "smile",
+        "file": "face/parts/mouth/smile.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "smileTongue",
+        "file": "face/parts/mouth/smileTongue.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "smirk",
+        "file": "face/parts/mouth/smirk.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "w",
+        "file": "face/parts/mouth/w.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      }
+    ],
+    "nose": [
+      {
+        "id": "neutral",
+        "file": "face/parts/nose/neutral.png",
+        "width": 8,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "o",
+        "file": "face/parts/nose/o.png",
+        "width": 8,
+        "height": 8,
+        "randomizer": false,
+        "copied_from_source": true
+      }
+    ],
+    "other": [
+      {
+        "id": "empty",
+        "file": "face/parts/other/empty.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      },
+      {
+        "id": "full",
+        "file": "face/parts/other/full.png",
+        "width": 32,
+        "height": 8,
+        "randomizer": true,
+        "copied_from_source": true
+      }
+    ]
+  },
+  "sequences": [
+    {
+      "id": "Neutral",
+      "group": "basic",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "neutral",
+          "mouth": "neutral",
+          "nose": "neutral",
+          "file": "face/sequences/Neutral/00.png"
+        }
+      ]
+    },
+    {
+      "id": "Joy",
+      "group": "basic",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "joy",
+          "mouth": "happy",
+          "nose": "neutral",
+          "file": "face/sequences/Joy/00.png"
+        }
+      ]
+    },
+    {
+      "id": "JoyBlush",
+      "group": "basic",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "joyBlush",
+          "mouth": "happy",
+          "nose": "neutral",
+          "file": "face/sequences/JoyBlush/00.png"
+        }
+      ]
+    },
+    {
+      "id": "Blushing",
+      "group": "basic",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "blushing",
+          "mouth": "sad",
+          "nose": "neutral",
+          "file": "face/sequences/Blushing/00.png"
+        }
+      ]
+    },
+    {
+      "id": "Angry",
+      "group": "basic",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": true,
+          "loop": false,
+          "eye": "angry",
+          "mouth": "sad",
+          "nose": "neutral",
+          "file": "face/sequences/Angry/00.png"
+        }
+      ]
+    },
+    {
+      "id": "AngryHappy",
+      "group": "basic",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "angry",
+          "mouth": "neutral",
+          "nose": "neutral",
+          "file": "face/sequences/AngryHappy/00.png"
+        }
+      ]
+    },
+    {
+      "id": "Annoyed",
+      "group": "basic",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": true,
+          "loop": false,
+          "eye": "annoyed",
+          "mouth": "sad",
+          "nose": "neutral",
+          "file": "face/sequences/Annoyed/00.png"
+        }
+      ]
+    },
+    {
+      "id": "Spooked",
+      "group": "basic",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "flushed",
+          "mouth": "sad",
+          "nose": "neutral",
+          "file": "face/sequences/Spooked/00.png"
+        }
+      ]
+    },
+    {
+      "id": "Squinting",
+      "group": "basic",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "boop",
+          "mouth": "happy",
+          "nose": "neutral",
+          "file": "face/sequences/Squinting/00.png"
+        }
+      ]
+    },
+    {
+      "id": "Questioning",
+      "group": "basic",
+      "transition": "drop",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": false,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "questionMark",
+          "mouth": "smirk",
+          "nose": "neutral",
+          "file": "face/sequences/Questioning/00.png"
+        }
+      ]
+    },
+    {
+      "id": "Exclamation",
+      "group": "basic",
+      "transition": "drop",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "exclamationPoint",
+          "mouth": "smirk",
+          "nose": "neutral",
+          "file": "face/sequences/Exclamation/00.png"
+        },
+        {
+          "duration_ms": 200,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": true,
+          "eye": "empty",
+          "mouth": "smirk",
+          "nose": "neutral",
+          "file": "face/sequences/Exclamation/01.png"
+        }
+      ]
+    },
+    {
+      "id": "UWU",
+      "group": "basic",
+      "transition": "drop",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "u",
+          "mouth": "w",
+          "nose": "neutral",
+          "file": "face/sequences/UWU/00.png"
+        }
+      ]
+    },
+    {
+      "id": "OWO",
+      "group": "basic",
+      "transition": "earthquake",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "o",
+          "mouth": "w",
+          "nose": "neutral",
+          "file": "face/sequences/OWO/00.png"
+        }
+      ]
+    },
+    {
+      "id": "NOPE",
+      "group": "basic",
+      "transition": "earthquake",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": false,
+          "mirror_nose": false,
+          "mirror_mouth": false,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "nope",
+          "mouth": "nope",
+          "nose_l": "o",
+          "nose_r": "nope",
+          "file": "face/sequences/NOPE/00.png"
+        },
+        {
+          "duration_ms": 100,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": true,
+          "empty_all": true,
+          "file": "face/sequences/NOPE/01.png"
+        }
+      ]
+    },
+    {
+      "id": "Wink",
+      "group": "animated",
+      "transition": "crossfade",
+      "frames": [
+        {
+          "duration_ms": 150,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "neutral",
+          "mouth": "neutral",
+          "nose": "neutral",
+          "file": "face/sequences/Wink/00.png"
+        },
+        {
+          "duration_ms": 250,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "neutral",
+          "mouth": "smile",
+          "nose": "neutral",
+          "note": "runtime: blink right eye, translate, particles",
+          "file": "face/sequences/Wink/01.png"
+        }
+      ]
+    },
+    {
+      "id": "HeartEyes",
+      "group": "animated",
+      "transition": "any",
+      "frames": [
+        {
+          "duration_ms": 400,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "heart0",
+          "mouth": "smile",
+          "nose": "neutral",
+          "file": "face/sequences/HeartEyes/00.png"
+        },
+        {
+          "duration_ms": 120,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "heart1",
+          "mouth": "smile",
+          "nose": "neutral",
+          "file": "face/sequences/HeartEyes/01.png"
+        },
+        {
+          "duration_ms": 180,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "heart2",
+          "mouth": "smile",
+          "nose": "neutral",
+          "file": "face/sequences/HeartEyes/02.png"
+        },
+        {
+          "duration_ms": 120,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "heart1",
+          "mouth": "smile",
+          "nose": "neutral",
+          "file": "face/sequences/HeartEyes/03.png"
+        },
+        {
+          "duration_ms": 140,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "heart2",
+          "mouth": "smile",
+          "nose": "neutral",
+          "file": "face/sequences/HeartEyes/04.png"
+        },
+        {
+          "duration_ms": 140,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": true,
+          "eye": "heart1",
+          "mouth": "smile",
+          "nose": "neutral",
+          "file": "face/sequences/HeartEyes/05.png"
+        }
+      ]
+    },
+    {
+      "id": "Dead",
+      "group": "basic",
+      "transition": "glitch",
+      "frames": [
+        {
+          "duration_ms": 33,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": true,
+          "eye": "dead",
+          "nose": "neutral",
+          "mouth_l": "smile",
+          "mouth_r": "smileTongue",
+          "note": "runtime: small glitch",
+          "file": "face/sequences/Dead/00.png"
+        }
+      ]
+    },
+    {
+      "id": "PowerOff",
+      "group": "animated",
+      "transition": "losePower",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "empty_all": true,
+          "file": "face/sequences/PowerOff/00.png"
+        }
+      ]
+    },
+    {
+      "id": "BatteryCheck",
+      "group": "animated",
+      "transition": null,
+      "frames": [
+        {
+          "duration_ms": 250,
+          "mirror_eyes": false,
+          "mirror_nose": false,
+          "mirror_mouth": false,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "batteryCheck",
+          "mouth": "batteryCheck",
+          "nose": "empty",
+          "file": "face/sequences/BatteryCheck/00.png"
+        },
+        {
+          "duration_ms": 250,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": true,
+          "empty_all": true,
+          "file": "face/sequences/BatteryCheck/01.png"
+        }
+      ]
+    },
+    {
+      "id": "Crying",
+      "group": "animated",
+      "transition": "crossfade",
+      "frames": [
+        {
+          "duration_ms": 100,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "crying0",
+          "mouth": "shaking0",
+          "nose": "neutral",
+          "file": "face/sequences/Crying/00.png"
+        },
+        {
+          "duration_ms": 100,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "crying0",
+          "mouth": "shaking1",
+          "nose": "neutral",
+          "file": "face/sequences/Crying/01.png"
+        },
+        {
+          "duration_ms": 100,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "crying0",
+          "mouth": "shaking2",
+          "nose": "neutral",
+          "file": "face/sequences/Crying/02.png"
+        },
+        {
+          "duration_ms": 100,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": true,
+          "loop": false,
+          "eye": "crying1",
+          "mouth": "shaking0",
+          "nose": "neutral",
+          "file": "face/sequences/Crying/03.png"
+        },
+        {
+          "duration_ms": 100,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": true,
+          "loop": false,
+          "eye": "crying1",
+          "mouth": "shaking1",
+          "nose": "neutral",
+          "file": "face/sequences/Crying/04.png"
+        },
+        {
+          "duration_ms": 100,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": true,
+          "loop": true,
+          "eye": "crying1",
+          "mouth": "shaking2",
+          "nose": "neutral",
+          "file": "face/sequences/Crying/05.png"
+        }
+      ],
+      "note": "runtime: eye translate + tear particles"
+    },
+    {
+      "id": "Dizzy",
+      "group": "animated",
+      "transition": "glitch",
+      "frames": [
+        {
+          "duration_ms": 75,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "dizzy0",
+          "nose": "neutral",
+          "mouth_l": "smile",
+          "mouth_r": "smileTongue",
+          "note": "runtime: rotate eyes 0/90/180/270 and glitch",
+          "file": "face/sequences/Dizzy/00.png"
+        },
+        {
+          "duration_ms": 75,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": true,
+          "eye": "dizzy1",
+          "nose": "neutral",
+          "mouth_l": "smile",
+          "mouth_r": "smileTongue",
+          "file": "face/sequences/Dizzy/01.png"
+        }
+      ]
+    },
+    {
+      "id": "Randomize",
+      "group": "misc",
+      "transition": "shuffle",
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "questionMark",
+          "mouth": "neutral",
+          "nose": "neutral",
+          "file": "face/sequences/Randomize/00.png"
+        }
+      ],
+      "note": "runtime: RandomizeFace overlay"
+    },
+    {
+      "id": "Startup",
+      "group": "animated",
+      "transition": "crossfade",
+      "frames": [
+        {
+          "duration_ms": 0,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "empty_all": true,
+          "note": "runtime: particle wipe",
+          "file": "face/sequences/Startup/00.png"
+        },
+        {
+          "duration_ms": 0,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "neutral",
+          "mouth": "neutral",
+          "nose": "neutral",
+          "file": "face/sequences/Startup/01.png"
+        }
+      ]
+    },
+    {
+      "id": "DisplayTest",
+      "group": "misc",
+      "transition": null,
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "fill_all": true,
+          "file": "face/sequences/DisplayTest/00.png"
+        }
+      ]
+    },
+    {
+      "id": "None",
+      "group": "misc",
+      "transition": null,
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "empty_all": true,
+          "file": "face/sequences/None/00.png"
+        }
+      ]
+    },
+    {
+      "id": "Boop",
+      "group": "overlay",
+      "transition": null,
+      "frames": [
+        {
+          "duration_ms": 500,
+          "mirror_eyes": true,
+          "mirror_nose": true,
+          "mirror_mouth": true,
+          "flip_mouth": false,
+          "loop": false,
+          "eye": "boop",
+          "mouth": "happy",
+          "nose": "neutral",
+          "file": "face/sequences/Boop/00.png"
+        }
+      ]
+    }
+  ],
+  "overlays": {
+    "boop": {
+      "eye": "boop",
+      "mouth": "happy",
+      "nose": "neutral",
+      "mirror_left": true,
+      "file": "face/sequences/Boop/00.png"
+    },
+    "eye_blink": {
+      "note": "runtime overlay only (Blink/Translate/Expand tweens), no extra bitmaps"
+    }
+  },
+  "hud": [
+    {
+      "id": "microphone",
+      "file": "hud/microphone.png",
+      "width": 8,
+      "height": 8
+    },
+    {
+      "id": "noBoop",
+      "file": "hud/noBoop.png",
+      "width": 8,
+      "height": 8
+    },
+    {
+      "id": "boop",
+      "file": "hud/boop.png",
+      "width": 8,
+      "height": 8
+    },
+    {
+      "id": "led",
+      "file": "hud/led.png",
+      "width": 8,
+      "height": 8
+    },
+    {
+      "id": "bluetooth",
+      "file": "hud/bluetooth.png",
+      "width": 8,
+      "height": 8
+    },
+    {
+      "id": "tick",
+      "file": "hud/tick.png",
+      "width": 8,
+      "height": 8
+    },
+    {
+      "id": "cross",
+      "file": "hud/cross.png",
+      "width": 8,
+      "height": 8
+    },
+    {
+      "id": "load",
+      "file": "hud/load.png",
+      "width": 8,
+      "height": 8
+    }
+  ],
+  "system": [
+    {
+      "id": "splash1",
+      "file": "system/splash1.png",
+      "width": 88,
+      "height": 55,
+      "padded_width": 88,
+      "encoding": "xbm"
+    },
+    {
+      "id": "splash2",
+      "file": "system/splash2.png",
+      "width": 30,
+      "height": 20,
+      "padded_width": 32,
+      "encoding": "xbm"
+    },
+    {
+      "id": "visor",
+      "file": "system/visor.png",
+      "width": 54,
+      "height": 38,
+      "padded_width": 56,
+      "encoding": "xbm"
+    }
+  ],
+  "digits": [
+    {
+      "id": "0",
+      "file": "system/digits/0.png",
+      "width": 3,
+      "height": 8
+    },
+    {
+      "id": "1",
+      "file": "system/digits/1.png",
+      "width": 3,
+      "height": 8
+    },
+    {
+      "id": "2",
+      "file": "system/digits/2.png",
+      "width": 3,
+      "height": 8
+    },
+    {
+      "id": "3",
+      "file": "system/digits/3.png",
+      "width": 3,
+      "height": 8
+    },
+    {
+      "id": "4",
+      "file": "system/digits/4.png",
+      "width": 3,
+      "height": 8
+    },
+    {
+      "id": "5",
+      "file": "system/digits/5.png",
+      "width": 3,
+      "height": 8
+    },
+    {
+      "id": "6",
+      "file": "system/digits/6.png",
+      "width": 3,
+      "height": 8
+    },
+    {
+      "id": "7",
+      "file": "system/digits/7.png",
+      "width": 3,
+      "height": 8
+    },
+    {
+      "id": "8",
+      "file": "system/digits/8.png",
+      "width": 3,
+      "height": 8
+    },
+    {
+      "id": "9",
+      "file": "system/digits/9.png",
+      "width": 3,
+      "height": 8
+    }
+  ],
+  "layout_p3": {
+    "canvas": {
+      "width": 64,
+      "height": 32
+    },
+    "scale": 2,
+    "panel": "half-face 64x32",
+    "mirror": "right panel = flip X of left master",
+    "origin": "x=0 outer/eye, x=48 snout",
+    "modules": [
+      {
+        "id": "eye",
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 16
+      },
+      {
+        "id": "nose",
+        "x": 48,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      {
+        "id": "mouth",
+        "x": 0,
+        "y": 16,
+        "w": 64,
+        "h": 16
+      }
+    ],
+    "catalog": "face/p3/catalog.json"
+  }
+}

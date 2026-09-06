@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>kotoproto-os — симулятор</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <section class="panel matrix-panel">
+      <div class="panel-head">
+        <h2>P3 матрица</h2>
+        <span id="matrix-meta">64×32 RGB</span>
+      </div>
+      <canvas id="matrix" width="768" height="384" aria-label="P3 LED matrix"></canvas>
+    </section>
+
+    <section class="panel side-panel">
+      <div class="panel-head">
+        <h2>OLED</h2>
+        <span>128×64</span>
+      </div>
+      <div class="oled-bezel">
+        <canvas id="oled" width="384" height="192" aria-label="OLED display"></canvas>
+      </div>
+      <div class="state-row">
+        <div class="state-block">
+          <div class="panel-head">
+            <h2>Состояние</h2>
+            <span id="tick">tick 0</span>
+          </div>
+          <dl class="stats">
+            <div><dt>режим</dt><dd id="scene">startup</dd></div>
+            <div><dt>лицо</dt><dd id="text">Startup</dd></div>
+            <div><dt>яркость</dt><dd id="bright">180</dd></div>
+            <div><dt>uptime</dt><dd id="uptime">00:00:00</dd></div>
+          </dl>
+          <div class="controls">
+            <button id="play" type="button">Пауза</button>
+            <button id="step" type="button">Шаг</button>
+            <button id="restart" type="button">Перезапуск</button>
+          </div>
+        </div>
+        <div class="ring-block">
+          <div class="panel-head">
+            <h2>Кольцо</h2>
+            <span>WS2812 ×12</span>
+          </div>
+          <canvas id="ring" width="180" height="180" aria-label="RGB LED ring"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="io-row">
+      <article class="panel pad-panel">
+        <div class="panel-head">
+          <h2>Mocute</h2>
+          <span id="pad-mode-label">GAME</span>
+        </div>
+        <div class="pad" id="pad">
+          <div class="pad-top">
+            <button class="shoulder" type="button" data-btn="ok" title="Моргнуть">OK / blink</button>
+            <label class="mode-switch" title="KEY / GAME">
+              <span>KEY</span>
+              <input id="mode" type="checkbox" checked>
+              <i></i>
+              <span>GAME</span>
+            </label>
+          </div>
+          <div class="pad-body">
+            <div class="stick" id="stick" role="application" aria-label="Аналоговый стик">
+              <div class="stick-cross"></div>
+              <div class="knob" id="knob"></div>
+            </div>
+            <div class="pad-mid">
+              <button class="small-btn" type="button" data-btn="esc" title="Назад из настроек. Калибровка boop — пункт меню">ESC</button>
+              <span class="led" id="led"></span>
+              <button class="small-btn" type="button" data-btn="select" title="Автосмена лиц">MENU<span>auto</span></button>
+            </div>
+            <div class="diamond">
+            <button class="face x" type="button" data-btn="x" title="Набор лиц 1">X<span>set 1</span></button>
+            <button class="face a" type="button" data-btn="a" title="Набор лиц 2">A<span>set 2</span></button>
+            <button class="face y" type="button" data-btn="y" title="Набор лиц 3">Y<span>set 3</span></button>
+            <button class="face b" type="button" data-btn="b" title="Настройки">B<span>settings</span></button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <div class="io-right">
+        <article class="panel sensors-panel">
+          <div class="panel-head">
+            <h2>Сенсоры</h2>
+            <span>mic · gyro · boop</span>
+          </div>
+          <div class="sensors">
+            <div class="sensor">
+              <label for="mic">Микрофон <b id="mic-val">0%</b></label>
+              <input id="mic" type="range" min="0" max="100" value="0">
+            </div>
+            <div class="sensor gyro">
+              <label>Гироскоп</label>
+              <div class="gyro-rows">
+                <label>P <input id="pitch" type="range" min="-90" max="90" value="0"></label>
+                <label>R <input id="roll" type="range" min="-90" max="90" value="0"></label>
+                <label>Y <input id="yaw" type="range" min="-90" max="90" value="0"></label>
+              </div>
+              <button id="shake" type="button">Shake</button>
+            </div>
+            <div class="sensor">
+              <label for="prox">Приближение <b id="prox-val">0%</b></label>
+              <input id="prox" type="range" min="0" max="100" value="0">
+              <div class="sensor-actions">
+                <button id="boop" type="button">Boop</button>
+                <button id="calibrate" type="button">Cal</button>
+              </div>
+            </div>
+          </div>
+        </article>
+        <article class="panel ble">
+          <div class="panel-head">
+            <h2>HID терминал</h2>
+            <span>Mocute BLE report</span>
+          </div>
+          <pre id="log"></pre>
+          <p class="legal">
+            kotoproto-os · AGPL-3.0 · source is this repository ·
+            inspired by <a href="https://github.com/diodeface/ToasterBlaster">Toaster Blaster</a>
+          </p>
+        </article>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
