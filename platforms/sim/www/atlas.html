@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>kotoproto-os — атлас эмоций</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="atlas-page">
+  <main class="atlas">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Эмоции</h2>
+        <a class="atlas-link" href="/">Симулятор</a>
+      </div>
+      <p class="atlas-meta" id="meta">загрузка…</p>
+      <div class="atlas-controls">
+        <button id="blink" type="button">Моргнуть</button>
+        <button id="boop" type="button">Boop</button>
+        <button id="replay" type="button">Переход</button>
+        <label>Рот <input id="mic" type="range" min="0" max="100" value="0"></label>
+      </div>
+      <div class="atlas-list" id="lists"></div>
+    </section>
+    <section class="panel atlas-stage">
+      <div class="panel-head">
+        <h2>Визор</h2>
+        <span>левая панель + зеркало</span>
+      </div>
+      <div class="visor-wrap">
+        <div class="visor-head" aria-label="Макет визора протогена">
+          <div class="visor-panel left">
+            <canvas id="left" width="64" height="32"></canvas>
+          </div>
+          <div class="visor-panel right">
+            <canvas id="right" width="64" height="32"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="/atlas.js"></script>
+</body>
+</html>

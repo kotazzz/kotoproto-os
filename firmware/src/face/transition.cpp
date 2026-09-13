@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <string_view>
 
 namespace koto {
 namespace face {
@@ -120,31 +119,6 @@ std::uint32_t transition_duration_ms(TransitionKind kind) {
     default:
       return 0;
   }
-}
-
-TransitionKind transition_for_sequence(std::string_view sequence) {
-  if (sequence == "Questioning" || sequence == "Exclamation" || sequence == "UWU") {
-    return TransitionKind::Drop;
-  }
-  if (sequence == "OWO" || sequence == "NOPE") {
-    return TransitionKind::Earthquake;
-  }
-  if (sequence == "Wink" || sequence == "Crying" || sequence == "Startup") {
-    return TransitionKind::Crossfade;
-  }
-  if (sequence == "Dead" || sequence == "Dizzy") {
-    return TransitionKind::Glitch;
-  }
-  if (sequence == "Randomize") {
-    return TransitionKind::Shuffle;
-  }
-  if (sequence == "PowerOff") {
-    return TransitionKind::LosePower;
-  }
-  if (sequence == "BatteryCheck") {
-    return TransitionKind::None;
-  }
-  return TransitionKind::Blink;
 }
 
 TransitionKind pick_transition(TransitionKind preferred, std::uint32_t rng, std::uint8_t rare_chance) {

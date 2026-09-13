@@ -20,7 +20,7 @@ struct SettingsBlob {
   std::uint32_t magic = kSettingsMagic;
   std::uint8_t version = kSettingsVersion;
   std::uint8_t brightness = 8;
-  std::uint8_t flags = kFlagMatrix | kFlagLed | kFlagBlink | kFlagBoop;
+  std::uint8_t flags = kFlagMatrix | kFlagLed | kFlagBlink | kFlagBoop | kFlagMouth;
   std::uint8_t boop_sensitivity = 127;
   std::uint8_t rare_chance = 25;
   std::uint8_t fan_speed = 255;

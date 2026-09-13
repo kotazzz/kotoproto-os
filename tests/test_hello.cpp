@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "koto/app.hpp"
+#include "koto/config.hpp"
 #include "koto/hal/clock.hpp"
 #include "koto/hal/fan.hpp"
 #include "koto/hal/hid_host.hpp"
@@ -16,6 +17,7 @@
 #include "koto/hal/sensors.hpp"
 #include "koto/hal/store.hpp"
 #include "koto/protocol/mocute.hpp"
+#include "koto/settings.hpp"
 
 namespace {
 
@@ -182,6 +184,8 @@ void require(bool cond, const char* what) {
 }  // namespace
 
 int main() {
+  require((koto::SettingsBlob{}.flags & koto::kFlagMouth) != 0, "default blob enables mouth");
+
   koto::PadState pad;
   pad.x = 200;
   pad.y = 10;
@@ -199,6 +203,10 @@ int main() {
   require(key.mode == koto::PadMode::Key, "KEY mode");
   require(key.y == 0, "KEY up");
   require(key.ok() && key.a(), "KEY enter = OK/A");
+
+  std::uint8_t keyboard_esc[8] = {0, 0, 0x29, 0, 0, 0, 0, 0};
+  const koto::PadState key_esc = koto::parse_mocute_report(keyboard_esc, 8);
+  require(key_esc.esc() && !key_esc.b(), "KEY Esc is Esc only");
 
   MockMatrix matrix(64, 32);
   MockOled oled(128, 64);
@@ -220,7 +228,8 @@ int main() {
   skip.buttons = koto::kBtnB;
   const auto skip_report = koto::encode_mocute_report(skip);
   app.handle_report(skip_report.data(), skip_report.size());
-  require(app.state().scene == "settings", "skip splash opens settings");
+  require(app.state().scene == "faceset", "skip splash opens faceset");
+  require(app.state().face == "Neutral", "startup ends on Neutral");
 
   koto::PadState press_x;
   press_x.buttons = koto::kBtnX;
@@ -293,9 +302,40 @@ int main() {
 
   koto::PadState press_menu;
   press_menu.buttons = koto::kBtnSelect;
-  const auto menu_report = koto::encode_mocute_report(press_menu);
-  app.handle_report(menu_report.data(), menu_report.size());
-  require(app.state().scene == "auto", "MENU starts automatic faces");
+  app.handle_report(koto::encode_mocute_report(press_menu).data(), koto::kReportSize);
+  koto::PadState release_menu;
+  app.handle_report(koto::encode_mocute_report(release_menu).data(), koto::kReportSize);
+  require(app.state().scene == "settings", "MENU opens BT status");
+  require(app.state().setting_index == koto::kSettingStatus1, "first MENU is BT screen");
+
+  app.handle_report(koto::encode_mocute_report(press_menu).data(), koto::kReportSize);
+  app.handle_report(koto::encode_mocute_report(release_menu).data(), koto::kReportSize);
+  require(app.state().setting_index == koto::kSettingStatus2, "second MENU is Frame screen");
+
+  app.handle_report(koto::encode_mocute_report(press_menu).data(), koto::kReportSize);
+  app.handle_report(koto::encode_mocute_report(release_menu).data(), koto::kReportSize);
+  require(app.state().setting_index == 0, "third MENU is settings list");
+
+  app.handle_report(koto::encode_mocute_report(press_menu).data(), koto::kReportSize);
+  app.handle_report(koto::encode_mocute_report(release_menu).data(), koto::kReportSize);
+  require(app.state().setting_index == koto::kSettingStatus1, "fourth MENU returns to BT");
+
+  koto::PadState hold_menu;
+  press_x.buttons = koto::kBtnX;
+  app.handle_report(koto::encode_mocute_report(press_x).data(), koto::kReportSize);
+  require(app.state().scene == "faceset", "X leaves status to faceset");
+  hold_menu.buttons = koto::kBtnSelect;
+  app.handle_report(koto::encode_mocute_report(hold_menu).data(), koto::kReportSize);
+  clock.advance(koto::kMenuHoldMs);
+  app.tick();
+  require(app.state().scene == "settings", "MENU hold opens settings");
+  require(app.state().setting_index == 0, "MENU hold skips BT/Frame");
+
+  koto::PadState press_auto;
+  press_auto.buttons = koto::kBtnB;
+  const auto auto_report = koto::encode_mocute_report(press_auto);
+  app.handle_report(auto_report.data(), auto_report.size());
+  require(app.state().scene == "auto", "B starts automatic faces");
 
   sensors.set_proximity(1.0f);
   for (int i = 0; i < 6; ++i) {

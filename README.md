@@ -2,7 +2,7 @@
 
 **English** | [Русский](README.ru.md)
 
-Personal LED visor firmware for a Protogen-style helmet: ESP32, P3 RGB 64×32, SSD1306 HUD, BLE Mocute gamepad, WS2812 rings, microphone mouth bars, boop sensor, and a browser simulator.
+Personal LED visor firmware for a Protogen-style helmet, **simulator-first**: P3 RGB 64×32 faces, SSD1306 HUD, Mocute pad mapping, WS2812 ring logic, microphone mouth bars, and a boop sensor. The ESP32 target is a stub until a board is chosen.
 
 > **Roadmap / current status.** There is a **working PC simulator with a browser UI**. The ESP32 HAL is a stub. The firmware has **not been adapted or tested on real hardware**. The exact board, panel, and wiring will be documented later.
 
@@ -11,21 +11,22 @@ Personal LED visor firmware for a Protogen-style helmet: ESP32, P3 RGB 64×32, S
 kotoproto-os is released under the **GNU Affero General Public License v3.0** (`LICENSE`). That matches [Toaster Blaster](https://github.com/diodeface/ToasterBlaster) by [diodeface](https://github.com/diodeface), which is also AGPL-3.0.
 
 - **Author of this project:** Kotaz (2026). Developed for personal use.
-- **Upstream inspiration:** [Toaster Blaster](https://github.com/diodeface/ToasterBlaster) — sequences, HUD layout, Mocute mapping, overlays (blink, boop, `flipMouth`, mouth bars), and 1-bit face art. Many of those components were taken from that repository and then rewritten for a P3 RGB panel.
+- **Upstream inspiration:** [Toaster Blaster](https://github.com/diodeface/ToasterBlaster) — sequences, HUD layout, Mocute mapping, overlays (blink, boop, mouth bars), and original 1-bit face art, now stored as RGB 64×32 frames. Many of those components were taken from that repository and then rewritten for a P3 RGB panel.
 - This tree is **not** a drop-in MAX7219 port. Logic was reimplemented against a 64×32 RGB framebuffer, with changes for this visor. A large part of the new code was written with AI assistance in [Cursor](https://cursor.com).
 - See `NOTICE` for the short attribution block. If you run the simulator as a network service, AGPL section 13 requires offering this source to users; locally the source is this repository.
 
 ## What works today (simulator)
 
-- 25 named faces as P3 64×32 frames (left half; right half is mirrored on hardware later)
-- Three Mocute face sets on X / A / Y, auto-cycle on MENU/SELECT, Settings on B
+- 26 named emotions as P3 64×32 RGB frames (left half; right half is mirrored in the atlas UI)
+- Three Mocute face sets on X / A / Y, MENU cycles BT / Frame / settings, auto-cycle on B
 - OLED HUD: header preview, emotion name, boop box, microphone bar, 8-face ring, Auto visor sprite, 14-item settings
 - Blink, boop glitch, gyro nudge, snake, PWM fan value, rare transitions
 - Browser pad: stick, buttons, mic / gyro / proximity sliders
+- Emotion atlas at `/atlas.html` (classic/special lists, visor L+mirror, blink/mouth preview)
 
 ## Build and run the simulator
 
-Need CMake 3.16+, a C++17 compiler, and Python 3 only if you regenerate assets.
+Need CMake 3.16+, a C++17 compiler, and Python 3 only if you re-pack PNG into firmware.
 
 ```bash
 cmake -S . -B build
@@ -40,14 +41,14 @@ python -m venv .tools\venv
 .\.tools\venv\Scripts\pip install ziglang
 $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 & $zig c++ -std=c++17 -O2 -I firmware/include `
-  firmware/src/app.cpp firmware/src/assets/bitmaps.cpp firmware/src/assets/face_p3.cpp `
+  firmware/src/app.cpp firmware/src/assets/bitmaps.cpp firmware/src/assets/emotions.cpp `
   firmware/src/face/transition.cpp firmware/src/gfx/framebuffer.cpp firmware/src/gfx/oled_canvas.cpp `
   firmware/src/gfx/font5x7.cpp firmware/src/protocol/mocute.cpp tests/test_hello.cpp `
   -o build/koto_test_hello.exe
 .\build\koto_test_hello.exe
 
 & $zig c++ -std=c++17 -O2 -I firmware/include -I platforms/sim/include `
-  firmware/src/app.cpp firmware/src/assets/bitmaps.cpp firmware/src/assets/face_p3.cpp `
+  firmware/src/app.cpp firmware/src/assets/bitmaps.cpp firmware/src/assets/emotions.cpp `
   firmware/src/face/transition.cpp firmware/src/gfx/framebuffer.cpp firmware/src/gfx/oled_canvas.cpp `
   firmware/src/gfx/font5x7.cpp firmware/src/protocol/mocute.cpp `
   platforms/sim/src/main.cpp platforms/sim/src/hal_sim.cpp platforms/sim/src/http_server.cpp `
@@ -55,7 +56,7 @@ $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 .\build\koto_sim.exe --port 8080
 ```
 
-Open http://127.0.0.1:8080/
+Open http://127.0.0.1:8080/  (atlas: http://127.0.0.1:8080/atlas.html)
 
 Stop an old `koto_sim` process before relinking the `.exe` on Windows.
 
@@ -76,20 +77,19 @@ Tunable sizes, timings, and **placeholder** GPIO numbers live in `firmware/inclu
 
 Other knobs:
 
-- Face sets, auto pool, HUD labels: `firmware/src/app.cpp`
+- Emotion catalog, stick sets, HUD labels: `assets/emotions.json` (packed into `firmware/src/assets/emotions.cpp`)
 - Settings blob / EEPROM-style flags: `firmware/include/koto/settings.hpp`
 - Mocute button bits: `firmware/include/koto/protocol/mocute.hpp`
 - LED ring count: `firmware/include/koto/hal/led_ring.hpp` (`kLedRingCount = 12`, drawn twice on device)
 - Version string: `firmware/include/koto/version.hpp`
 
-Regenerate P3 frames from Toaster Blaster parts (keep these scripts; they are not junk):
+PNG files under `assets/faces/` are the authored faces. Pack only embeds them into firmware (plus OLED thumbs). It does not rebuild pixels from Toaster Blaster.
+
+Regenerate firmware tables after editing PNG or `assets/emotions.json`:
 
 ```bash
-python tools/import_toasterblaster.py   # if you point it at a Toaster Blaster tree
-python tools/adapt_p3_face.py
+python tools/pack_assets.py
 ```
-
-Face pixel editor: `python tools/face/serve.py` then open the local HTML.
 
 ## ESP32 (not ready)
 
@@ -111,10 +111,11 @@ GAME report, 6 bytes: X, Y, hat, buttons, mode, 0. Buttons: A B X Y OK ESC SELEC
 
 | Control | Action |
 | --- | --- |
+| (boot skip) | FaceSet with Neutral (not Settings) |
 | X / A / Y | Face sets 1 / 2 / 3 |
-| MENU / SELECT | Auto faces |
-| B | Settings (again = back) |
-| ESC | Back from Settings only |
+| MENU / SELECT | Short: BT → Frame → settings → BT. Hold: settings list from any screen |
+| B | Auto faces |
+| ESC | Back from Settings only (KEY Esc is Esc, not B) |
 | OK | Blink if the stick is centered; with stick held, cancels the pending face |
 
 ## Tree
@@ -123,8 +124,9 @@ GAME report, 6 bytes: X, Y, hat, buttons, mode, 0. Buttons: A B X Y OK ESC SELEC
 firmware/           core: faces, HUD, HID, HAL interfaces, config
 platforms/sim/      HTTP + browser UI
 platforms/esp32/    IDF skeleton, HAL stubs
-assets/             catalogs and P3/part bitmaps
-tools/              import / scale / face editor
+assets/             emotions.json + RGB faces (authored)
+tools/              pack_assets.py (PNG → firmware)
+trash/              retired Toaster import/adapt, kept for reference
 tests/              headless core test
 AGENTS.md           notes for Cursor / other agents
 ```

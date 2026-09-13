@@ -4,7 +4,7 @@ idf_component_register(
     "hal_esp32.cpp"
     "../../../firmware/src/app.cpp"
     "../../../firmware/src/assets/bitmaps.cpp"
-    "../../../firmware/src/assets/face_p3.cpp"
+    "../../../firmware/src/assets/emotions.cpp"
     "../../../firmware/src/face/transition.cpp"
     "../../../firmware/src/gfx/framebuffer.cpp"
     "../../../firmware/src/gfx/oled_canvas.cpp"

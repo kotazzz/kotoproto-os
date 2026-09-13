@@ -5,7 +5,8 @@
 namespace koto {
 namespace hal {
 
-// PWM-вентилятор 25 кГц, 8 бит. В симе — слайдер и вращающаяся крыльчатка.
+// PWM fan 25 kHz, 8-bit duty. Settings menu writes it. Simulator stores duty
+// only (no /api/fan). ESP32 HAL keeps RAM duty, no PWM yet.
 class IFan {
  public:
   virtual ~IFan() = default;

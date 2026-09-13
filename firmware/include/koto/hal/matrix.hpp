@@ -7,7 +7,8 @@
 namespace koto {
 namespace hal {
 
-// P3 HUB75 RGB-панель. На железе present() уйдёт в DMA/I2S драйвер.
+// P3 64×32 RGB framebuffer. ESP32 present() is a log stub until a panel driver
+// lands. Simulator paints the browser canvas from the same pixels.
 class IMatrix {
  public:
   virtual ~IMatrix() = default;

@@ -53,22 +53,19 @@ void Framebuffer::draw_hline(int x, int y, int w, Color color) {
   }
 }
 
-void Framebuffer::blit_bitmap_1bpp(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* data,
-                                   std::size_t size, Color on) {
-  if (data == nullptr || bitmap_w <= 0 || bitmap_h <= 0) {
+void Framebuffer::blit_rgb(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* rgb,
+                            std::size_t size) {
+  if (rgb == nullptr || bitmap_w <= 0 || bitmap_h <= 0) {
     return;
   }
-  const int bytes_per_row = (bitmap_w + 7) / 8;
+  const std::size_t need = static_cast<std::size_t>(bitmap_w * bitmap_h * 3);
+  if (size < need) {
+    return;
+  }
   for (int row = 0; row < bitmap_h; ++row) {
     for (int col = 0; col < bitmap_w; ++col) {
-      const std::size_t index = static_cast<std::size_t>(row * bytes_per_row + (col / 8));
-      if (index >= size) {
-        return;
-      }
-      const std::uint8_t bit = static_cast<std::uint8_t>(0x80 >> (col & 7));
-      if ((data[index] & bit) != 0) {
-        set_pixel(x + col, y + row, on);
-      }
+      const std::size_t i = static_cast<std::size_t>((row * bitmap_w + col) * 3);
+      set_pixel(x + col, y + row, Color{rgb[i], rgb[i + 1], rgb[i + 2]});
     }
   }
 }
@@ -130,23 +127,6 @@ void Framebuffer::rotate_square_cw(int x, int y, int size, int turns) {
         c = src(row, size - 1 - col);
       }
       set_pixel(x + col, y + row, c);
-    }
-  }
-}
-
-void Framebuffer::rotate_rect_180(int x, int y, int w, int h) {
-  if (w <= 1 || h <= 1) {
-    return;
-  }
-  std::vector<Color> tmp(static_cast<std::size_t>(w * h));
-  for (int row = 0; row < h; ++row) {
-    for (int col = 0; col < w; ++col) {
-      tmp[static_cast<std::size_t>(row * w + col)] = get_pixel(x + col, y + row);
-    }
-  }
-  for (int row = 0; row < h; ++row) {
-    for (int col = 0; col < w; ++col) {
-      set_pixel(x + col, y + row, tmp[static_cast<std::size_t>((h - 1 - row) * w + (w - 1 - col))]);
     }
   }
 }
@@ -220,39 +200,6 @@ int Framebuffer::draw_text(int x, int y, std::string_view text, Color color) {
     cursor += draw_char(cursor, y, ch, color);
   }
   return cursor - x;
-}
-
-int Framebuffer::text_width(std::string_view text) const {
-  if (text.empty()) {
-    return 0;
-  }
-  return static_cast<int>(text.size()) * (kFontWidth + kFontSpacing) - kFontSpacing;
-}
-
-Color hue(int angle_deg) {
-  int hue_val = angle_deg % 360;
-  if (hue_val < 0) {
-    hue_val += 360;
-  }
-  const int region = hue_val / 60;
-  const int remainder = hue_val % 60;
-  const std::uint8_t rising = static_cast<std::uint8_t>((remainder * 255) / 60);
-  const std::uint8_t falling = static_cast<std::uint8_t>(255 - rising);
-
-  switch (region) {
-    case 0:
-      return Color{255, rising, 0};
-    case 1:
-      return Color{falling, 255, 0};
-    case 2:
-      return Color{0, 255, rising};
-    case 3:
-      return Color{0, falling, 255};
-    case 4:
-      return Color{rising, 0, 255};
-    default:
-      return Color{255, 0, falling};
-  }
 }
 
 }  // namespace gfx

@@ -51,6 +51,8 @@ void HidHost::set_report_handler(ReportHandler handler) {
 }
 
 bool HidHost::connected() const {
+  // Stub until BLE host exists. App::update_hid_link() enters Settings on a
+  // falling edge of connected().
   return true;
 }
 

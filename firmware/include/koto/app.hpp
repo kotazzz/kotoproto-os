@@ -1,10 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <utility>
 #include <vector>
 
+#include "koto/assets/emotions.hpp"
 #include "koto/color.hpp"
 #include "koto/face/transition.hpp"
 #include "koto/gfx/framebuffer.hpp"
@@ -41,11 +41,14 @@ class App {
   void restart();
   bool save_settings();
   bool load_settings();
+  bool set_face(const char* id, bool with_transition = true);
+  void preview_blink();
 
   std::uint32_t tick_count() const { return tick_count_; }
   const DeviceState& state() const { return state_; }
   const gfx::Framebuffer& matrix_buffer() const { return matrix_fb_; }
   const gfx::OledCanvas& oled_buffer() const { return oled_fb_; }
+  const assets::Emotion* emotion() const { return emotion_; }
 
  private:
   enum class Mode { Startup, FaceSet, Auto, Settings, Snake };
@@ -69,6 +72,9 @@ class App {
   void enter_faceset(int set);
   void enter_auto();
   void enter_settings();
+  void enter_settings_list();
+  void cycle_menu_pages();
+  void poll_menu_hold();
   void enter_snake();
   void enter_safe_mode();
   void finish_startup();
@@ -84,18 +90,14 @@ class App {
   void nudge_setting(int delta);
   void activate_setting();
   void sync_brightness();
-  void apply_blob_to_state();
-  void capture_state_to_blob();
   void render_oled_header();
   void draw_settings_pager();
-  void draw_face_thumb(int x, int y, const char* sequence, bool invert);
-  void blit_oled_face_parts(int eye_x, int eye_y, int nose_x, int nose_y, int mouth_x, int mouth_y,
-                            const char* sequence);
+  void draw_face_thumb(int x, int y, const char* id, bool invert);
   void draw_toggle(int x, int y, bool on);
+  void apply_effect(std::uint32_t now_ms);
   void apply_dizzy_motion(std::uint32_t now_ms);
   void apply_wink_motion(std::uint32_t now_ms);
   void apply_angry_motion(std::uint32_t now_ms);
-  void blit_mouth_2x(const char* id, bool rot180);
   void apply_mouth_effect();
   void apply_blink_overlay();
   void apply_boop_overlay(std::uint32_t now_ms);
@@ -104,7 +106,7 @@ class App {
   void draw_sparks();
   bool boop_allowed() const;
   bool blink_allowed() const;
-  Color visor_color() const;
+  Color accent() const;
   std::uint32_t rng();
 
   hal::IMatrix& matrix_;
@@ -123,8 +125,8 @@ class App {
 
   Mode mode_ = Mode::Startup;
   BlinkState blink_ = BlinkState::Idle;
-  const char* sequence_ = "Startup";
-  const char* auto_next_ = "Joy";
+  const assets::Emotion* emotion_ = nullptr;
+  const assets::Emotion* auto_next_ = nullptr;
   bool sequence_loop_ = false;
   bool blink_held_ = false;
   bool joystick_centered_ = true;
@@ -137,6 +139,8 @@ class App {
   int boop_triggers_ = 0;
   bool settings_y_latched_ = false;
   bool settings_x_latched_ = false;
+  bool menu_long_fired_ = false;
+  std::uint32_t menu_down_ms_ = 0;
   int mouth_calibrate_left_ = 0;
   int boop_calibrate_left_ = 0;
   int calib_percent_ = 0;
@@ -178,6 +182,8 @@ class App {
   std::uint32_t startup_started_ms_ = 0;
   std::uint32_t fps_window_ms_ = 0;
   std::uint32_t randomize_last_ms_ = 0;
+  const assets::Emotion* randomize_pick_ = nullptr;
+  int randomize_frame_ = 0;
   std::uint32_t boop_started_ms_ = 0;
   std::uint32_t toast_until_ms_ = 0;
   std::uint32_t rng_state_ = 0xA341316Cu;

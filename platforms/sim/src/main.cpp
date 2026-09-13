@@ -13,8 +13,9 @@
 #include <vector>
 
 #include "koto/app.hpp"
+#include "koto/assets/emotions.hpp"
+#include "koto/color.hpp"
 #include "koto/config.hpp"
-#include "koto/gfx/framebuffer.hpp"
 #include "koto/sim/hal_sim.hpp"
 #include "koto/sim/http_server.hpp"
 #include "koto/version.hpp"
@@ -159,6 +160,7 @@ int main(int argc, char** argv) {
     std::uint32_t ticks = 0;
     std::uint32_t uptime = 0;
     bool is_playing = playing.load();
+    koto::Color color{90, 220, 255};
 
     {
       std::lock_guard<std::mutex> lock(mu);
@@ -169,9 +171,11 @@ int main(int argc, char** argv) {
       state = app.state();
       ticks = app.tick_count();
       uptime = clock.millis();
+      if (app.emotion() != nullptr) {
+        color = app.emotion()->accent;
+      }
     }
 
-    const koto::Color color = koto::gfx::hue(state.hue_deg);
     const koto::PadState& pad = state.pad;
     std::ostringstream json;
     json << "{"
@@ -184,7 +188,6 @@ int main(int argc, char** argv) {
          << "\"text\":\"" << koto::sim::json_escape(state.text) << "\","
          << "\"face\":\"" << koto::sim::json_escape(state.face) << "\","
          << "\"brightness\":" << static_cast<int>(state.brightness) << ","
-         << "\"auto_scroll\":" << (state.auto_scroll ? "true" : "false") << ","
          << "\"faceset\":" << state.faceset << ","
          << "\"octant\":" << state.octant << ","
          << "\"blinking\":" << (state.blinking ? "true" : "false") << ","
@@ -238,6 +241,65 @@ int main(int argc, char** argv) {
     return koto::sim::HttpResponse{200, "application/json; charset=utf-8", json.str()};
   });
 
+  server.get("/api/emotions", [&](const koto::sim::HttpRequest&) {
+    std::ostringstream json;
+    json << "{\"ok\":true,\"emotions\":[";
+    for (int i = 0; i < koto::assets::kEmotionCount; ++i) {
+      const koto::assets::Emotion* e = koto::assets::emotion_at(i);
+      if (e == nullptr) {
+        continue;
+      }
+      if (i != 0) {
+        json << ",";
+      }
+      json << "{\"id\":\"" << koto::sim::json_escape(e->id) << "\","
+           << "\"label\":\"" << koto::sim::json_escape(e->label) << "\","
+           << "\"short\":\"" << koto::sim::json_escape(e->short_label) << "\","
+           << "\"kind\":\"" << koto::assets::kind_name(e->kind) << "\","
+           << "\"effect\":\"" << koto::assets::effect_name(e->effect) << "\","
+           << "\"transition\":\"" << koto::face::transition_name(e->transition) << "\","
+           << "\"accent\":[" << static_cast<int>(e->accent.r) << ","
+           << static_cast<int>(e->accent.g) << "," << static_cast<int>(e->accent.b) << "],"
+           << "\"loop\":" << (e->loop ? "true" : "false") << ","
+           << "\"allow_blink\":" << (e->allow_blink ? "true" : "false") << ","
+           << "\"allow_boop\":" << (e->allow_boop ? "true" : "false") << ","
+           << "\"frames\":" << e->frame_count << "}";
+    }
+    json << "]}";
+    return koto::sim::HttpResponse{200, "application/json; charset=utf-8", json.str()};
+  });
+
+  server.post("/api/face", [&](const koto::sim::HttpRequest& req) {
+    const std::string src = req.body.empty() ? req.query : req.body;
+    const std::string id = query_value(src, "id", "");
+    const bool with_transition = query_value(src, "transition", "1") != "0";
+    bool ok = false;
+    {
+      std::lock_guard<std::mutex> lock(mu);
+      ok = app.set_face(id.c_str(), with_transition);
+      if (!playing.load()) {
+        app.tick();
+      }
+    }
+    return koto::sim::HttpResponse{ok ? 200 : 404, "application/json; charset=utf-8",
+                                   ok ? "{\"ok\":true}" : "{\"ok\":false}"};
+  });
+
+  server.post("/api/preview", [&](const koto::sim::HttpRequest& req) {
+    const std::string src = req.body.empty() ? req.query : req.body;
+    const bool blink = query_value(src, "blink", "0") == "1";
+    {
+      std::lock_guard<std::mutex> lock(mu);
+      if (blink) {
+        app.preview_blink();
+      }
+      if (!playing.load()) {
+        app.tick();
+      }
+    }
+    return koto::sim::HttpResponse{200, "application/json; charset=utf-8", "{\"ok\":true}"};
+  });
+
   server.post("/api/hid", [&](const koto::sim::HttpRequest& req) {
     const std::vector<std::uint8_t> report = parse_hex_bytes(req.body);
     std::string reply;
@@ -286,24 +348,6 @@ int main(int argc, char** argv) {
     return koto::sim::HttpResponse{200, "application/json; charset=utf-8", "{\"ok\":true}"};
   });
 
-  server.post("/api/fan", [&](const koto::sim::HttpRequest& req) {
-    const std::string src = req.body.empty() ? req.query : req.body;
-    try {
-      const int duty = std::clamp(static_cast<int>(parse_form_float(src, "duty", 255.0f)), 0, 255);
-      {
-        std::lock_guard<std::mutex> lock(mu);
-        app.set_fan_speed(static_cast<std::uint8_t>(duty));
-        fan.set_speed(static_cast<std::uint8_t>(duty));
-        if (!playing.load()) {
-          app.tick();
-        }
-      }
-    } catch (const std::exception&) {
-      return koto::sim::HttpResponse{400, "application/json; charset=utf-8", "{\"ok\":false}"};
-    }
-    return koto::sim::HttpResponse{200, "application/json; charset=utf-8", "{\"ok\":true}"};
-  });
-
   server.post("/api/play", [&](const koto::sim::HttpRequest&) {
     playing = true;
     return koto::sim::HttpResponse{200, "application/json; charset=utf-8", "{\"ok\":true,\"playing\":true}"};
@@ -340,6 +384,7 @@ int main(int argc, char** argv) {
             << " + WS2812 x" << koto::hal::kLedRingCount
             << " + Mocute HID + mic/gyro/boop + fan\n"
             << "Open http://127.0.0.1:" << port << "/\n"
+            << "Atlas: http://127.0.0.1:" << port << "/atlas.html\n"
             << "www: " << www_dir << "\n"
             << std::flush;
 

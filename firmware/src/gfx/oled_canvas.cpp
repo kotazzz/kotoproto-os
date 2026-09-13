@@ -127,35 +127,6 @@ void OledCanvas::blit_bitmap_1bpp(int x, int y, int bitmap_w, int bitmap_h, cons
   }
 }
 
-void OledCanvas::blit_bitmap_region_1bpp(int dst_x, int dst_y, int dst_w, int dst_h, int bitmap_w,
-                                         int bitmap_h, const std::uint8_t* data, std::size_t size,
-                                         int src_x, int src_y, int src_w, int src_h) {
-  if (data == nullptr || dst_w <= 0 || dst_h <= 0 || src_w <= 0 || src_h <= 0) {
-    return;
-  }
-  const int bytes_per_row = (bitmap_w + 7) / 8;
-  for (int row = 0; row < dst_h; ++row) {
-    const int sy = src_y + row * src_h / dst_h;
-    if (sy < 0 || sy >= bitmap_h) {
-      continue;
-    }
-    for (int col = 0; col < dst_w; ++col) {
-      const int sx = src_x + col * src_w / dst_w;
-      if (sx < 0 || sx >= bitmap_w) {
-        continue;
-      }
-      const std::size_t index = static_cast<std::size_t>(sy * bytes_per_row + (sx / 8));
-      if (index >= size) {
-        return;
-      }
-      const std::uint8_t bit = static_cast<std::uint8_t>(0x80 >> (sx & 7));
-      if ((data[index] & bit) != 0) {
-        set_pixel(dst_x + col, dst_y + row, true);
-      }
-    }
-  }
-}
-
 int OledCanvas::draw_char(int x, int y, char ch, bool on, int scale) {
   const char* glyph = glyph5x7(ch);
   if (glyph == nullptr) {

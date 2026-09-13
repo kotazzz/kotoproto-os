@@ -47,8 +47,6 @@ struct DeviceState {
   std::string text = "Neutral";
   std::uint8_t brightness = 136;
   std::uint8_t brightness_level = 8;
-  std::uint16_t hue_deg = 190;
-  bool auto_scroll = false;
   std::string scene = "startup";
   PadState pad;
   std::string face = "Startup";

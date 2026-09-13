@@ -1,0 +1,700 @@
+{
+  "sets": [
+    [
+      "JoyBlush",
+      "Spooked",
+      "Neutral",
+      "Blushing",
+      "Joy",
+      "Angry",
+      "AngryHappy",
+      "Annoyed"
+    ],
+    [
+      "HeartEyes",
+      "Questioning",
+      "Dizzy",
+      "Exclamation",
+      "Dead",
+      "Squinting",
+      "PowerOff",
+      "Wink"
+    ],
+    [
+      "Crying",
+      "BatteryCheck",
+      "UWU",
+      "Randomize",
+      "NOPE",
+      "PowerOff",
+      "OWO",
+      "Dizzy"
+    ]
+  ],
+  "auto": [
+    "Neutral",
+    "Joy",
+    "JoyBlush",
+    "Blushing",
+    "AngryHappy",
+    "Angry",
+    "Annoyed",
+    "Spooked",
+    "Questioning",
+    "Exclamation",
+    "Dead",
+    "Squinting",
+    "Dizzy",
+    "HeartEyes",
+    "UWU",
+    "OWO",
+    "Crying"
+  ],
+  "boot": [
+    "Neutral",
+    "Joy",
+    "UWU",
+    "OWO",
+    "Spooked",
+    "HeartEyes",
+    "Questioning"
+  ],
+  "emotions": [
+    {
+      "id": "Neutral",
+      "label": "Neutral",
+      "short": "Neutral",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        90,
+        220,
+        255
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Neutral_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Joy",
+      "label": "Joy",
+      "short": "Joy",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        255,
+        210,
+        50
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Joy_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "JoyBlush",
+      "label": "JoyBlush",
+      "short": "JoyBlush",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        255,
+        120,
+        160
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "JoyBlush_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Blushing",
+      "label": "Blushing",
+      "short": "Blush",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        255,
+        120,
+        160
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Blushing_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Angry",
+      "label": "Angry",
+      "short": "Angry",
+      "kind": "classic",
+      "effect": "snarl",
+      "transition": "blink",
+      "accent": [
+        255,
+        36,
+        28
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Angry_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "AngryHappy",
+      "label": "AngryHappy",
+      "short": "AngHappy",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        255,
+        90,
+        40
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "AngryHappy_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Annoyed",
+      "label": "Annoyed",
+      "short": "Annoyed",
+      "kind": "classic",
+      "effect": "snarl",
+      "transition": "blink",
+      "accent": [
+        255,
+        110,
+        36
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Annoyed_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Spooked",
+      "label": "Spooked",
+      "short": "Spooked",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        210,
+        190,
+        255
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Spooked_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Squinting",
+      "label": "Squinting",
+      "short": "Squint",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        255,
+        214,
+        170
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Squinting_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Questioning",
+      "label": "Questioning",
+      "short": "Ques",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "drop",
+      "accent": [
+        255,
+        220,
+        70
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Questioning_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Exclamation",
+      "label": "Exclamation",
+      "short": "Excl",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "drop",
+      "accent": [
+        255,
+        230,
+        40
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Exclamation_0.png",
+          "ms": 500
+        },
+        {
+          "file": "Exclamation_1.png",
+          "ms": 200
+        }
+      ]
+    },
+    {
+      "id": "UWU",
+      "label": "UWU",
+      "short": "UWU",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "drop",
+      "accent": [
+        255,
+        130,
+        210
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "UWU_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "OWO",
+      "label": "OWO",
+      "short": "OWO",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "earthquake",
+      "accent": [
+        255,
+        96,
+        186
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "OWO_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "NOPE",
+      "label": "NOPE",
+      "short": "NOPE",
+      "kind": "special",
+      "effect": "none",
+      "transition": "earthquake",
+      "accent": [
+        255,
+        48,
+        72
+      ],
+      "loop": true,
+      "allow_blink": false,
+      "allow_boop": false,
+      "frames": [
+        {
+          "file": "NOPE_0.png",
+          "ms": 500
+        },
+        {
+          "file": "NOPE_1.png",
+          "ms": 100
+        }
+      ]
+    },
+    {
+      "id": "Wink",
+      "label": "Wink",
+      "short": "Wink",
+      "kind": "classic",
+      "effect": "wink",
+      "transition": "crossfade",
+      "accent": [
+        255,
+        186,
+        72
+      ],
+      "loop": true,
+      "allow_blink": false,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Wink_0.png",
+          "ms": 150
+        },
+        {
+          "file": "Wink_1.png",
+          "ms": 250
+        }
+      ]
+    },
+    {
+      "id": "HeartEyes",
+      "label": "HeartEyes",
+      "short": "Hearts",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        255,
+        64,
+        118
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "HeartEyes_0.png",
+          "ms": 400
+        },
+        {
+          "file": "HeartEyes_1.png",
+          "ms": 120
+        },
+        {
+          "file": "HeartEyes_2.png",
+          "ms": 180
+        },
+        {
+          "file": "HeartEyes_3.png",
+          "ms": 120
+        },
+        {
+          "file": "HeartEyes_4.png",
+          "ms": 140
+        },
+        {
+          "file": "HeartEyes_5.png",
+          "ms": 140
+        }
+      ]
+    },
+    {
+      "id": "Dead",
+      "label": "Dead",
+      "short": "Dead",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "glitch",
+      "accent": [
+        70,
+        200,
+        80
+      ],
+      "loop": true,
+      "allow_blink": false,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Dead_0.png",
+          "ms": 33
+        }
+      ]
+    },
+    {
+      "id": "PowerOff",
+      "label": "PowerOff",
+      "short": "Off",
+      "kind": "special",
+      "effect": "none",
+      "transition": "losePower",
+      "accent": [
+        28,
+        40,
+        56
+      ],
+      "loop": true,
+      "allow_blink": false,
+      "allow_boop": false,
+      "frames": [
+        {
+          "file": "PowerOff_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "BatteryCheck",
+      "label": "BatteryCheck",
+      "short": "Batt",
+      "kind": "special",
+      "effect": "none",
+      "transition": "none",
+      "accent": [
+        255,
+        48,
+        56
+      ],
+      "loop": true,
+      "allow_blink": false,
+      "allow_boop": false,
+      "frames": [
+        {
+          "file": "BatteryCheck_0.png",
+          "ms": 250
+        },
+        {
+          "file": "BatteryCheck_1.png",
+          "ms": 250
+        }
+      ]
+    },
+    {
+      "id": "Crying",
+      "label": "Crying",
+      "short": "Crying",
+      "kind": "classic",
+      "effect": "none",
+      "transition": "crossfade",
+      "accent": [
+        56,
+        148,
+        255
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Crying_0.png",
+          "ms": 100
+        },
+        {
+          "file": "Crying_1.png",
+          "ms": 100
+        },
+        {
+          "file": "Crying_2.png",
+          "ms": 100
+        },
+        {
+          "file": "Crying_3.png",
+          "ms": 100
+        },
+        {
+          "file": "Crying_4.png",
+          "ms": 100
+        },
+        {
+          "file": "Crying_5.png",
+          "ms": 100
+        }
+      ]
+    },
+    {
+      "id": "Dizzy",
+      "label": "Dizzy",
+      "short": "Dizzy",
+      "kind": "classic",
+      "effect": "dizzy",
+      "transition": "glitch",
+      "accent": [
+        176,
+        92,
+        255
+      ],
+      "loop": true,
+      "allow_blink": true,
+      "allow_boop": true,
+      "frames": [
+        {
+          "file": "Dizzy_0.png",
+          "ms": 75
+        },
+        {
+          "file": "Dizzy_1.png",
+          "ms": 75
+        }
+      ]
+    },
+    {
+      "id": "Randomize",
+      "label": "Randomize",
+      "short": "Rnd",
+      "kind": "special",
+      "effect": "randomize",
+      "transition": "shuffle",
+      "accent": [
+        230,
+        230,
+        240
+      ],
+      "loop": true,
+      "allow_blink": false,
+      "allow_boop": false,
+      "frames": [
+        {
+          "file": "Randomize_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Startup",
+      "label": "Startup",
+      "short": "Hello",
+      "kind": "special",
+      "effect": "none",
+      "transition": "crossfade",
+      "accent": [
+        80,
+        236,
+        255
+      ],
+      "loop": false,
+      "allow_blink": false,
+      "allow_boop": false,
+      "frames": [
+        {
+          "file": "Startup_0.png",
+          "ms": 0
+        },
+        {
+          "file": "Startup_1.png",
+          "ms": 0
+        }
+      ]
+    },
+    {
+      "id": "DisplayTest",
+      "label": "DisplayTest",
+      "short": "Test",
+      "kind": "special",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        90,
+        220,
+        255
+      ],
+      "loop": false,
+      "allow_blink": false,
+      "allow_boop": false,
+      "frames": [
+        {
+          "file": "DisplayTest_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "None",
+      "label": "None",
+      "short": "none",
+      "kind": "special",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        90,
+        220,
+        255
+      ],
+      "loop": false,
+      "allow_blink": false,
+      "allow_boop": false,
+      "frames": [
+        {
+          "file": "None_0.png",
+          "ms": 500
+        }
+      ]
+    },
+    {
+      "id": "Boop",
+      "label": "Boop",
+      "short": "Boop",
+      "kind": "special",
+      "effect": "none",
+      "transition": "blink",
+      "accent": [
+        255,
+        150,
+        186
+      ],
+      "loop": false,
+      "allow_blink": false,
+      "allow_boop": false,
+      "frames": [
+        {
+          "file": "Boop_0.png",
+          "ms": 500
+        }
+      ]
+    }
+  ]
+}

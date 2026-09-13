@@ -9,13 +9,15 @@ struct GyroSample {
   float yaw_deg = 0;
 };
 
-// Микрофон, IMU и датчик приближения (boop). На железе — ADC/I2C, в симе — слайдеры.
+// Microphone, IMU, and proximity (boop). Simulator uses sliders.
+// ESP32 stub returns zeros. Firmware uses pitch/roll for dizzy and gyro nudge;
+// yaw is stored and forwarded to /api/state but does not move pixels.
 class ISensors {
  public:
   virtual ~ISensors() = default;
-  virtual float microphone() const = 0;  // 0..1, амплитуда
+  virtual float microphone() const = 0;  // 0..1, amplitude
   virtual GyroSample gyro() const = 0;
-  virtual float proximity() const = 0;  // 0 = далеко, 1 = вплотную
+  virtual float proximity() const = 0;  // 0 = far, 1 = against the snout
 };
 
 }  // namespace hal

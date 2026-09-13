@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "koto/assets/bitmaps.hpp"
-#include "koto/assets/face_p3.hpp"
+#include "koto/assets/emotions.hpp"
 #include "koto/config.hpp"
 #include "koto/gfx/font5x7.hpp"
 #include "koto/settings.hpp"
@@ -29,69 +29,9 @@ constexpr int kSnakeCell = 2;
 constexpr std::uint32_t kSnakeStepMs = 200;
 constexpr std::uint32_t kSnakeBlinkMs = 100;
 
-const char* kFaceSet[3][8] = {
-    {"JoyBlush", "Spooked", "Neutral", "Blushing", "Joy", "Angry", "AngryHappy", "Annoyed"},
-    {"HeartEyes", "Questioning", "Dizzy", "Exclamation", "Dead", "Squinting", "PowerOff", "Wink"},
-    {"Crying", "BatteryCheck", "UWU", "Randomize", "NOPE", "PowerOff", "OWO", "Dizzy"},
-};
-
-const char* kAutoFaces[] = {
-    "Neutral",     "Joy",       "JoyBlush", "Blushing", "AngryHappy", "Angry",
-    "Annoyed",     "Spooked",   "Questioning", "Exclamation", "Dead", "Squinting",
-    "Dizzy",       "HeartEyes", "PowerOff", "UWU", "OWO", "Crying",
-};
-
-const char* kBootFaces[] = {"Neutral", "Joy", "UWU", "OWO", "Spooked", "HeartEyes", "Questioning"};
-
 const int kThumbPos[8][2] = {
     {0, 32}, {0, 16}, {43, 16}, {86, 16}, {86, 32}, {86, 48}, {43, 48}, {0, 48},
 };
-
-struct HudFaceParts {
-  const char* sequence;
-  const char* eye;
-  const char* nose;
-  const char* mouth;
-};
-
-const HudFaceParts kHudFaceParts[] = {
-    {"Neutral", "neutral", "neutral", "neutral"},
-    {"Joy", "joy", "neutral", "happy"},
-    {"JoyBlush", "joyBlush", "neutral", "happy"},
-    {"Blushing", "blushing", "neutral", "sad"},
-    {"Angry", "angry", "neutral", "sad"},
-    {"AngryHappy", "angry", "neutral", "neutral"},
-    {"Annoyed", "annoyed", "neutral", "sad"},
-    {"Spooked", "flushed", "neutral", "sad"},
-    {"Squinting", "boop", "neutral", "happy"},
-    {"Questioning", "questionMark", "neutral", "smirk"},
-    {"Exclamation", "exclamationPoint", "neutral", "smirk"},
-    {"UWU", "u", "neutral", "w"},
-    {"OWO", "o", "neutral", "w"},
-    {"NOPE", nullptr, "o", "nope"},
-    {"Wink", "neutral", "neutral", "neutral"},
-    {"HeartEyes", "heart0", "neutral", "smile"},
-    {"Dead", "dead", "neutral", "smile"},
-    {"PowerOff", nullptr, nullptr, nullptr},
-    {"BatteryCheck", "batteryCheck", nullptr, "batteryCheck"},
-    {"Crying", "crying0", "neutral", "shaking0"},
-    {"Dizzy", "dizzy0", "neutral", "smile"},
-    {"Randomize", "questionMark", "neutral", nullptr},
-    {"Startup", "neutral", "neutral", "neutral"},
-    {"Boop", "boop", "neutral", "happy"},
-};
-
-const HudFaceParts* hud_parts_for(const char* sequence) {
-  if (sequence == nullptr) {
-    return nullptr;
-  }
-  for (const HudFaceParts& row : kHudFaceParts) {
-    if (std::strcmp(row.sequence, sequence) == 0) {
-      return &row;
-    }
-  }
-  return nullptr;
-}
 
 struct MenuItem {
   const char* category;
@@ -123,15 +63,19 @@ bool pressed(bool now, bool was) {
   return now && !was;
 }
 
+bool released(bool now, bool was) {
+  return !now && was;
+}
+
 bool stick_active(const PadState& pad) {
-  return std::abs(static_cast<int>(pad.x) - 128) >= 40 ||
-         std::abs(static_cast<int>(pad.y) - 128) >= 40;
+  return std::abs(static_cast<int>(pad.x) - 128) >= kStickDeadzone ||
+         std::abs(static_cast<int>(pad.y) - 128) >= kStickDeadzone;
 }
 
 int stick_octant(const PadState& pad) {
   const int dx = 128 - static_cast<int>(pad.x);
   const int dy = 128 - static_cast<int>(pad.y);
-  if (std::abs(dx) < 64 && std::abs(dy) < 64) {
+  if (std::abs(dx) < kStickDeadzone && std::abs(dy) < kStickDeadzone) {
     return -1;
   }
   double angle = std::atan2(static_cast<double>(dy), static_cast<double>(dx)) * (180.0 / M_PI);
@@ -141,31 +85,47 @@ int stick_octant(const PadState& pad) {
   return static_cast<int>((angle + 22.5) / 45.0) % 8;
 }
 
-bool bitmap_blank(const assets::FaceFrame* frame) {
-  if (frame == nullptr || frame->data == nullptr) {
+bool rgb_blank(const assets::EmotionFrame* frame) {
+  if (frame == nullptr || frame->rgb == nullptr) {
     return true;
   }
   for (std::size_t i = 0; i < frame->size; ++i) {
-    if (frame->data[i] != 0) {
+    if (frame->rgb[i] != 0) {
       return false;
     }
   }
   return true;
 }
 
-bool bitmap_hot(const assets::FaceFrame* frame) {
-  if (frame == nullptr || frame->data == nullptr || frame->size == 0) {
+bool rgb_hot(const assets::EmotionFrame* frame) {
+  if (frame == nullptr || frame->rgb == nullptr || frame->size < 3) {
     return false;
   }
+  const int pixels = static_cast<int>(frame->size / 3);
   int lit = 0;
-  for (std::size_t i = 0; i < frame->size; ++i) {
-    std::uint8_t b = frame->data[i];
-    while (b != 0) {
-      lit += static_cast<int>(b & 1u);
-      b = static_cast<std::uint8_t>(b >> 1);
+  for (int i = 0; i < pixels; ++i) {
+    const std::size_t o = static_cast<std::size_t>(i * 3);
+    if ((frame->rgb[o] | frame->rgb[o + 1] | frame->rgb[o + 2]) != 0) {
+      ++lit;
     }
   }
-  return lit * 10 > static_cast<int>(frame->size) * 8 * 7;
+  return lit * 10 > pixels * 7;
+}
+
+const assets::Emotion* lookup_emotion(const char* id) {
+  const assets::Emotion* found = assets::find_emotion(id);
+  if (found != nullptr) {
+    return found;
+  }
+  return assets::find_emotion("Neutral");
+}
+
+const assets::EmotionFrame* frame_at(const assets::Emotion* emotion, int index) {
+  if (emotion == nullptr || emotion->frames == nullptr || emotion->frame_count <= 0) {
+    return nullptr;
+  }
+  const int clamped = std::clamp(index, 0, emotion->frame_count - 1);
+  return &emotion->frames[clamped];
 }
 
 std::string format_uptime(std::uint32_t ms) {
@@ -183,50 +143,11 @@ void snapshot(std::vector<Color>& out, const gfx::Framebuffer& fb) {
   out.assign(fb.data(), fb.data() + n);
 }
 
-const char* hud_label(const char* sequence) {
-  if (std::strcmp(sequence, "JoyBlush") == 0) {
-    return "JoyBlush";
+const char* hud_label(const assets::Emotion* emotion) {
+  if (emotion == nullptr) {
+    return "Neutral";
   }
-  if (std::strcmp(sequence, "HeartEyes") == 0) {
-    return "Hearts";
-  }
-  if (std::strcmp(sequence, "Squinting") == 0) {
-    return "Squint";
-  }
-  if (std::strcmp(sequence, "Blushing") == 0) {
-    return "Blush";
-  }
-  if (std::strcmp(sequence, "Questioning") == 0) {
-    return "Ques";
-  }
-  if (std::strcmp(sequence, "Exclamation") == 0) {
-    return "Excl";
-  }
-  if (std::strcmp(sequence, "BatteryCheck") == 0) {
-    return "Batt";
-  }
-  if (std::strcmp(sequence, "Dizzy") == 0) {
-    return "Dizzy";
-  }
-  if (std::strcmp(sequence, "PowerOff") == 0) {
-    return "Off";
-  }
-  if (std::strcmp(sequence, "Randomize") == 0) {
-    return "Rnd";
-  }
-  if (std::strcmp(sequence, "Startup") == 0) {
-    return "Hello";
-  }
-  if (std::strcmp(sequence, "DisplayTest") == 0) {
-    return "Test";
-  }
-  if (std::strcmp(sequence, "AngryHappy") == 0) {
-    return "AngHappy";
-  }
-  if (std::strcmp(sequence, "None") == 0) {
-    return "none";
-  }
-  return sequence;
+  return emotion->short_label != nullptr ? emotion->short_label : emotion->id;
 }
 
 }  // namespace
@@ -252,43 +173,6 @@ App::App(hal::IMatrix& matrix,
 
 void App::sync_brightness() {
   state_.brightness = static_cast<std::uint8_t>(state_.brightness_level * 17);
-}
-
-void App::apply_blob_to_state() {
-  SettingsBlob blob;
-  capture_state_to_blob();
-  if (!load_settings()) {
-    sync_brightness();
-    fan_.set_speed(state_.fan_speed);
-    return;
-  }
-  (void)blob;
-}
-
-void App::capture_state_to_blob() {
-  SettingsBlob blob;
-  blob.brightness = state_.brightness_level;
-  blob.flags = 0;
-  if (state_.matrix_enabled) {
-    blob.flags = static_cast<std::uint8_t>(blob.flags | kFlagMatrix);
-  }
-  if (state_.led_enabled) {
-    blob.flags = static_cast<std::uint8_t>(blob.flags | kFlagLed);
-  }
-  if (state_.auto_blink) {
-    blob.flags = static_cast<std::uint8_t>(blob.flags | kFlagBlink);
-  }
-  if (state_.boop_enabled) {
-    blob.flags = static_cast<std::uint8_t>(blob.flags | kFlagBoop);
-  }
-  if (state_.mouth_enabled) {
-    blob.flags = static_cast<std::uint8_t>(blob.flags | kFlagMouth);
-  }
-  blob.boop_sensitivity = state_.boop_sensitivity;
-  blob.rare_chance = state_.rare_chance;
-  blob.fan_speed = state_.fan_speed;
-  settings_seal(blob);
-  store_.save(reinterpret_cast<const std::uint8_t*>(&blob), sizeof(blob));
 }
 
 bool App::load_settings() {
@@ -343,6 +227,7 @@ void App::init() {
   hid_.start();
   load_settings();
   fan_.set_speed(state_.fan_speed);
+  auto_next_ = lookup_emotion("Joy");
   startup_started_ms_ = clock_.millis();
   set_sequence("Startup", false, false);
   state_.scene = "startup";
@@ -403,10 +288,10 @@ std::uint32_t App::rng() {
 }
 
 void App::set_sequence(const char* name, bool loop, bool with_transition) {
-  if (with_transition) {
+  const assets::Emotion* next = lookup_emotion(name);
+  if (with_transition && next != nullptr) {
     snapshot(trans_from_, matrix_fb_);
-    const face::TransitionKind preferred = face::transition_for_sequence(name);
-    trans_kind_ = face::pick_transition(preferred, rng(), state_.rare_chance);
+    trans_kind_ = face::pick_transition(next->transition, rng(), state_.rare_chance);
     trans_start_ms_ = clock_.millis();
     trans_duration_ms_ = face::transition_duration_ms(trans_kind_);
     state_.transition = face::transition_name(trans_kind_);
@@ -414,25 +299,51 @@ void App::set_sequence(const char* name, bool loop, bool with_transition) {
     trans_kind_ = face::TransitionKind::None;
     state_.transition = "none";
   }
-  sequence_ = name;
+  emotion_ = next;
   sequence_loop_ = loop;
   frame_index_ = 0;
-  frame_count_ = std::max(1, assets::count_sequence_frames(name));
+  frame_count_ = emotion_ != nullptr ? std::max(1, emotion_->frame_count) : 1;
   frame_started_ms_ = clock_.millis();
   wink_cycle_ms_ = clock_.millis();
   wink_burst_ = false;
   sparks_.clear();
-  while (frame_index_ + 1 < frame_count_ && bitmap_blank(assets::find_face_frame(sequence_, frame_index_))) {
+  randomize_pick_ = nullptr;
+  randomize_frame_ = 0;
+  randomize_last_ms_ = 0;
+  while (frame_index_ + 1 < frame_count_ && rgb_blank(frame_at(emotion_, frame_index_))) {
     ++frame_index_;
     frame_started_ms_ = clock_.millis();
   }
-  state_.face = sequence_;
-  state_.text = hud_label(sequence_);
+  state_.face = emotion_ != nullptr ? emotion_->id : "Neutral";
+  state_.text = hud_label(emotion_);
+}
+
+bool App::set_face(const char* id, bool with_transition) {
+  const assets::Emotion* next = assets::find_emotion(id);
+  if (next == nullptr || mode_ == Mode::Snake) {
+    return false;
+  }
+  if (mode_ == Mode::Startup) {
+    mode_ = Mode::FaceSet;
+    state_.faceset = 1;
+    state_.scene = "faceset";
+  }
+  set_sequence(next->id, next->loop, with_transition);
+  return true;
+}
+
+void App::preview_blink() {
+  if (!blink_allowed() || blink_ != BlinkState::Idle) {
+    return;
+  }
+  blink_ = BlinkState::Closing;
+  blink_started_ms_ = clock_.millis();
+  blink_closed_ms_ = 80;
 }
 
 void App::finish_startup() {
   set_sequence("Neutral", true, false);
-  enter_settings();
+  enter_faceset(state_.faceset);
 }
 
 void App::enter_faceset(int set) {
@@ -457,6 +368,42 @@ void App::enter_settings() {
   action_done_ = false;
 }
 
+void App::enter_settings_list() {
+  mode_ = Mode::Settings;
+  state_.scene = "settings";
+  state_.setting_index = 0;
+  action_done_ = false;
+}
+
+void App::cycle_menu_pages() {
+  if (mode_ != Mode::Settings) {
+    enter_settings();
+    return;
+  }
+  if (state_.setting_index == kSettingStatus1) {
+    state_.setting_index = kSettingStatus2;
+  } else if (state_.setting_index == kSettingStatus2) {
+    state_.setting_index = 0;
+  } else {
+    state_.setting_index = kSettingStatus1;
+  }
+  action_done_ = false;
+}
+
+void App::poll_menu_hold() {
+  if (mode_ == Mode::Startup || !state_.pad.select() || menu_long_fired_) {
+    return;
+  }
+  if (menu_down_ms_ == 0) {
+    menu_down_ms_ = clock_.millis();
+    return;
+  }
+  if (clock_.millis() - menu_down_ms_ >= kMenuHoldMs) {
+    menu_long_fired_ = true;
+    enter_settings_list();
+  }
+}
+
 void App::enter_snake() {
   mode_ = Mode::Snake;
   state_.scene = "snake";
@@ -467,17 +414,18 @@ void App::enter_safe_mode() {
   if (mode_ == Mode::Startup) {
     return;
   }
-  if (std::strcmp(sequence_, "Startup") != 0 && std::strcmp(sequence_, "Neutral") != 0) {
+  if (emotion_ == nullptr ||
+      (std::strcmp(emotion_->id, "Startup") != 0 && std::strcmp(emotion_->id, "Neutral") != 0)) {
     set_sequence("Neutral", true, false);
   }
   enter_settings();
 }
 
 void App::pick_next_auto_face() {
-  const int count = static_cast<int>(sizeof(kAutoFaces) / sizeof(kAutoFaces[0]));
-  const char* current = auto_next_;
+  const int count = assets::kAutoFaceCount;
+  const assets::Emotion* current = auto_next_;
   for (int i = 0; i < 8; ++i) {
-    auto_next_ = kAutoFaces[rng() % static_cast<std::uint32_t>(count)];
+    auto_next_ = lookup_emotion(assets::kAutoFaces[rng() % static_cast<std::uint32_t>(count)]);
     if (auto_next_ != current || count == 1) {
       break;
     }
@@ -491,23 +439,21 @@ void App::apply_octant_face() {
     return;
   }
   const int set = std::max(1, std::min(3, state_.faceset)) - 1;
-  set_sequence(kFaceSet[set][prev_octant_], true, true);
+  const assets::Emotion* next = lookup_emotion(assets::kFaceSets[set][prev_octant_]);
+  set_sequence(next->id, next->loop, true);
   state_.octant = prev_octant_;
 }
 
 void App::add_settings_cursor(int delta) {
   int cursor = state_.setting_index;
-  if (cursor == kSettingStatus1) {
-    cursor = delta > 0 ? 0 : kSettingStatus2;
-  } else if (cursor == kSettingStatus2) {
-    cursor = delta > 0 ? kSettingStatus1 : (kSettingCount - 1);
-  } else {
-    cursor += delta;
-    if (cursor < 0) {
-      cursor = kSettingStatus1;
-    } else if (cursor >= kSettingCount) {
-      cursor = kSettingStatus2;
-    }
+  if (cursor == kSettingStatus1 || cursor == kSettingStatus2) {
+    return;
+  }
+  cursor += delta;
+  if (cursor < 0) {
+    cursor = kSettingCount - 1;
+  } else if (cursor >= kSettingCount) {
+    cursor = 0;
   }
   state_.setting_index = cursor;
   action_done_ = false;
@@ -613,59 +559,63 @@ void App::apply_pad(const PadState& pad) {
     if (pressed(pad.b(), prev.b()) || pressed(pad.esc(), prev.esc())) {
       enter_settings();
     }
-    return;
-  }
-
-  if (pressed(pad.x_btn(), prev.x_btn())) {
-    enter_faceset(1);
-  }
-  if (pressed(pad.a(), prev.a())) {
-    enter_faceset(2);
-  }
-  if (pressed(pad.y_btn(), prev.y_btn())) {
-    enter_faceset(3);
-  }
-  if (pressed(pad.select(), prev.select())) {
-    enter_auto();
-  }
-  if (pressed(pad.b(), prev.b())) {
-    if (mode_ == Mode::Settings) {
-      enter_faceset(state_.faceset);
-    } else {
-      enter_settings();
-    }
-  }
-  if (pressed(pad.esc(), prev.esc())) {
-    if (mode_ == Mode::Settings) {
-      enter_faceset(state_.faceset);
-    }
-  }
-
-  if (mode_ == Mode::Settings) {
-    if (pressed(pad.ok(), prev.ok())) {
-      activate_setting();
-    }
-    blink_held_ = false;
   } else {
-    const bool stick_out = stick_active(pad);
-    blink_held_ = pad.ok() && !stick_out;
-    if (pressed(pad.ok(), prev.ok()) && blink_ == BlinkState::Idle && blink_allowed() && !stick_out) {
-      blink_ = BlinkState::Closing;
-      blink_started_ms_ = clock_.millis();
-      blink_closed_ms_ = 40;
+    if (pressed(pad.x_btn(), prev.x_btn())) {
+      enter_faceset(1);
+    }
+    if (pressed(pad.a(), prev.a())) {
+      enter_faceset(2);
+    }
+    if (pressed(pad.y_btn(), prev.y_btn())) {
+      enter_faceset(3);
+    }
+    if (pressed(pad.b(), prev.b())) {
+      enter_auto();
+    }
+    if (pressed(pad.esc(), prev.esc())) {
+      if (mode_ == Mode::Settings) {
+        enter_faceset(state_.faceset);
+      }
+    }
+
+    if (mode_ == Mode::Settings) {
+      if (pressed(pad.ok(), prev.ok())) {
+        activate_setting();
+      }
+      blink_held_ = false;
+    } else {
+      const bool stick_out = stick_active(pad);
+      blink_held_ = pad.ok() && !stick_out;
+      if (pressed(pad.ok(), prev.ok()) && blink_ == BlinkState::Idle && blink_allowed() && !stick_out) {
+        blink_ = BlinkState::Closing;
+        blink_started_ms_ = clock_.millis();
+        blink_closed_ms_ = 40;
+      }
+    }
+
+    if (mode_ == Mode::FaceSet) {
+      handle_stick_faceset(pad);
+    } else if (mode_ == Mode::Auto) {
+      if (stick_active(pad) && clock_.millis() - last_auto_skip_ms_ >= 250) {
+        set_sequence(auto_next_ != nullptr ? auto_next_->id : "Joy", true, true);
+        last_auto_skip_ms_ = clock_.millis();
+        pick_next_auto_face();
+      }
+    } else if (mode_ == Mode::Settings) {
+      handle_stick_settings(pad, prev);
     }
   }
 
-  if (mode_ == Mode::FaceSet) {
-    handle_stick_faceset(pad);
-  } else if (mode_ == Mode::Auto) {
-    if (stick_active(pad) && clock_.millis() - last_auto_skip_ms_ >= 250) {
-      set_sequence(auto_next_, true, true);
-      last_auto_skip_ms_ = clock_.millis();
-      pick_next_auto_face();
+  if (pressed(pad.select(), prev.select())) {
+    menu_down_ms_ = clock_.millis();
+    menu_long_fired_ = false;
+  }
+  if (released(pad.select(), prev.select())) {
+    if (!menu_long_fired_) {
+      cycle_menu_pages();
     }
-  } else if (mode_ == Mode::Settings) {
-    handle_stick_settings(pad, prev);
+    menu_down_ms_ = 0;
+    menu_long_fired_ = false;
   }
 }
 
@@ -771,8 +721,8 @@ void App::update_sensors(std::uint32_t now_ms) {
   prev_pitch_ = gyro.pitch_deg;
   prev_roll_ = gyro.roll_deg;
   const float motion = std::sqrt(dp * dp + dr * dr);
-  const bool dizzy = std::fabs(gyro.pitch_deg - gyro_rest_pitch_) > 35.0f ||
-                     std::fabs(gyro.roll_deg - gyro_rest_roll_) > 35.0f || motion > 12.0f;
+  const bool dizzy = std::fabs(gyro.pitch_deg - gyro_rest_pitch_) > kGyroDizzyDeg ||
+                     std::fabs(gyro.roll_deg - gyro_rest_roll_) > kGyroDizzyDeg || motion > 12.0f;
   state_.dizzy = dizzy && !state_.boop;
   if (gyro_last_motion_ms_ == 0) {
     gyro_rest_pitch_ = gyro.pitch_deg;
@@ -782,9 +732,9 @@ void App::update_sensors(std::uint32_t now_ms) {
   if (motion > 1.2f) {
     gyro_last_motion_ms_ = now_ms;
   }
-  if (motion > 5.0f) {
-    gyro_kick_x_ = std::clamp(static_cast<int>(dr / 5.0f), -3, 3);
-    gyro_kick_y_ = std::clamp(static_cast<int>(-dp / 5.0f), -3, 3);
+  if (motion > kGyroKickDeg) {
+    gyro_kick_x_ = std::clamp(static_cast<int>(dr / kGyroKickDeg), -3, 3);
+    gyro_kick_y_ = std::clamp(static_cast<int>(-dp / kGyroKickDeg), -3, 3);
     gyro_kick_until_ = now_ms + 160;
   }
   if (now_ms - gyro_last_motion_ms_ > 700) {
@@ -868,8 +818,7 @@ void App::update_face_player(std::uint32_t now_ms) {
       return;
     }
     if (now_ms - frame_started_ms_ >= kStartupFaceMs) {
-      const int count = static_cast<int>(sizeof(kBootFaces) / sizeof(kBootFaces[0]));
-      set_sequence(kBootFaces[rng() % static_cast<std::uint32_t>(count)], true, false);
+      set_sequence(assets::kBootFaces[rng() % static_cast<std::uint32_t>(assets::kBootFaceCount)], true, false);
     }
     return;
   }
@@ -878,7 +827,7 @@ void App::update_face_player(std::uint32_t now_ms) {
     return;
   }
 
-  const assets::FaceFrame* frame = assets::find_face_frame(sequence_, frame_index_);
+  const assets::EmotionFrame* frame = frame_at(emotion_, frame_index_);
   std::uint32_t duration = kDefaultFrameMs;
   if (frame != nullptr) {
     duration = frame->duration_ms > 0 ? static_cast<std::uint32_t>(frame->duration_ms)
@@ -903,7 +852,7 @@ void App::update_auto(std::uint32_t now_ms) {
   if (now_ms - auto_started_ms_ < auto_wait_ms_) {
     return;
   }
-  set_sequence(auto_next_, true, true);
+  set_sequence(auto_next_ != nullptr ? auto_next_->id : "Joy", true, true);
   last_auto_skip_ms_ = now_ms;
   pick_next_auto_face();
 }
@@ -1024,73 +973,9 @@ void App::update_fps(std::uint32_t now_ms) {
   fps_window_ms_ = now_ms;
 }
 
-Color App::visor_color() const {
-  const std::string& face = state_.face;
-  if (face == "Angry") {
-    return Color{255, 36, 28};
-  }
-  if (face == "Annoyed") {
-    return Color{255, 110, 36};
-  }
-  if (face == "AngryHappy") {
-    return Color{255, 90, 40};
-  }
-  if (face == "Joy") {
-    return Color{255, 210, 50};
-  }
-  if (face == "JoyBlush" || face == "Blushing") {
-    return Color{255, 120, 160};
-  }
-  if (face == "HeartEyes") {
-    return Color{255, 64, 118};
-  }
-  if (face == "Spooked") {
-    return Color{210, 190, 255};
-  }
-  if (face == "Dizzy") {
-    return Color{176, 92, 255};
-  }
-  if (face == "Crying") {
-    return Color{56, 148, 255};
-  }
-  if (face == "Questioning") {
-    return Color{255, 220, 70};
-  }
-  if (face == "Exclamation") {
-    return Color{255, 230, 40};
-  }
-  if (face == "Dead") {
-    return Color{70, 200, 80};
-  }
-  if (face == "Squinting") {
-    return Color{255, 214, 170};
-  }
-  if (face == "UWU") {
-    return Color{255, 130, 210};
-  }
-  if (face == "OWO") {
-    return Color{255, 96, 186};
-  }
-  if (face == "NOPE") {
-    return Color{255, 48, 72};
-  }
-  if (face == "Wink") {
-    return Color{255, 186, 72};
-  }
-  if (face == "PowerOff") {
-    return Color{28, 40, 56};
-  }
-  if (face == "BatteryCheck") {
-    return Color{255, 48, 56};
-  }
-  if (face == "Randomize") {
-    return Color{230, 230, 240};
-  }
-  if (face == "Boop") {
-    return Color{255, 150, 186};
-  }
-  if (face == "Startup") {
-    return Color{80, 236, 255};
+Color App::accent() const {
+  if (emotion_ != nullptr) {
+    return emotion_->accent;
   }
   return Color{90, 220, 255};
 }
@@ -1099,7 +984,7 @@ void App::render_snake(std::uint32_t now_ms) {
   (void)now_ms;
   matrix_fb_.clear(Color::black());
   const Color border = Color{40, 80, 90};
-  const Color body = visor_color();
+  const Color body = accent();
   const Color fruit = Color{255, 80, 80};
   matrix_fb_.draw_rect(kSnakeOx - 1, kSnakeOy - 1, kSnakeW * kSnakeCell + 2, kSnakeH * kSnakeCell + 2, border);
   for (const auto& part : snake_.body) {
@@ -1123,65 +1008,56 @@ void App::render_snake(std::uint32_t now_ms) {
 void App::render_face(std::uint32_t now_ms) {
   matrix_fb_.clear(Color::black());
 
-  const char* draw_name = sequence_;
+  const assets::Emotion* draw = emotion_;
   int draw_frame = frame_index_;
-  if (std::strcmp(sequence_, "Randomize") == 0) {
-    if (now_ms - randomize_last_ms_ >= 100) {
+  if (emotion_ != nullptr && emotion_->effect == assets::Effect::Randomize) {
+    if (randomize_pick_ == nullptr || now_ms - randomize_last_ms_ >= kRandomizePeriodMs) {
       randomize_last_ms_ = now_ms;
-    }
-    for (int attempt = 0; attempt < 16; ++attempt) {
-      const int pick = static_cast<int>(rng() % static_cast<std::uint32_t>(assets::kFaceFrameCount));
-      const char* name = assets::kFaceFrames[pick].sequence;
-      if (std::strcmp(name, "DisplayTest") == 0 || std::strcmp(name, "None") == 0 ||
-          std::strcmp(name, "Randomize") == 0 || std::strcmp(name, "Startup") == 0) {
-        continue;
+      for (int attempt = 0; attempt < 16; ++attempt) {
+        const assets::Emotion* pick =
+            assets::emotion_at(static_cast<int>(rng() % static_cast<std::uint32_t>(assets::kEmotionCount)));
+        if (pick == nullptr || pick->kind != assets::Kind::Classic || pick->effect == assets::Effect::Randomize) {
+          continue;
+        }
+        const int idx = static_cast<int>(rng() % static_cast<std::uint32_t>(std::max(1, pick->frame_count)));
+        if (rgb_hot(frame_at(pick, idx))) {
+          continue;
+        }
+        randomize_pick_ = pick;
+        randomize_frame_ = idx;
+        break;
       }
-      if (bitmap_hot(&assets::kFaceFrames[pick])) {
-        continue;
-      }
-      draw_name = name;
-      draw_frame = assets::kFaceFrames[pick].index;
-      break;
     }
-  } else if (std::strcmp(sequence_, "Dizzy") == 0) {
-    draw_frame = static_cast<int>((now_ms / 75) % 2);
+    if (randomize_pick_ != nullptr) {
+      draw = randomize_pick_;
+      draw_frame = randomize_frame_;
+    }
+  } else if (emotion_ != nullptr && emotion_->effect == assets::Effect::Dizzy && emotion_->frame_count > 0) {
+    draw_frame = static_cast<int>((now_ms / 75) % static_cast<std::uint32_t>(emotion_->frame_count));
   }
 
   if (state_.boop && boop_allowed()) {
-    const assets::FaceFrame* boop = assets::find_face_frame("Boop", 0);
-    if (boop != nullptr) {
-      matrix_fb_.blit_bitmap_1bpp(0, 0, kFaceW, kFaceH, boop->data, boop->size, visor_color());
+    const assets::Emotion* boop = assets::find_emotion("Boop");
+    const assets::EmotionFrame* frame = frame_at(boop, 0);
+    if (frame != nullptr) {
+      matrix_fb_.blit_rgb(0, 0, kFaceW, kFaceH, frame->rgb, frame->size);
     }
     apply_boop_overlay(now_ms);
   } else {
-    const assets::FaceFrame* frame = assets::find_face_frame(draw_name, draw_frame);
+    const assets::EmotionFrame* frame = frame_at(draw, draw_frame);
     if (frame == nullptr) {
-      frame = assets::find_face_frame("Neutral", 0);
+      frame = frame_at(assets::find_emotion("Neutral"), 0);
     }
     if (frame != nullptr) {
-      matrix_fb_.blit_bitmap_1bpp(0, 0, kFaceW, kFaceH, frame->data, frame->size, visor_color());
-      if (frame->flip_mouth) {
-        const HudFaceParts* parts = hud_parts_for(draw_name);
-        if (parts != nullptr && parts->mouth != nullptr &&
-            (std::strcmp(draw_name, "Angry") == 0 || std::strcmp(draw_name, "Annoyed") == 0)) {
-          matrix_fb_.fill_rect(0, kMouthY0, kFaceW, kMouthH, Color::black());
-          blit_mouth_2x(parts->mouth, true);
-        } else {
-          matrix_fb_.rotate_rect_180(0, kMouthY0, kFaceW, kMouthH);
-        }
-      }
+      matrix_fb_.blit_rgb(0, 0, kFaceW, kFaceH, frame->rgb, frame->size);
     }
-    if (std::strcmp(sequence_, "Dizzy") == 0) {
-      apply_dizzy_motion(now_ms);
+    apply_effect(now_ms);
+    // Classic faces keep one static RGB sprite. Overlays then rewrite pixels in
+    // the mouth band (mic / snarl) and the left-eye rect (blink). Special faces skip both.
+    if (emotion_classic(emotion_)) {
+      apply_mouth_effect();
+      apply_blink_overlay();
     }
-    if (std::strcmp(sequence_, "Wink") == 0) {
-      apply_wink_motion(now_ms);
-    }
-    if (std::strcmp(sequence_, "Angry") == 0 || std::strcmp(sequence_, "Annoyed") == 0) {
-      apply_angry_motion(now_ms);
-    }
-    apply_mouth_effect();
-    apply_blink_overlay();
     draw_sparks();
   }
 
@@ -1204,17 +1080,17 @@ bool App::boop_allowed() const {
   if (!state_.boop_enabled || mode_ == Mode::Snake || mode_ == Mode::Startup) {
     return false;
   }
-  return std::strcmp(sequence_, "PowerOff") != 0;
+  return emotion_ == nullptr || emotion_->allow_boop;
 }
 
 bool App::blink_allowed() const {
-  if (state_.boop) {
+  if (state_.boop || emotion_ == nullptr) {
     return false;
   }
-  return std::strcmp(sequence_, "PowerOff") != 0 && std::strcmp(sequence_, "BatteryCheck") != 0 &&
-         std::strcmp(sequence_, "Dead") != 0 && std::strcmp(sequence_, "Randomize") != 0 &&
-         std::strcmp(sequence_, "Wink") != 0 && std::strcmp(sequence_, "NOPE") != 0 &&
-         std::strcmp(sequence_, "None") != 0 && std::strcmp(sequence_, "DisplayTest") != 0;
+  if (emotion_->effect == assets::Effect::Wink) {
+    return false;
+  }
+  return emotion_->allow_blink;
 }
 
 void App::apply_boop_overlay(std::uint32_t now_ms) {
@@ -1227,17 +1103,36 @@ void App::apply_boop_overlay(std::uint32_t now_ms) {
   matrix_fb_.glitch_rows(0, matrix_fb_.height(), amp, rng_state_ + elapsed);
 }
 
+void App::apply_effect(std::uint32_t now_ms) {
+  if (emotion_ == nullptr) {
+    return;
+  }
+  switch (emotion_->effect) {
+    case assets::Effect::Dizzy:
+      apply_dizzy_motion(now_ms);
+      break;
+    case assets::Effect::Wink:
+      apply_wink_motion(now_ms);
+      break;
+    case assets::Effect::Snarl:
+      apply_angry_motion(now_ms);
+      break;
+    default:
+      break;
+  }
+}
+
 void App::apply_dizzy_motion(std::uint32_t now_ms) {
   const int phase = static_cast<int>((now_ms / 75) % 8);
   const int turns = phase / 2;
-  matrix_fb_.rotate_square_cw(8, kEyeY0, 16, turns);
+  matrix_fb_.rotate_square_cw(kDizzySpinX, kEyeY0, kDizzySpinSize, turns);
   const int dx = static_cast<int>(std::sin(static_cast<float>(now_ms) / 300.0f) * 2.0f);
   matrix_fb_.translate_rect(kEyeLX, kEyeY0, kEyeW, kEyeH, dx, 0);
 }
 
 void App::apply_gyro_nudge() {
-  int dx = std::clamp(static_cast<int>((state_.roll - gyro_rest_roll_) / 14.0f), -3, 3);
-  int dy = std::clamp(static_cast<int>(-(state_.pitch - gyro_rest_pitch_) / 14.0f), -3, 3);
+  int dx = std::clamp(static_cast<int>((state_.roll - gyro_rest_roll_) / kGyroNudgeDiv), -3, 3);
+  int dy = std::clamp(static_cast<int>(-(state_.pitch - gyro_rest_pitch_) / kGyroNudgeDiv), -3, 3);
   if (clock_.millis() < gyro_kick_until_) {
     dx = std::clamp(dx + gyro_kick_x_, -3, 3);
     dy = std::clamp(dy + gyro_kick_y_, -3, 3);
@@ -1263,7 +1158,7 @@ void App::emit_wink_sparks() {
 void App::draw_sparks() {
   std::vector<Spark> live;
   live.reserve(sparks_.size());
-  const Color c = visor_color();
+  const Color c = accent();
   for (Spark spark : sparks_) {
     spark.x += spark.vx;
     spark.y += spark.vy;
@@ -1303,36 +1198,13 @@ void App::apply_wink_motion(std::uint32_t now_ms) {
   matrix_fb_.fill_rect(kEyeLX, kEyeY0, kEyeW, top, Color::black());
   matrix_fb_.fill_rect(kEyeLX, kEyeY0 + kEyeH - bottom, kEyeW, bottom, Color::black());
   const int lid = kEyeY0 + top;
-  matrix_fb_.draw_hline(kEyeLX + 2, lid, kEyeW - 4, visor_color());
-}
-
-void App::blit_mouth_2x(const char* id, bool rot180) {
-  const assets::Bitmap* mouth = assets::find_part("mouth", id);
-  if (mouth == nullptr || mouth->data == nullptr) {
-    return;
-  }
-  const int mw = mouth->width;
-  const int mh = mouth->height;
-  const int bytes_per_row = (mw + 7) / 8;
-  const Color on = visor_color();
-  for (int row = 0; row < mh; ++row) {
-    for (int col = 0; col < mw; ++col) {
-      const int sx = rot180 ? mw - 1 - col : col;
-      const int sy = rot180 ? mh - 1 - row : row;
-      const std::size_t index = static_cast<std::size_t>(sy * bytes_per_row + (sx / 8));
-      if (index >= mouth->size) {
-        continue;
-      }
-      const std::uint8_t bit = static_cast<std::uint8_t>(0x80 >> (sx & 7));
-      if ((mouth->data[index] & bit) == 0) {
-        continue;
-      }
-      matrix_fb_.fill_rect(col * 2, kMouthY0 + row * 2, 2, 2, on);
-    }
-  }
+  matrix_fb_.draw_hline(kEyeLX + 2, lid, kEyeW - 4, accent());
 }
 
 void App::apply_angry_motion(std::uint32_t now_ms) {
+  if (!state_.mouth_enabled) {
+    return;
+  }
   const float wave = 0.5f + 0.5f * std::sin(static_cast<float>(now_ms) / 140.0f);
   const float peak = wave * 5.0f;
   // Triangle open: tip near the middle, base on the right. Left side stays put.
@@ -1348,6 +1220,7 @@ void App::apply_angry_motion(std::uint32_t now_ms) {
 }
 
 void App::apply_mouth_effect() {
+  // Stretch already-drawn mouth pixels in y=16..32. No second mouth sprite.
   if (!state_.mouth_enabled || mouth_level_ <= 0.02f) {
     return;
   }
@@ -1364,6 +1237,7 @@ void App::apply_mouth_effect() {
 }
 
 void App::apply_blink_overlay() {
+  // Cover the left 32×16 eye with black from the top; nose at x=48 is untouched.
   if (!state_.blinking) {
     return;
   }
@@ -1378,62 +1252,18 @@ void App::apply_blink_overlay() {
   matrix_fb_.fill_rect(kEyeLX, kEyeY0, kEyeW, cover, Color::black());
   if (blink_ == BlinkState::Closed || cover >= kEyeH / 2) {
     const int lid = kEyeY0 + std::min(cover, kEyeH) - 1;
-    matrix_fb_.draw_hline(kEyeLX + 2, lid, kEyeW - 4, visor_color());
+    matrix_fb_.draw_hline(kEyeLX + 2, lid, kEyeW - 4, accent());
   }
 }
 
-void App::blit_oled_face_parts(int eye_x, int eye_y, int nose_x, int nose_y, int mouth_x, int mouth_y,
-                               const char* sequence) {
-  const HudFaceParts* parts = hud_parts_for(sequence);
-  if (parts == nullptr) {
-    const assets::FaceFrame* frame = assets::find_face_frame(sequence, 0);
-    if (frame != nullptr) {
-      oled_fb_.blit_bitmap_1bpp(eye_x, eye_y, kFaceW, kFaceH, frame->data, frame->size, 16, 8);
-    }
-    return;
+void App::draw_face_thumb(int x, int y, const char* id, bool invert) {
+  const assets::Emotion* emotion = lookup_emotion(id);
+  if (emotion != nullptr && emotion->hud != nullptr) {
+    oled_fb_.blit_bitmap_1bpp(x, y, kHudThumbW, kHudThumbH, emotion->hud, emotion->hud_size, kHudThumbW,
+                              kHudThumbH);
   }
-  if (parts->eye != nullptr) {
-    const assets::Bitmap* eye = assets::find_part("eye", parts->eye);
-    if (eye != nullptr) {
-      oled_fb_.blit_bitmap_1bpp(eye_x, eye_y, eye->width, eye->height, eye->data, eye->size, eye->width,
-                                eye->height);
-    }
-  }
-  if (parts->nose != nullptr) {
-    const assets::Bitmap* nose = assets::find_part("nose", parts->nose);
-    if (nose != nullptr) {
-      oled_fb_.blit_bitmap_1bpp(nose_x, nose_y, nose->width, nose->height, nose->data, nose->size,
-                                nose->width, nose->height);
-    }
-  }
-  if (parts->mouth != nullptr) {
-    const assets::Bitmap* mouth = assets::find_part("mouth", parts->mouth);
-    if (mouth != nullptr && mouth->data != nullptr) {
-      const assets::FaceFrame* face = assets::find_face_frame(sequence, 0);
-      const bool rot180 = face != nullptr && face->flip_mouth;
-      const int bytes_per_row = (mouth->width + 7) / 8;
-      for (int row = 0; row < mouth->height; ++row) {
-        for (int col = 0; col < mouth->width; ++col) {
-          const int sx = rot180 ? mouth->width - 1 - col : col;
-          const int sy = rot180 ? mouth->height - 1 - row : row;
-          const std::size_t index = static_cast<std::size_t>(sy * bytes_per_row + (sx / 8));
-          if (index >= mouth->size) {
-            break;
-          }
-          const std::uint8_t bit = static_cast<std::uint8_t>(0x80 >> (sx & 7));
-          if ((mouth->data[index] & bit) != 0) {
-            oled_fb_.set_pixel(mouth_x + col, mouth_y + row, true);
-          }
-        }
-      }
-    }
-  }
-}
-
-void App::draw_face_thumb(int x, int y, const char* sequence, bool invert) {
-  blit_oled_face_parts(x + 7, y, x + 29, y, x + 5, y + 8, sequence);
   if (invert) {
-    oled_fb_.invert_rect(x, y, 42, 16);
+    oled_fb_.invert_rect(x, y, kHudThumbW, kHudThumbH);
   }
 }
 
@@ -1474,10 +1304,10 @@ void App::render_oled_header() {
       oled_fb_.set_pixel(x, y, (c.r | c.g | c.b) > 20);
     }
   }
-  const char* label = sequence_;
+  const assets::Emotion* label = emotion_;
   if (mode_ == Mode::FaceSet && !joystick_centered_) {
     const int set = std::max(1, std::min(3, state_.faceset)) - 1;
-    label = kFaceSet[set][std::clamp(state_.octant, 0, 7)];
+    label = lookup_emotion(assets::kFaceSets[set][std::clamp(state_.octant, 0, 7)]);
   }
   oled_fb_.draw_text(34, 4, hud_label(label), true);
   oled_fb_.draw_rect(90, 4, 7, 7, true);
@@ -1551,12 +1381,12 @@ void App::render_oled_settings(std::uint32_t now_ms) {
 
   if (item.kind == MenuItem::Toggle) {
     draw_toggle(0, 40, raw != 0);
-    oled_fb_.draw_text(40, 44, "BLINK", true);
+    oled_fb_.draw_text(40, 44, item.name, true);
   } else if (item.kind == MenuItem::Action) {
     if ((index == 6 && boop_calibrate_left_ > 0) || (index == 8 && mouth_calibrate_left_ > 0)) {
       std::snprintf(value, sizeof(value), "%d%%", calib_percent_);
     } else {
-      std::snprintf(value, sizeof(value), "%s", action_done_ ? "Done" : "BLINK");
+      std::snprintf(value, sizeof(value), "%s", action_done_ ? "Done" : "OK");
     }
     oled_fb_.draw_text(0, 42, value, true, 2);
   } else {
@@ -1572,11 +1402,13 @@ void App::render_oled_settings(std::uint32_t now_ms) {
 
 void App::render_oled_faceset() {
   const int set = std::max(1, std::min(3, state_.faceset)) - 1;
+  const char* current_id = emotion_ != nullptr ? emotion_->id : "";
   for (int i = 0; i < 8; ++i) {
-    const bool current = std::strcmp(sequence_, kFaceSet[set][i]) == 0;
-    draw_face_thumb(kThumbPos[i][0], kThumbPos[i][1], kFaceSet[set][i], current);
+    const char* id = assets::kFaceSets[set][i];
+    const bool current = std::strcmp(current_id, id) == 0;
+    draw_face_thumb(kThumbPos[i][0], kThumbPos[i][1], id, current);
     if (state_.octant == i && !joystick_centered_) {
-      oled_fb_.draw_rect(kThumbPos[i][0], kThumbPos[i][1], 42, 16, true);
+      oled_fb_.draw_rect(kThumbPos[i][0], kThumbPos[i][1], kHudThumbW, kHudThumbH, true);
     }
   }
   const int line_x = state_.pad.x / 2;
@@ -1594,7 +1426,7 @@ void App::render_oled_auto(std::uint32_t now_ms) {
     oled_fb_.blit_bitmap_1bpp(0, 26, visor->width, visor->height, visor->data, visor->size, visor->width,
                               visor->height);
   }
-  blit_oled_face_parts(15, 40, 44, 40, 18, 51, auto_next_);
+  draw_face_thumb(6, 40, auto_next_ != nullptr ? auto_next_->id : "Joy", false);
   char line[24];
   std::snprintf(line, sizeof(line), "%s", hud_label(auto_next_));
   oled_fb_.draw_text(68, 41, line, true);
@@ -1651,7 +1483,7 @@ void App::render_ring(std::uint32_t now_ms) {
   }
   const int speed = state_.boop ? 20 : (state_.dizzy ? 18 : 50);
   const int head = static_cast<int>((now_ms / static_cast<std::uint32_t>(speed)) % hal::kLedRingCount);
-  const Color base = visor_color();
+  const Color base = accent();
   for (int i = 0; i < hal::kLedRingCount; ++i) {
     const int dist = (i - head + hal::kLedRingCount) % hal::kLedRingCount;
     std::uint8_t fade = 22;
@@ -1675,6 +1507,7 @@ void App::tick() {
   ++tick_count_;
 
   update_hid_link();
+  poll_menu_hold();
   update_sensors(now);
   update_face_player(now);
   update_auto(now);

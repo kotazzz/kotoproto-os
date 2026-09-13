@@ -93,7 +93,7 @@ PadState parse_keyboard(const std::uint8_t* data) {
         pad.buttons = static_cast<std::uint8_t>(pad.buttons | kBtnOk | kBtnA);
         break;
       case kKeyEsc:
-        pad.buttons = static_cast<std::uint8_t>(pad.buttons | kBtnEsc | kBtnB);
+        pad.buttons = static_cast<std::uint8_t>(pad.buttons | kBtnEsc);
         break;
       case kKeyMenu:
         pad.buttons = static_cast<std::uint8_t>(pad.buttons | kBtnSelect);

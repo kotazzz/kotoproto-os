@@ -5,7 +5,8 @@
 namespace koto {
 namespace hal {
 
-// Монохромный SSD1306-совместимый кадр: 1 бит/пиксель, MSB слева, по строкам.
+// Monochrome SSD1306-compatible frame: 1 bit/pixel, MSB left, row-major.
+// ESP32 present() is a log stub.
 class IOled {
  public:
   virtual ~IOled() = default;
