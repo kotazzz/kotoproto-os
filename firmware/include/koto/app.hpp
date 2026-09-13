@@ -91,6 +91,7 @@ class App {
   void activate_setting();
   void sync_brightness();
   void render_oled_header();
+  void render_oled_startup(std::uint32_t now_ms);
   void draw_settings_pager();
   void draw_face_thumb(int x, int y, const char* id, bool invert);
   void draw_toggle(int x, int y, bool on);

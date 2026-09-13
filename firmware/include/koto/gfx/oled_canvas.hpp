@@ -26,7 +26,7 @@ class OledCanvas {
   void draw_rect(int x, int y, int w, int h, bool on);
   void draw_line(int x0, int y0, int x1, int y1, bool on);
   void blit_bitmap_1bpp(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* data,
-                        std::size_t size, int dst_w, int dst_h);
+                        std::size_t size, int dst_w, int dst_h, bool on = true);
   int draw_char(int x, int y, char ch, bool on, int scale = 1);
   int draw_text(int x, int y, std::string_view text, bool on, int scale = 1);
 

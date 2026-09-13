@@ -1436,17 +1436,37 @@ void App::render_oled_auto(std::uint32_t now_ms) {
   oled_fb_.draw_text(80, 49, line, true, 2);
 }
 
+void App::render_oled_startup(std::uint32_t now_ms) {
+  oled_fb_.fill_rect(0, 0, oled_fb_.width(), oled_fb_.height(), true);
+  const std::uint32_t elapsed = now_ms - startup_started_ms_;
+  if (elapsed < kStartupMs / 2) {
+    const assets::Bitmap* splash1 = assets::find_system("splash1");
+    const assets::Bitmap* splash2 = assets::find_system("splash2");
+    if (splash1 != nullptr) {
+      oled_fb_.blit_bitmap_1bpp(4, 5, splash1->width, splash1->height, splash1->data, splash1->size,
+                                 splash1->width, splash1->height, false);
+    }
+    if (splash2 != nullptr) {
+      oled_fb_.blit_bitmap_1bpp(92, 6, splash2->width, splash2->height, splash2->data, splash2->size,
+                                 splash2->width, splash2->height, false);
+    }
+    oled_fb_.draw_text(92, 46, kVersion, false);
+    const int bar = static_cast<int>(elapsed * 110 / kStartupMs);
+    oled_fb_.fill_rect(8, 58, std::clamp(bar, 0, 110), 5, false);
+  } else {
+    oled_fb_.draw_text(8, 6, "KOTOPROTO", false);
+    oled_fb_.draw_text(8, 17, "by Kotaz", false);
+    oled_fb_.draw_text(8, 28, kVersion, false);
+    const int bar = static_cast<int>(elapsed * 110 / kStartupMs);
+    oled_fb_.fill_rect(8, 50, std::clamp(bar, 0, 110), 6, false);
+  }
+}
+
 void App::render_oled(std::uint32_t now_ms) {
   oled_fb_.clear();
 
   if (mode_ == Mode::Startup) {
-    oled_fb_.fill_rect(0, 0, oled_fb_.width(), oled_fb_.height(), true);
-    oled_fb_.draw_text(8, 6, "KOTOPROTO", false);
-    oled_fb_.draw_text(8, 16, "by Kotaz", false);
-    oled_fb_.draw_text(8, 28, kVersion, false);
-    oled_fb_.draw_text(8, 38, "MOCUTE only", false);
-    const int bar = static_cast<int>((now_ms - startup_started_ms_) * 110 / kStartupMs);
-    oled_fb_.fill_rect(8, 50, std::clamp(bar, 0, 110), 6, false);
+    render_oled_startup(now_ms);
     return;
   }
 
