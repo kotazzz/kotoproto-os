@@ -107,7 +107,7 @@ Special faces skip both. Wink uses its own eye effect and disables the shared bl
 - OK starts blink only if stick is near center; displaced stick + OK = cancel pending face, no blink
 - Header name follows the **hovered** octant while the stick is out
 - Microphone default **on** (`mouth_enabled` / `kFlagMouth`); bars only, never changes the Emotion
-- Auto HUD: original `visor` 54×38 at (0,26) plus generated thumb at (6,40)
+- Auto HUD: original `visor` 54×38 at (0,26) plus generated thumb at (8,42)
 - Blink covers **left eye 32×16 only**; do not paint over the nose
 - Right P3 panel is not drawn in firmware; atlas UI mirrors the left half in CSS
 - Gyro nudge always translates the full 64×32 (pitch/roll; yaw unused). Dizzy spins a 16×16 patch at `(8,0)`

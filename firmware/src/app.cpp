@@ -1426,7 +1426,7 @@ void App::render_oled_auto(std::uint32_t now_ms) {
     oled_fb_.blit_bitmap_1bpp(0, 26, visor->width, visor->height, visor->data, visor->size, visor->width,
                               visor->height);
   }
-  draw_face_thumb(6, 40, auto_next_ != nullptr ? auto_next_->id : "Joy", false);
+  draw_face_thumb(8, 42, auto_next_ != nullptr ? auto_next_->id : "Joy", false);
   char line[24];
   std::snprintf(line, sizeof(line), "%s", hud_label(auto_next_));
   oled_fb_.draw_text(68, 41, line, true);
