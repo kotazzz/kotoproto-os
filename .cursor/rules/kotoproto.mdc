@@ -15,5 +15,6 @@ alwaysApply: true
 - Mouth orientation is baked into the PNG. Do not add a runtime `flip_mouth`.
 - HUD thumbs are generated 42×16 1bpp from the RGB frame at pack time.
 - Retired Toaster import/adapt lives in `trash/`; do not restore it into the live tree.
-- C++ includes only at file top. No commits unless asked. Ignore `.tools/` and `build/`.
+- C++ includes only at file top. Ignore `.tools/` and `build/`.
+- After each prompt, commit if the work is a real history step: a large addition, a bug fix, or a new emotion. Do not commit temp files, polish, or unapproved experiments. Do not push unless asked.
 - Full notes: `AGENTS.md`.

@@ -32,9 +32,21 @@ Upstream inspiration: [Toaster Blaster](https://github.com/diodeface/ToasterBlas
 - Do not restore `tools/import_toasterblaster.py`, `tools/adapt_p3_face.py`, or `assets/face/` into the live tree
 - `LICENSE`, `NOTICE`, `AUTHORS`, `README.md`, `README.ru.md`
 
-## Do not commit
+## Commits
 
-Build trees, `.tools/venv`, `koto_settings.bin`, IDE junk — see `.gitignore`.
+After each prompt, commit when the result is a real history step. Split into several commits if the changes are independent.
+
+Commit:
+- a large addition (new pipeline, feature, catalog layout)
+- a bug fix
+- a new emotion (PNG + `emotions.json`, then pack)
+
+Do not commit:
+- temp files, local backups, and in-progress polish
+- experiments the user has not approved
+- build trees, `.tools/venv`, `koto_settings.bin`, IDE junk — see `.gitignore`
+
+Do not push unless the user asks.
 
 ## Simulator
 
@@ -115,7 +127,6 @@ Author full 64×32 RGB frames. Regions above are overlays (blink / mouth / snarl
 
 - C++17, includes only at the top of the file (no local Python or C++ imports mid-function)
 - Do not invent hardware pin numbers; keep `pins::*` at -1 until the user names the board
-- Do not commit unless the user asks
 - Do not run `check-update.sh` / em-corp version scripts
 - Prefer editing existing files over new layers of abstraction
 
