@@ -34,7 +34,7 @@ inline constexpr int kHudCornerLen = 3;
 
 inline constexpr int kSplashVisorX = 4;
 inline constexpr int kSplashVisorY = 5;
-inline constexpr int kSplashLogoX = 44;
+inline constexpr int kSplashLogoX = 77;
 inline constexpr int kSplashLogoY = 6;
 
 inline constexpr int kBoopTriggerCount = 4;
