@@ -77,6 +77,8 @@ One object per face in `assets/emotions.json`. Codegen emits `Emotion(id, Kind, 
 - Face pixels are RGB; no runtime tint. Accent color is for the LED ring.
 - Mouth flip is baked into PNG, not a runtime flag
 - HUD thumbs are generated 42×16 1bpp from the first RGB frame
+- A frame may omit `file` for a black hold (PowerOff, None, flash-off of NOPE / BatteryCheck). Do not author empty PNGs.
+- `Startup` is one visor sprite; the boot splash then switches to `kBootFaces`
 - `DisplayTest` and `None` live in the catalog only, not in stick sets
 
 All authored files sit in `assets/`: `emotions.json`, RGB `Name_N.png` faces, and black/white `visor.png` / `splash1.png` / `logo.png`. Pack embeds RGB faces into `emotions.cpp` and 1bpp HUD sprites into `bitmaps.cpp`. HUD conversion accepts only `#000000` and `#FFFFFF`. HUD 42×16 thumbs are derived from the RGB face at pack time.

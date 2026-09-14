@@ -9,7 +9,7 @@ alwaysApply: true
 - License is AGPL-3.0 because of Toaster Blaster. Keep LICENSE, NOTICE, AUTHORS. Credit Kotaz and https://github.com/diodeface/ToasterBlaster.
 - Answer the user in Russian.
 - Config: `firmware/include/koto/config.hpp`. Do not invent GPIO; pins stay -1.
-- Emotions live in `assets/emotions.json` + RGB `Name_N.png` and black/white HUD PNGs in `assets/`. Pack with `python tools/pack_assets.py` (PNG → firmware only; no Toaster regen).
+- Emotions live in `assets/emotions.json` + RGB `Name_N.png` and black/white HUD PNGs in `assets/`. Pack with `python tools/pack_assets.py` (PNG → firmware only; no Toaster regen). Frames may omit `file` for a black hold — do not author empty PNGs.
 - Settings icon sheet: `assets/settings_icons.png` + `settings_icons.json` via `python tools/settings_atlas.py`. Empty 9×9 screens / 7×7 params, not packed into firmware.
 - Classic faces get blink/mouth/boop as runtime overlays on eye `(0,0) 32×16` and mouth `y=16 64×16`; special faces do not. Snarl follows `mouth_enabled`. Effects are enum hooks (`snarl`, `dizzy`, `wink`, `randomize`), not JSON scripts.
 - Default Blink face transition: mouth and nose swap immediately; the lid wipe is the left eye `32×16` only.

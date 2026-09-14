@@ -371,7 +371,6 @@
           "ms": 500
         },
         {
-          "file": "NOPE_1.png",
           "ms": 100
         }
       ]
@@ -483,7 +482,6 @@
       "allow_boop": false,
       "frames": [
         {
-          "file": "PowerOff_0.png",
           "ms": 500
         }
       ]
@@ -509,7 +507,6 @@
           "ms": 250
         },
         {
-          "file": "BatteryCheck_1.png",
           "ms": 250
         }
       ]
@@ -623,10 +620,6 @@
         {
           "file": "Startup_0.png",
           "ms": 0
-        },
-        {
-          "file": "Startup_1.png",
-          "ms": 0
         }
       ]
     },
@@ -669,7 +662,6 @@
       "allow_boop": false,
       "frames": [
         {
-          "file": "None_0.png",
           "ms": 500
         }
       ]

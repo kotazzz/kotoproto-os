@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "koto/app.hpp"
+#include "koto/assets/emotions.hpp"
 #include "koto/config.hpp"
 #include "koto/hal/clock.hpp"
 #include "koto/hal/fan.hpp"
@@ -223,6 +224,16 @@ int main() {
   require(oled.any_lit(), "oled has pixels after init");
   require(ring.any_lit(), "led ring has pixels after init");
   require(app.state().scene == "startup", "boot splash");
+  {
+    const koto::assets::Emotion* off = koto::assets::find_emotion("PowerOff");
+    require(off != nullptr && off->frame_count == 1 && off->frames[0].rgb == nullptr, "PowerOff has no sprite");
+    const koto::assets::Emotion* nope = koto::assets::find_emotion("NOPE");
+    require(nope != nullptr && nope->frame_count == 2 && nope->frames[1].rgb == nullptr, "NOPE flash-off has no sprite");
+    const koto::assets::Emotion* batt = koto::assets::find_emotion("BatteryCheck");
+    require(batt != nullptr && batt->frame_count == 2 && batt->frames[1].rgb == nullptr, "BatteryCheck flash-off has no sprite");
+    const koto::assets::Emotion* hello = koto::assets::find_emotion("Startup");
+    require(hello != nullptr && hello->frame_count == 1 && hello->frames[0].rgb != nullptr, "Startup is one visor frame");
+  }
 
   koto::PadState skip;
   skip.buttons = koto::kBtnB;
