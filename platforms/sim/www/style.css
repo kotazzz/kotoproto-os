@@ -436,6 +436,13 @@ input[type="range"]::-moz-range-thumb {
 }
 .mode-switch input:checked + i::after { left: 26px; background: var(--led); }
 
+.kbd-hint {
+  margin: 10px 8px 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #8b93a6;
+}
+
 .pad-body {
   flex: 1;
   min-height: 0;

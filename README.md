@@ -118,6 +118,7 @@ GAME report, 6 bytes: X, Y, hat, buttons, mode, 0. Buttons: A B X Y OK ESC SELEC
 | B | Auto faces |
 | ESC | Back from Settings only (KEY Esc is Esc, not B) |
 | OK | Blink if the stick is centered; with stick held, cancels the pending face |
+| Sim keys | WASD stick (diagonals WA/WD/AS/DS), Q=ESC, E=MENU, arrows=X/A/Y/B, Space=blink |
 
 ## Tree
 

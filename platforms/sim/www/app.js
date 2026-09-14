@@ -28,6 +28,21 @@ const pad = {
   buttons: 0,
 };
 
+const KEY_BTN = {
+  KeyQ: "esc",
+  KeyE: "select",
+  Space: "ok",
+  ArrowUp: "x",
+  ArrowLeft: "a",
+  ArrowRight: "y",
+  ArrowDown: "b",
+};
+
+let pointerButtons = 0;
+let keyButtons = 0;
+const heldKeys = new Set();
+let dragging = false;
+
 function decodeBase64(b64) {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
@@ -123,6 +138,71 @@ function setKnob(x, y) {
   const dx = ((x - 128) / 128) * range;
   const dy = ((y - 128) / 128) * range;
   knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
+}
+
+function typingInField(el) {
+  if (!el || el === document.body || el === document.documentElement) {
+    return false;
+  }
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+}
+
+function isPadKey(code) {
+  return Boolean(KEY_BTN[code]) || code === "KeyW" || code === "KeyA" || code === "KeyS" || code === "KeyD";
+}
+
+function syncPadButtons() {
+  pad.buttons = pointerButtons | keyButtons;
+  document.querySelectorAll("[data-btn]").forEach((btn) => {
+    const bit = BTN[btn.dataset.btn];
+    btn.classList.toggle("held", (pad.buttons & bit) !== 0);
+  });
+}
+
+function stickFromKeys() {
+  const left = heldKeys.has("KeyA");
+  const right = heldKeys.has("KeyD");
+  const up = heldKeys.has("KeyW");
+  const down = heldKeys.has("KeyS");
+  let x = 128;
+  let y = 128;
+  if (left && !right) {
+    x = 0;
+  } else if (right && !left) {
+    x = 255;
+  }
+  if (up && !down) {
+    y = 0;
+  } else if (down && !up) {
+    y = 255;
+  }
+  return { x, y, any: left || right || up || down };
+}
+
+function applyKeyPad() {
+  keyButtons = 0;
+  heldKeys.forEach((code) => {
+    const name = KEY_BTN[code];
+    if (name) {
+      keyButtons |= BTN[name];
+    }
+  });
+  syncPadButtons();
+  const stick = stickFromKeys();
+  if (stick.any) {
+    pad.x = stick.x;
+    pad.y = stick.y;
+    if (pad.mode === 1) {
+      pad.x = quantizeAxis(pad.x);
+      pad.y = quantizeAxis(pad.y);
+    }
+    setKnob(pad.x, pad.y);
+  } else if (!dragging) {
+    pad.x = 128;
+    pad.y = 128;
+    setKnob(128, 128);
+  }
 }
 
 function setStickFromEvent(event) {
@@ -307,6 +387,7 @@ document.getElementById("restart").addEventListener("click", async () => {
 
 modeEl.addEventListener("change", async () => {
   pad.mode = modeEl.checked ? 0 : 1;
+  applyKeyPad();
   await sendHid();
 });
 
@@ -314,26 +395,24 @@ document.querySelectorAll("[data-btn]").forEach((btn) => {
   const bit = BTN[btn.dataset.btn];
   const down = async (event) => {
     event.preventDefault();
-    btn.classList.add("held");
-    pad.buttons |= bit;
+    pointerButtons |= bit;
+    syncPadButtons();
     await sendHid();
   };
   const up = async (event) => {
     event.preventDefault();
-    btn.classList.remove("held");
-    pad.buttons &= ~bit;
+    pointerButtons &= ~bit;
+    syncPadButtons();
     await sendHid();
   };
   btn.addEventListener("pointerdown", down);
   btn.addEventListener("pointerup", up);
   btn.addEventListener("pointerleave", () => {
-    if ((pad.buttons & bit) !== 0) {
+    if ((pointerButtons & bit) !== 0) {
       up({ preventDefault() {} });
     }
   });
 });
-
-let dragging = false;
 stickEl.addEventListener("pointerdown", async (event) => {
   dragging = true;
   stickEl.setPointerCapture(event.pointerId);
@@ -352,13 +431,49 @@ const releaseStick = async () => {
     return;
   }
   dragging = false;
-  pad.x = 128;
-  pad.y = 128;
-  setKnob(128, 128);
+  if (stickFromKeys().any) {
+    applyKeyPad();
+  } else {
+    pad.x = 128;
+    pad.y = 128;
+    setKnob(128, 128);
+  }
   await sendHid();
 };
 stickEl.addEventListener("pointerup", releaseStick);
 stickEl.addEventListener("pointercancel", releaseStick);
+
+window.addEventListener("keydown", (event) => {
+  if (event.repeat || event.ctrlKey || event.altKey || event.metaKey) {
+    return;
+  }
+  if (typingInField(event.target) || !isPadKey(event.code)) {
+    return;
+  }
+  event.preventDefault();
+  heldKeys.add(event.code);
+  applyKeyPad();
+  sendHid();
+});
+
+window.addEventListener("keyup", (event) => {
+  if (!heldKeys.has(event.code)) {
+    return;
+  }
+  event.preventDefault();
+  heldKeys.delete(event.code);
+  applyKeyPad();
+  sendHid();
+});
+
+window.addEventListener("blur", () => {
+  if (heldKeys.size === 0) {
+    return;
+  }
+  heldKeys.clear();
+  applyKeyPad();
+  sendHid();
+});
 
 setKnob(128, 128);
 setInterval(refresh, 80);

@@ -63,6 +63,7 @@ Windows cannot overwrite `koto_sim.exe` while it is running.
 
 HID GAME report: `[x, y, hat, buttons, mode, 0]` hex POST to `/api/hid`.
 Bits: A=1 B=2 X=4 Y=8 OK=16 ESC=32 SELECT=64.
+Sim keyboard: WASD stick (WA/WD/AS/DS diagonals), Q=ESC, E=MENU, arrows=X/A/Y/B as on the diamond, Space=OK/blink.
 
 ## Emotions
 
