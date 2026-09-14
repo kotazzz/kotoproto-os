@@ -78,7 +78,7 @@ $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 Ещё:
 
 - сеты лиц, авто-пул, подписи HUD: `assets/emotions.json` (собирается в `firmware/src/assets/emotions.cpp`)
-- OLED-спрайты 1bpp: чёрно-белые `visor.png` / `splash1.png` / `splash2.png` в `assets/` (собирается в `firmware/src/assets/bitmaps.cpp`)
+- OLED-спрайты 1bpp: чёрно-белые `visor.png` / `splash1.png` / `logo.png` в `assets/` (собирается в `firmware/src/assets/bitmaps.cpp`)
 - блоб настроек: `firmware/include/koto/settings.hpp`
 - биты Mocute: `firmware/include/koto/protocol/mocute.hpp`
 - кольцо: `firmware/include/koto/hal/led_ring.hpp` (12 светодиодов, на плате дважды)

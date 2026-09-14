@@ -14,4 +14,4 @@ This folder is **not** an input to the firmware. Do not wire these files back in
 | `toaster-pipeline/tools-face/` | pixel editor |
 | `toaster-pipeline/firmware/face_p3.*` | last 1bpp C++ tables |
 
-Live faces to edit by hand: RGB `assets/Name_N.png`. HUD marks: `assets/visor.png`, `splash1.png`, `splash2.png`.
+Live faces to edit by hand: RGB `assets/Name_N.png`. HUD marks: `assets/visor.png`, `splash1.png`, `logo.png`.

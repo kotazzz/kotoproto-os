@@ -78,7 +78,7 @@ Tunable sizes, timings, and **placeholder** GPIO numbers live in `firmware/inclu
 Other knobs:
 
 - Emotion catalog, stick sets, HUD labels: `assets/emotions.json` (packed into `firmware/src/assets/emotions.cpp`)
-- OLED 1bpp sprites: black/white `visor.png` / `splash1.png` / `splash2.png` in `assets/` (packed into `firmware/src/assets/bitmaps.cpp`)
+- OLED 1bpp sprites: black/white `visor.png` / `splash1.png` / `logo.png` in `assets/` (packed into `firmware/src/assets/bitmaps.cpp`)
 - Settings blob / EEPROM-style flags: `firmware/include/koto/settings.hpp`
 - Mocute button bits: `firmware/include/koto/protocol/mocute.hpp`
 - LED ring count: `firmware/include/koto/hal/led_ring.hpp` (`kLedRingCount = 12`, drawn twice on device)

@@ -1,7 +1,7 @@
 """Pack hand-authored assets into firmware C++ tables.
 
 All authored files live in assets/: emotions.json, RGB face PNGs, and
-black/white OLED sprites (visor, splash1, splash2).
+black/white OLED sprites (visor, splash1, logo).
 
 This script does not regenerate faces from Toaster Blaster or any other source.
 """
@@ -23,7 +23,7 @@ GEN_BITMAPS = ROOT / "firmware" / "src" / "assets" / "bitmaps.cpp"
 SYSTEM_SPRITES = (
     ("visor", "visor.png"),
     ("splash1", "splash1.png"),
-    ("splash2", "splash2.png"),
+    ("logo", "logo.png"),
 )
 
 FACE_W = 64

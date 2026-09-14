@@ -15,17 +15,19 @@ Upstream inspiration: [Toaster Blaster](https://github.com/diodeface/ToasterBlas
 | --- | --- |
 | `firmware/include/koto/config.hpp` | Sizes, timings, placeholder GPIO (`pins::*` = -1) |
 | `firmware/include/koto/app.hpp` + `firmware/src/app.cpp` | Scenes, pad, OLED HUD, blink/boop/mouth, effect hooks |
-| `assets/` | Flat authored tree: `emotions.json`, RGB `Name_N.png` faces, BW `visor`/`splash1`/`splash2` |
+| `assets/` | Flat authored tree: `emotions.json`, RGB `Name_N.png` faces, BW `visor`/`splash1`/`logo`, settings icon atlas |
 | `firmware/src/assets/emotions.cpp` | Generated RGB atlas + Emotion table |
 | `firmware/src/assets/bitmaps.cpp` | Generated OLED 1bpp sprites from `assets/*.png` |
 | `firmware/include/koto/settings.hpp` | 16-byte settings blob, magic `0x13371337`; default flags include mouth |
 | `platforms/sim/` | HTTP on `:8080`, `www/` UI, `/atlas.html` |
 | `platforms/esp32/` | IDF skeleton; `hal_esp32.cpp` logs only |
 | `tools/pack_assets.py` | PNG + `emotions.json` → `emotions.cpp` / `bitmaps.cpp` |
+| `tools/settings_atlas.py` | Empty 9×9/7×7 settings icon sheet + `settings_icons.json` (not packed) |
 
 ## Do not delete
 
 - `tools/pack_assets.py`, `assets/emotions.json`, RGB face PNGs and BW HUD PNGs in `assets/`
+- `assets/settings_icons.png`, `assets/settings_icons.json` (authoring sheet; not packed)
 - `trash/` is the retired Toaster pipeline; do not wire it back into pack or firmware
 - Do not restore `tools/import_toasterblaster.py`, `tools/adapt_p3_face.py`, or `assets/face/` into the live tree
 - `LICENSE`, `NOTICE`, `AUTHORS`, `README.md`, `README.ru.md`
@@ -76,7 +78,7 @@ One object per face in `assets/emotions.json`. Codegen emits `Emotion(id, Kind, 
 - HUD thumbs are generated 42×16 1bpp from the first RGB frame
 - `DisplayTest` and `None` live in the catalog only, not in stick sets
 
-All authored files sit in `assets/`: `emotions.json`, RGB `Name_N.png` faces, and black/white `visor.png` / `splash1.png` / `splash2.png`. Pack embeds RGB faces into `emotions.cpp` and 1bpp HUD sprites into `bitmaps.cpp`. HUD conversion accepts only `#000000` and `#FFFFFF`. HUD 42×16 thumbs are derived from the RGB face at pack time.
+All authored files sit in `assets/`: `emotions.json`, RGB `Name_N.png` faces, and black/white `visor.png` / `splash1.png` / `logo.png`. Pack embeds RGB faces into `emotions.cpp` and 1bpp HUD sprites into `bitmaps.cpp`. HUD conversion accepts only `#000000` and `#FFFFFF`. HUD 42×16 thumbs are derived from the RGB face at pack time.
 
 Rebuild tables after editing PNG/JSON:
 
