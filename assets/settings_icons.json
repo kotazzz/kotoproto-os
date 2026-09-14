@@ -1,5 +1,5 @@
 {
-  "how_to": "python tools/settings_atlas.py",
+  "how_to": "python tools/settings_atlas.py  # PNG → JSON only, never writes PNG",
   "packed": false,
   "grid": {
     "color": [
@@ -129,7 +129,7 @@
         ".........",
         ".XX.XX.XX",
         ".XX.XX.XX",
-        ".........",
+        ".XX.XX.XX",
         ".........",
         ".........",
         "........."
@@ -147,15 +147,15 @@
       "h": 9,
       "empty": false,
       "bits": [
-        ".XXXXXXX.",
-        ".X.....X.",
-        ".XXXXXXX.",
-        ".X.....X.",
-        ".X.XXX.X.",
-        ".X.X.X.X.",
-        ".X.....X.",
-        ".XXXXXXX.",
-        "........."
+        "XXXXXXX..",
+        "X.X..X.X.",
+        "X.XXXX..X",
+        "X.......X",
+        "X.XXXXX.X",
+        "X.X...X.X",
+        "X.X...X.X",
+        "X.X...X.X",
+        "XXXXXXXXX"
       ]
     },
     {
@@ -191,13 +191,13 @@
       "h": 7,
       "empty": false,
       "bits": [
+        ".......",
         ".XXXXX.",
-        "X.....X",
-        "XX...XX",
-        "X.....X",
-        "XXX.XXX",
-        "X.X.X.X",
-        ".X...X."
+        ".X...X.",
+        ".X.X.X.",
+        ".XXXXX.",
+        "..X.X..",
+        "..XXX.."
       ]
     },
     {
@@ -213,12 +213,12 @@
       "empty": false,
       "bits": [
         ".......",
-        ".XXXXX.",
+        ".XX....",
+        "XXXXXX.",
         "XXXXXXX",
-        ".XXXXX.",
-        "X.....X",
-        ".XXXXX.",
-        "..XXX.."
+        ".XXXXXX",
+        "...XXXX",
+        "......."
       ]
     },
     {
@@ -254,13 +254,13 @@
       "h": 7,
       "empty": false,
       "bits": [
-        ".X...X.",
-        ".XXXXX.",
-        "..X.X..",
+        "..XX.XX",
+        "X.X..X.",
+        "X.XXX..",
         "XXXXXXX",
-        "..X.X..",
-        ".XXXXX.",
-        ".X...X."
+        "..XXX.X",
+        ".X..X.X",
+        "XX.XX.."
       ]
     },
     {
@@ -275,13 +275,13 @@
       "h": 7,
       "empty": false,
       "bits": [
-        "...X...",
-        ".X.X.X.",
-        "..XXX..",
-        "XXXXXXX",
-        "..XXX..",
-        ".X.X.X.",
-        "...X..."
+        "X.X....",
+        ".X.....",
+        "X.X.XXX",
+        ".X...X.",
+        "X.X..X.",
+        ".X.....",
+        "X.X...."
       ]
     },
     {
@@ -296,9 +296,9 @@
       "h": 7,
       "empty": false,
       "bits": [
-        "XXXXXXX",
-        "XX.X.XX",
-        "XXXXXXX",
+        "XXXXXX.",
+        "X.XX.XX",
+        "X.....X",
         "X.....X",
         "X.XXX.X",
         "X.X.X.X",
@@ -319,11 +319,11 @@
       "bits": [
         ".XXXXX.",
         "X.....X",
-        "X......",
+        "X.X...X",
         "X..X..X",
-        "X...XX.",
-        ".XXXXX.",
-        "...X..."
+        ".XXXX.X",
+        "...X...",
+        "..X...."
       ]
     }
   ]
