@@ -1,0 +1,198 @@
+{
+  "how_to": "python tools/settings_atlas.py",
+  "packed": false,
+  "grid": {
+    "color": [
+      255,
+      0,
+      255
+    ]
+  },
+  "ink": [
+    0,
+    0,
+    0
+  ],
+  "font": {
+    "width": 5,
+    "height": 7,
+    "spacing": 1,
+    "inverted": true
+  },
+  "gap": 1,
+  "atlas": {
+    "file": "settings_icons.png",
+    "width": 159,
+    "height": 113
+  },
+  "groups": [
+    {
+      "id": "screens",
+      "size": 9,
+      "count": 5
+    },
+    {
+      "id": "params",
+      "size": 7,
+      "count": 8
+    }
+  ],
+  "tiles": [
+    {
+      "id": "screen_matrix",
+      "kind": "screen",
+      "label": "MATRIX",
+      "label_x": 0,
+      "label_y": 1,
+      "x": 150,
+      "y": 0,
+      "w": 9,
+      "h": 9,
+      "empty": true
+    },
+    {
+      "id": "screen_switches",
+      "kind": "screen",
+      "label": "SWITCHES",
+      "label_x": 0,
+      "label_y": 11,
+      "x": 150,
+      "y": 10,
+      "w": 9,
+      "h": 9,
+      "empty": true
+    },
+    {
+      "id": "screen_calibration",
+      "kind": "screen",
+      "label": "CALIBRATION & SENSITIVITY",
+      "label_x": 0,
+      "label_y": 21,
+      "x": 150,
+      "y": 20,
+      "w": 9,
+      "h": 9,
+      "empty": true
+    },
+    {
+      "id": "screen_other",
+      "kind": "screen",
+      "label": "OTHER",
+      "label_x": 0,
+      "label_y": 31,
+      "x": 150,
+      "y": 30,
+      "w": 9,
+      "h": 9,
+      "empty": true
+    },
+    {
+      "id": "screen_restart_save",
+      "kind": "screen",
+      "label": "RESTART & SAVE",
+      "label_x": 0,
+      "label_y": 41,
+      "x": 150,
+      "y": 40,
+      "w": 9,
+      "h": 9,
+      "empty": true
+    },
+    {
+      "id": "param_matrix",
+      "kind": "param",
+      "label": "MATRIX",
+      "label_x": 0,
+      "label_y": 50,
+      "x": 152,
+      "y": 50,
+      "w": 7,
+      "h": 7,
+      "empty": true
+    },
+    {
+      "id": "param_headphones_led",
+      "kind": "param",
+      "label": "HEADPHONES LED",
+      "label_x": 0,
+      "label_y": 58,
+      "x": 152,
+      "y": 58,
+      "w": 7,
+      "h": 7,
+      "empty": true
+    },
+    {
+      "id": "param_auto_blink",
+      "kind": "param",
+      "label": "AUTO-BLINK",
+      "label_x": 0,
+      "label_y": 66,
+      "x": 152,
+      "y": 66,
+      "w": 7,
+      "h": 7,
+      "empty": true
+    },
+    {
+      "id": "param_boop",
+      "kind": "param",
+      "label": "BOOP",
+      "label_x": 0,
+      "label_y": 74,
+      "x": 152,
+      "y": 74,
+      "w": 7,
+      "h": 7,
+      "empty": true
+    },
+    {
+      "id": "param_fan",
+      "kind": "param",
+      "label": "FAN",
+      "label_x": 0,
+      "label_y": 82,
+      "x": 152,
+      "y": 82,
+      "w": 7,
+      "h": 7,
+      "empty": true
+    },
+    {
+      "id": "param_rare_transitions",
+      "kind": "param",
+      "label": "RARE TRANSITIONS",
+      "label_x": 0,
+      "label_y": 90,
+      "x": 152,
+      "y": 90,
+      "w": 7,
+      "h": 7,
+      "empty": true
+    },
+    {
+      "id": "param_save",
+      "kind": "param",
+      "label": "SAVE",
+      "label_x": 0,
+      "label_y": 98,
+      "x": 152,
+      "y": 98,
+      "w": 7,
+      "h": 7,
+      "empty": true
+    },
+    {
+      "id": "param_restart",
+      "kind": "param",
+      "label": "RESTART",
+      "label_x": 0,
+      "label_y": 106,
+      "x": 152,
+      "y": 106,
+      "w": 7,
+      "h": 7,
+      "empty": true
+    }
+  ]
+}
