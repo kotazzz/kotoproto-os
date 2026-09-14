@@ -32,6 +32,11 @@ inline constexpr int kHudThumbW = 42;
 inline constexpr int kHudThumbH = 16;
 inline constexpr int kHudCornerLen = 3;
 
+inline constexpr int kSplashVisorX = 4;
+inline constexpr int kSplashVisorY = 5;
+inline constexpr int kSplashLogoX = 44;
+inline constexpr int kSplashLogoY = 6;
+
 inline constexpr int kBoopTriggerCount = 4;
 inline constexpr int kBoopTriggersMax = 6;
 inline constexpr std::uint32_t kBoopGlitchMs = 1800;

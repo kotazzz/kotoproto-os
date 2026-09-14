@@ -1451,15 +1451,13 @@ void App::render_oled_startup(std::uint32_t now_ms) {
     oled_fb_.fill_rect(0, 0, oled_fb_.width(), oled_fb_.height(), true);
     const assets::Bitmap* splash1 = assets::find_system("splash1");
     const assets::Bitmap* logo = assets::find_system("logo");
-    int splash_x = 4;
     if (splash1 != nullptr) {
-      oled_fb_.blit_bitmap_1bpp(splash_x, 5, splash1->width, splash1->height, splash1->data, splash1->size,
-                                 splash1->width, splash1->height, false, true);
-      splash_x += splash1->width;
+      oled_fb_.blit_bitmap_1bpp(kSplashVisorX, kSplashVisorY, splash1->width, splash1->height, splash1->data,
+                                 splash1->size, splash1->width, splash1->height, false, true);
     }
     if (logo != nullptr) {
-      oled_fb_.blit_bitmap_1bpp(splash_x, 5, logo->width, logo->height, logo->data, logo->size, logo->width,
-                                 logo->height, false, true);
+      oled_fb_.blit_bitmap_1bpp(kSplashLogoX, kSplashLogoY, logo->width, logo->height, logo->data, logo->size,
+                                 logo->width, logo->height, false, true);
     }
   } else {
     oled_fb_.fill_rect(0, 0, oled_fb_.width(), oled_fb_.height(), true);
