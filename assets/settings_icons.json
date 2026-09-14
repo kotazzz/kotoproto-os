@@ -13,6 +13,11 @@
     0,
     0
   ],
+  "lit": [
+    255,
+    255,
+    255
+  ],
   "font": {
     "width": 5,
     "height": 7,
@@ -48,7 +53,18 @@
       "y": 0,
       "w": 9,
       "h": 9,
-      "empty": true
+      "empty": false,
+      "bits": [
+        "XXXXXXXXX",
+        "X.X.X.X.X",
+        "XXXXXXXXX",
+        "X.X.X.X.X",
+        "XXXXXXXXX",
+        "X.X.X.X.X",
+        "XXXXXXXXX",
+        "X.X.X.X.X",
+        "XXXXXXXXX"
+      ]
     },
     {
       "id": "screen_switches",
@@ -60,7 +76,18 @@
       "y": 10,
       "w": 9,
       "h": 9,
-      "empty": true
+      "empty": false,
+      "bits": [
+        ".........",
+        ".XXXXXXX.",
+        "X.......X",
+        "X....XXX.",
+        "X....XXX.",
+        "X.......X",
+        ".XXXXXXX.",
+        ".........",
+        "........."
+      ]
     },
     {
       "id": "screen_calibration",
@@ -72,7 +99,18 @@
       "y": 20,
       "w": 9,
       "h": 9,
-      "empty": true
+      "empty": false,
+      "bits": [
+        "....X....",
+        "....X....",
+        "..XXXXX..",
+        ".X..X..X.",
+        "XXXX.XXXX",
+        ".X..X..X.",
+        "..XXXXX..",
+        "....X....",
+        "....X...."
+      ]
     },
     {
       "id": "screen_other",
@@ -84,7 +122,18 @@
       "y": 30,
       "w": 9,
       "h": 9,
-      "empty": true
+      "empty": false,
+      "bits": [
+        ".........",
+        ".........",
+        ".........",
+        ".XX.XX.XX",
+        ".XX.XX.XX",
+        ".........",
+        ".........",
+        ".........",
+        "........."
+      ]
     },
     {
       "id": "screen_restart_save",
@@ -96,7 +145,18 @@
       "y": 40,
       "w": 9,
       "h": 9,
-      "empty": true
+      "empty": false,
+      "bits": [
+        ".XXXXXXX.",
+        ".X.....X.",
+        ".XXXXXXX.",
+        ".X.....X.",
+        ".X.XXX.X.",
+        ".X.X.X.X.",
+        ".X.....X.",
+        ".XXXXXXX.",
+        "........."
+      ]
     },
     {
       "id": "param_matrix",
@@ -108,7 +168,16 @@
       "y": 50,
       "w": 7,
       "h": 7,
-      "empty": true
+      "empty": false,
+      "bits": [
+        "XXXXXXX",
+        "X.X.X.X",
+        "XXXXXXX",
+        "X.X.X.X",
+        "XXXXXXX",
+        "X.X.X.X",
+        "XXXXXXX"
+      ]
     },
     {
       "id": "param_headphones_led",
@@ -120,7 +189,16 @@
       "y": 58,
       "w": 7,
       "h": 7,
-      "empty": true
+      "empty": false,
+      "bits": [
+        ".XXXXX.",
+        "X.....X",
+        "XX...XX",
+        "X.....X",
+        "XXX.XXX",
+        "X.X.X.X",
+        ".X...X."
+      ]
     },
     {
       "id": "param_auto_blink",
@@ -132,7 +210,16 @@
       "y": 66,
       "w": 7,
       "h": 7,
-      "empty": true
+      "empty": false,
+      "bits": [
+        ".......",
+        ".XXXXX.",
+        "XXXXXXX",
+        ".XXXXX.",
+        "X.....X",
+        ".XXXXX.",
+        "..XXX.."
+      ]
     },
     {
       "id": "param_boop",
@@ -144,7 +231,16 @@
       "y": 74,
       "w": 7,
       "h": 7,
-      "empty": true
+      "empty": false,
+      "bits": [
+        "..XXX..",
+        ".X...X.",
+        "X..X..X",
+        "X.XXX.X",
+        "X..X..X",
+        ".X...X.",
+        "..XXX.."
+      ]
     },
     {
       "id": "param_fan",
@@ -156,7 +252,16 @@
       "y": 82,
       "w": 7,
       "h": 7,
-      "empty": true
+      "empty": false,
+      "bits": [
+        ".X...X.",
+        ".XXXXX.",
+        "..X.X..",
+        "XXXXXXX",
+        "..X.X..",
+        ".XXXXX.",
+        ".X...X."
+      ]
     },
     {
       "id": "param_rare_transitions",
@@ -168,7 +273,16 @@
       "y": 90,
       "w": 7,
       "h": 7,
-      "empty": true
+      "empty": false,
+      "bits": [
+        "...X...",
+        ".X.X.X.",
+        "..XXX..",
+        "XXXXXXX",
+        "..XXX..",
+        ".X.X.X.",
+        "...X..."
+      ]
     },
     {
       "id": "param_save",
@@ -180,7 +294,16 @@
       "y": 98,
       "w": 7,
       "h": 7,
-      "empty": true
+      "empty": false,
+      "bits": [
+        "XXXXXXX",
+        "XX.X.XX",
+        "XXXXXXX",
+        "X.....X",
+        "X.XXX.X",
+        "X.X.X.X",
+        "XXXXXXX"
+      ]
     },
     {
       "id": "param_restart",
@@ -192,7 +315,16 @@
       "y": 106,
       "w": 7,
       "h": 7,
-      "empty": true
+      "empty": false,
+      "bits": [
+        ".XXXXX.",
+        "X.....X",
+        "X......",
+        "X..X..X",
+        "X...XX.",
+        ".XXXXX.",
+        "...X..."
+      ]
     }
   ]
 }

@@ -4,7 +4,7 @@
 
 Layout is a vertical list: 5x7 inverted label on #FF00FF, then a black 1-bit
 icon square flush right. One purple pixel between rows. Screens are 9x9,
-parameters are 7x7. Icon interiors stay empty until they are drawn by hand.
+parameters are 7x7. White pixels are the icon; the square stays black.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ ATLAS_JSON = ASSETS / "settings_icons.json"
 
 GRID = (255, 0, 255)
 INK = (0, 0, 0)
+LIT = (255, 255, 255)
 FONT_W = 5
 FONT_H = 7
 FONT_GAP = 1
@@ -32,6 +33,137 @@ ROW_GAP = 1
 LABEL_ICON_GAP = 1
 SCREEN_SIZE = 9
 PARAM_SIZE = 7
+
+# 1-bit white-on-black. X is lit. Rows must match the tile size.
+ICONS = {
+    "screen_matrix": (
+        "XXXXXXXXX",
+        "X.X.X.X.X",
+        "XXXXXXXXX",
+        "X.X.X.X.X",
+        "XXXXXXXXX",
+        "X.X.X.X.X",
+        "XXXXXXXXX",
+        "X.X.X.X.X",
+        "XXXXXXXXX",
+    ),
+    "screen_switches": (
+        ".........",
+        ".XXXXXXX.",
+        "X.......X",
+        "X....XXX.",
+        "X....XXX.",
+        "X.......X",
+        ".XXXXXXX.",
+        ".........",
+        ".........",
+    ),
+    "screen_calibration": (
+        "....X....",
+        "....X....",
+        "..XXXXX..",
+        ".X..X..X.",
+        "XXXX.XXXX",
+        ".X..X..X.",
+        "..XXXXX..",
+        "....X....",
+        "....X....",
+    ),
+    "screen_other": (
+        ".........",
+        ".........",
+        ".........",
+        ".XX.XX.XX",
+        ".XX.XX.XX",
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+    ),
+    "screen_restart_save": (
+        ".XXXXXXX.",
+        ".X.....X.",
+        ".XXXXXXX.",
+        ".X.....X.",
+        ".X.XXX.X.",
+        ".X.X.X.X.",
+        ".X.....X.",
+        ".XXXXXXX.",
+        ".........",
+    ),
+    "param_matrix": (
+        "XXXXXXX",
+        "X.X.X.X",
+        "XXXXXXX",
+        "X.X.X.X",
+        "XXXXXXX",
+        "X.X.X.X",
+        "XXXXXXX",
+    ),
+    "param_headphones_led": (
+        ".XXXXX.",
+        "X.....X",
+        "XX...XX",
+        "X.....X",
+        "XXX.XXX",
+        "X.X.X.X",
+        ".X...X.",
+    ),
+    "param_auto_blink": (
+        ".......",
+        ".XXXXX.",
+        "XXXXXXX",
+        ".XXXXX.",
+        "X.....X",
+        ".XXXXX.",
+        "..XXX..",
+    ),
+    "param_boop": (
+        "..XXX..",
+        ".X...X.",
+        "X..X..X",
+        "X.XXX.X",
+        "X..X..X",
+        ".X...X.",
+        "..XXX..",
+    ),
+    "param_fan": (
+        ".X...X.",
+        ".XXXXX.",
+        "..X.X..",
+        "XXXXXXX",
+        "..X.X..",
+        ".XXXXX.",
+        ".X...X.",
+    ),
+    "param_rare_transitions": (
+        "...X...",
+        ".X.X.X.",
+        "..XXX..",
+        "XXXXXXX",
+        "..XXX..",
+        ".X.X.X.",
+        "...X...",
+    ),
+    "param_save": (
+        "XXXXXXX",
+        "XX.X.XX",
+        "XXXXXXX",
+        "X.....X",
+        "X.XXX.X",
+        "X.X.X.X",
+        "XXXXXXX",
+    ),
+    "param_restart": (
+        ".XXXXX.",
+        "X.....X",
+        "X......",
+        "X..X..X",
+        "X...XX.",
+        ".XXXXX.",
+        "...X...",
+    ),
+}
 
 SCREENS = (
     ("matrix", "MATRIX"),
@@ -108,6 +240,24 @@ def fill_rect(
             put(rgb, width, x + col, y + row, color)
 
 
+def icon_rows(tile_id: str, size: int) -> tuple[str, ...]:
+    rows = ICONS.get(tile_id)
+    if rows is None:
+        raise SystemExit(f"missing icon {tile_id}")
+    if len(rows) != size or any(len(row) != size for row in rows):
+        raise SystemExit(f"{tile_id} must be {size}x{size}")
+    if any(ch not in ".X" for row in rows for ch in row):
+        raise SystemExit(f"{tile_id} has a non .X pixel")
+    return rows
+
+
+def blit_icon(rgb: bytearray, width: int, x: int, y: int, rows: tuple[str, ...]) -> None:
+    for row, line in enumerate(rows):
+        for col, ch in enumerate(line):
+            if ch == "X":
+                put(rgb, width, x + col, y + row, LIT)
+
+
 def draw_inverted_text(
     rgb: bytearray,
     width: int,
@@ -146,7 +296,8 @@ def layout_rows() -> tuple[int, int, list[dict]]:
                 "y": y,
                 "w": SCREEN_SIZE,
                 "h": SCREEN_SIZE,
-                "empty": True,
+                "empty": False,
+                "bits": list(icon_rows(f"screen_{ident}", SCREEN_SIZE)),
             }
         )
         y += SCREEN_SIZE + ROW_GAP
@@ -162,7 +313,8 @@ def layout_rows() -> tuple[int, int, list[dict]]:
                 "y": y,
                 "w": PARAM_SIZE,
                 "h": PARAM_SIZE,
-                "empty": True,
+                "empty": False,
+                "bits": list(icon_rows(f"param_{ident}", PARAM_SIZE)),
             }
         )
         y += PARAM_SIZE + ROW_GAP
@@ -178,12 +330,14 @@ def generate() -> None:
     for tile in tiles:
         draw_inverted_text(rgb, width, tile["label_x"], tile["label_y"], tile["label"], glyphs)
         fill_rect(rgb, width, tile["x"], tile["y"], tile["w"], tile["h"], INK)
+        blit_icon(rgb, width, tile["x"], tile["y"], tuple(tile["bits"]))
     write_png_rgb(ATLAS_PNG, width, height, bytes(rgb))
     meta = {
         "how_to": "python tools/settings_atlas.py",
         "packed": False,
         "grid": {"color": list(GRID)},
         "ink": list(INK),
+        "lit": list(LIT),
         "font": {
             "width": FONT_W,
             "height": FONT_H,
@@ -203,7 +357,7 @@ def generate() -> None:
         "tiles": tiles,
     }
     ATLAS_JSON.write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"wrote {ATLAS_PNG.name} {width}x{height} ({len(tiles)} empty icons)")
+    print(f"wrote {ATLAS_PNG.name} {width}x{height} ({len(tiles)} icons)")
 
 
 if __name__ == "__main__":
