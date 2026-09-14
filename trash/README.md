@@ -2,7 +2,7 @@
 
 Kept so the live tree can show the final face layout: `assets/emotions.json` + `assets/faces/`.
 
-This folder is **not** an input to the firmware. Do not wire these files back into `tools/pack_assets.py`. The only live codegen is PNG → `firmware/src/assets/emotions.cpp`.
+This folder is **not** an input to the firmware. Do not wire these files back into `tools/pack_assets.py`. Live codegen is `assets/faces/` + `assets/emotions.json` → `emotions.cpp` and black/white `assets/ui/` → `bitmaps.cpp`.
 
 | Path | What it was |
 | --- | --- |

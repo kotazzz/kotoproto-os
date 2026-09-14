@@ -1,6 +1,8 @@
-"""Pack hand-authored emotion JSON + RGB PNG frames into firmware C++ tables.
+"""Pack hand-authored assets into firmware C++ tables.
 
-Source of truth: assets/emotions.json and assets/faces/{classic,special}/*.png.
+Emotions: assets/emotions.json + RGB PNG under assets/faces/{classic,special}.
+OLED sprites: black/white PNG under assets/ui/ → firmware/src/assets/bitmaps.cpp.
+
 This script does not regenerate faces from Toaster Blaster or any other source.
 """
 
@@ -15,7 +17,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EMOTIONS_JSON = ROOT / "assets" / "emotions.json"
 FACES_DIR = ROOT / "assets" / "faces"
+UI_DIR = ROOT / "assets" / "ui"
 GEN_CPP = ROOT / "firmware" / "src" / "assets" / "emotions.cpp"
+GEN_BITMAPS = ROOT / "firmware" / "src" / "assets" / "bitmaps.cpp"
+
+SYSTEM_SPRITES = (
+    ("visor", "visor.png"),
+    ("splash1", "splash1.png"),
+    ("splash2", "splash2.png"),
+)
 
 FACE_W = 64
 FACE_H = 32
@@ -150,6 +160,128 @@ def write_png_rgb(path: Path, width: int, height: int, rgb: bytes) -> None:
     png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b"")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(png)
+
+
+def write_png_bw(path: Path, width: int, height: int, on_at) -> None:
+    raw = bytearray()
+    for y in range(height):
+        raw.append(0)
+        byte = 0
+        bit = 7
+        for x in range(width):
+            if on_at(x, y):
+                byte |= 1 << bit
+            bit -= 1
+            if bit < 0:
+                raw.append(byte)
+                byte = 0
+                bit = 7
+        if bit != 7:
+            raw.append(byte)
+    ihdr = struct.pack(">IIBBBBB", width, height, 1, 0, 0, 0, 0)
+    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b"")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(png)
+
+
+def _png_chunks(path: Path) -> tuple[int, int, int, int, bytes, bytes]:
+    data = path.read_bytes()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError(f"not a PNG: {path}")
+    pos = 8
+    width = height = bit_depth = color_type = 0
+    raw = bytearray()
+    palette = b""
+    while pos < len(data):
+        length = struct.unpack(">I", data[pos : pos + 4])[0]
+        tag = data[pos + 4 : pos + 8]
+        chunk_data = data[pos + 8 : pos + 8 + length]
+        pos += 12 + length
+        if tag == b"IHDR":
+            width, height, bit_depth, color_type, *_ = struct.unpack(">IIBBBBB", chunk_data)
+        elif tag == b"PLTE":
+            palette = chunk_data
+        elif tag == b"IDAT":
+            raw.extend(chunk_data)
+        elif tag == b"IEND":
+            break
+    return width, height, bit_depth, color_type, bytes(palette), bytes(raw)
+
+
+def _require_bw(path: Path, r: int, g: int, b: int) -> bool:
+    if r == 0 and g == 0 and b == 0:
+        return False
+    if r == 255 and g == 255 and b == 255:
+        return True
+    raise ValueError(f"{path} has a non black/white pixel ({r},{g},{b})")
+
+
+def read_png_bw(path: Path) -> tuple[int, int, list[list[bool]]]:
+    width, height, bit_depth, color_type, palette, idat = _png_chunks(path)
+    decoded = zlib.decompress(idat)
+    rows: list[list[bool]] = []
+    if bit_depth == 1 and color_type == 0:
+        stride = 1 + (width + 7) // 8
+        pixels = unfilter(decoded, (width + 7) // 8, height, 1)
+        packed_stride = (width + 7) // 8
+        for y in range(height):
+            row: list[bool] = []
+            for x in range(width):
+                byte = pixels[y * packed_stride + (x // 8)]
+                row.append(((byte >> (7 - (x & 7))) & 1) != 0)
+            rows.append(row)
+        return width, height, rows
+    if bit_depth != 8:
+        raise ValueError(f"unsupported PNG bit depth {bit_depth} in {path}")
+    if color_type == 2:
+        src = unfilter(decoded, width, height, 3)
+        for y in range(height):
+            row = []
+            for x in range(width):
+                i = (y * width + x) * 3
+                row.append(_require_bw(path, src[i], src[i + 1], src[i + 2]))
+            rows.append(row)
+        return width, height, rows
+    if color_type == 6:
+        src = unfilter(decoded, width, height, 4)
+        for y in range(height):
+            row = []
+            for x in range(width):
+                i = (y * width + x) * 4
+                row.append(_require_bw(path, src[i], src[i + 1], src[i + 2]))
+            rows.append(row)
+        return width, height, rows
+    if color_type == 0:
+        src = unfilter(decoded, width, height, 1)
+        for y in range(height):
+            row = []
+            for x in range(width):
+                v = src[y * width + x]
+                row.append(_require_bw(path, v, v, v))
+            rows.append(row)
+        return width, height, rows
+    if color_type == 3:
+        src = unfilter(decoded, width, height, 1)
+        for y in range(height):
+            row = []
+            for x in range(width):
+                idx = src[y * width + x]
+                row.append(_require_bw(path, palette[idx * 3], palette[idx * 3 + 1], palette[idx * 3 + 2]))
+            rows.append(row)
+        return width, height, rows
+    raise ValueError(f"unsupported PNG color type {color_type} in {path}")
+
+
+def pack_bw_bits(rows: list[list[bool]]) -> tuple[int, int, int, bytes]:
+    height = len(rows)
+    width = len(rows[0]) if height else 0
+    stride = (width + 7) // 8
+    out = bytearray(stride * height)
+    for y, row in enumerate(rows):
+        for x, on in enumerate(row):
+            if on:
+                out[y * stride + (x // 8)] |= 0x80 >> (x & 7)
+    return width, height, stride, bytes(out)
 
 
 def sample_rgb(rgb: bytes, x: int, y: int, src_w: int, src_h: int) -> tuple[int, int, int]:
@@ -321,11 +453,65 @@ const char* effect_name(Effect effect) {
     print(f"wrote {GEN_CPP} ({len(catalog['emotions'])} emotions)")
 
 
+def emit_bitmaps() -> None:
+    chunks = [
+        "// GENERATED by tools/pack_assets.py — do not edit.",
+        '#include "koto/assets/bitmaps.hpp"',
+        "",
+        "#include <string_view>",
+        "",
+        "namespace koto {",
+        "namespace assets {",
+        "namespace {",
+        "",
+    ]
+    table_rows: list[str] = []
+    for sprite_id, filename in SYSTEM_SPRITES:
+        path = UI_DIR / filename
+        if not path.exists():
+            raise SystemExit(f"missing {path}")
+        width, height, rows = read_png_bw(path)
+        packed_w, packed_h, stride, packed = pack_bw_bits(rows)
+        ident = re.sub(r"[^A-Za-z0-9_]", "_", sprite_id)
+        name = f"kSystem_{ident}"
+        chunks.append(f"const std::uint8_t {name}[] = {{")
+        chunks.append(cpp_bytes(packed))
+        chunks.append("};")
+        chunks.append("")
+        table_rows.append(
+            f'    {{"{sprite_id}", {packed_w}, {packed_h}, {stride}, {name}, sizeof({name})}},'
+        )
+    chunks.append("}  // namespace")
+    chunks.append("")
+    chunks.append("const Bitmap kSystem[] = {")
+    chunks.append("\n".join(table_rows))
+    chunks.append("};")
+    chunks.append("const int kSystemCount = static_cast<int>(sizeof(kSystem) / sizeof(kSystem[0]));")
+    chunks.append(
+        """
+const Bitmap* find_system(std::string_view id) {
+  for (int i = 0; i < kSystemCount; ++i) {
+    if (id == kSystem[i].id) {
+      return &kSystem[i];
+    }
+  }
+  return nullptr;
+}
+
+}  // namespace assets
+}  // namespace koto
+"""
+    )
+    GEN_BITMAPS.write_text("\n".join(chunks), encoding="utf-8")
+    print(f"wrote {GEN_BITMAPS} ({len(SYSTEM_SPRITES)} sprites)")
+
+
 def pack() -> None:
     if not EMOTIONS_JSON.exists():
         raise SystemExit(f"missing {EMOTIONS_JSON}")
     catalog = json.loads(EMOTIONS_JSON.read_text(encoding="utf-8"))
     emit_cpp(catalog)
+    emit_bitmaps()
 
 
 if __name__ == "__main__":
