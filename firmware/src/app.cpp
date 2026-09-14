@@ -1439,15 +1439,16 @@ void App::render_oled_auto(std::uint32_t now_ms) {
 void App::render_oled_startup(std::uint32_t now_ms) {
   const std::uint32_t elapsed = now_ms - startup_started_ms_;
   if (elapsed < kStartupMs / 2) {
+    oled_fb_.fill_rect(0, 0, oled_fb_.width(), oled_fb_.height(), true);
     const assets::Bitmap* splash1 = assets::find_system("splash1");
     const assets::Bitmap* splash2 = assets::find_system("splash2");
     if (splash1 != nullptr) {
       oled_fb_.blit_bitmap_1bpp(4, 5, splash1->width, splash1->height, splash1->data, splash1->size,
-                                 splash1->width, splash1->height);
+                                 splash1->width, splash1->height, false, true);
     }
     if (splash2 != nullptr) {
       oled_fb_.blit_bitmap_1bpp(92, 6, splash2->width, splash2->height, splash2->data, splash2->size,
-                                 splash2->width, splash2->height);
+                                 splash2->width, splash2->height, false, true);
     }
   } else {
     oled_fb_.fill_rect(0, 0, oled_fb_.width(), oled_fb_.height(), true);

@@ -99,7 +99,7 @@ Special faces skip both. Wink uses its own eye effect and disables the shared bl
 
 ## Controls (parity notes)
 
-- Startup (~3 s, or any button/stick) ends on **FaceSet** with Neutral — not Settings. OLED shows the inverted Toaster Blaster splash (no text) until 50% of `kStartupMs`, then KOTOPROTO / by Kotaz / version / bar
+- Startup (~3 s, or any button/stick) ends on **FaceSet** with Neutral — not Settings. OLED fills, then draws the Toaster Blaster visor/logo (no text) until 50% of `kStartupMs`, then KOTOPROTO / by Kotaz / version / bar
 - X/A/Y = face sets 1/2/3; B = auto; ESC = **only** leave settings (no boop cal on the main page)
 - MENU/SELECT short: BT → Frame → settings list → BT. Stick does **not** open BT/Frame. Hold (~600 ms) jumps to the settings list from any screen
 - KEY-mode Esc is `kBtnEsc` only (not B). KEY Enter is still OK|A

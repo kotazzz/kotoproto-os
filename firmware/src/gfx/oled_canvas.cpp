@@ -106,7 +106,7 @@ void OledCanvas::draw_line(int x0, int y0, int x1, int y1, bool on) {
 }
 
 void OledCanvas::blit_bitmap_1bpp(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* data,
-                                  std::size_t size, int dst_w, int dst_h, bool on) {
+                                  std::size_t size, int dst_w, int dst_h, bool on, bool invert) {
   if (data == nullptr || bitmap_w <= 0 || bitmap_h <= 0 || dst_w <= 0 || dst_h <= 0) {
     return;
   }
@@ -120,7 +120,8 @@ void OledCanvas::blit_bitmap_1bpp(int x, int y, int bitmap_w, int bitmap_h, cons
         return;
       }
       const std::uint8_t bit = static_cast<std::uint8_t>(0x80 >> (src_x & 7));
-      if ((data[index] & bit) != 0) {
+      const bool lit = (data[index] & bit) != 0;
+      if (lit != invert) {
         set_pixel(x + col, y + row, on);
       }
     }
