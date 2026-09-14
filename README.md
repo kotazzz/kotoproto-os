@@ -78,13 +78,13 @@ Tunable sizes, timings, and **placeholder** GPIO numbers live in `firmware/inclu
 Other knobs:
 
 - Emotion catalog, stick sets, HUD labels: `assets/emotions.json` (packed into `firmware/src/assets/emotions.cpp`)
-- OLED 1bpp sprites: black/white PNG in `assets/ui/` (packed into `firmware/src/assets/bitmaps.cpp`)
+- OLED 1bpp sprites: black/white `visor.png` / `splash1.png` / `splash2.png` in `assets/` (packed into `firmware/src/assets/bitmaps.cpp`)
 - Settings blob / EEPROM-style flags: `firmware/include/koto/settings.hpp`
 - Mocute button bits: `firmware/include/koto/protocol/mocute.hpp`
 - LED ring count: `firmware/include/koto/hal/led_ring.hpp` (`kLedRingCount = 12`, drawn twice on device)
 - Version string: `firmware/include/koto/version.hpp`
 
-PNG files under `assets/faces/` are the authored faces (RGB). OLED HUD sprites in `assets/ui/` are black/white only. Pack embeds them into firmware (plus OLED thumbs from RGB faces). It does not rebuild pixels from Toaster Blaster.
+PNG files in `assets/` are the authored faces (RGB `Name_N.png`) and HUD sprites (black/white only). Pack embeds them into firmware (plus OLED thumbs from RGB faces). It does not rebuild pixels from Toaster Blaster.
 
 Regenerate firmware tables after editing PNG or `assets/emotions.json`:
 
@@ -125,7 +125,7 @@ GAME report, 6 bytes: X, Y, hat, buttons, mode, 0. Buttons: A B X Y OK ESC SELEC
 firmware/           core: faces, HUD, HID, HAL interfaces, config
 platforms/sim/      HTTP + browser UI
 platforms/esp32/    IDF skeleton, HAL stubs
-assets/             emotions.json + RGB faces + black/white UI sprites
+assets/             emotions.json + RGB faces + black/white HUD sprites (flat)
 tools/              pack_assets.py (PNG → firmware)
 trash/              retired Toaster import/adapt, kept for reference
 tests/              headless core test

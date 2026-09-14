@@ -1,7 +1,7 @@
 """Pack hand-authored assets into firmware C++ tables.
 
-Emotions: assets/emotions.json + RGB PNG under assets/faces/{classic,special}.
-OLED sprites: black/white PNG under assets/ui/ → firmware/src/assets/bitmaps.cpp.
+All authored files live in assets/: emotions.json, RGB face PNGs, and
+black/white OLED sprites (visor, splash1, splash2).
 
 This script does not regenerate faces from Toaster Blaster or any other source.
 """
@@ -15,9 +15,8 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EMOTIONS_JSON = ROOT / "assets" / "emotions.json"
-FACES_DIR = ROOT / "assets" / "faces"
-UI_DIR = ROOT / "assets" / "ui"
+ASSETS = ROOT / "assets"
+EMOTIONS_JSON = ASSETS / "emotions.json"
 GEN_CPP = ROOT / "firmware" / "src" / "assets" / "emotions.cpp"
 GEN_BITMAPS = ROOT / "firmware" / "src" / "assets" / "bitmaps.cpp"
 
@@ -326,8 +325,8 @@ def cpp_bytes(data: bytes, indent: str = "    ") -> str:
     return "\n".join(lines)
 
 
-def load_frame_rgb(kind: str, filename: str) -> bytes:
-    path = FACES_DIR / kind / filename
+def load_frame_rgb(filename: str) -> bytes:
+    path = ASSETS / filename
     width, height, rgb = read_png_rgb(path)
     if width != FACE_W or height != FACE_H:
         raise ValueError(f"{path} is {width}x{height}, expected {FACE_W}x{FACE_H}")
@@ -349,14 +348,14 @@ def emit_cpp(catalog: dict) -> None:
         ident = re.sub(r"[^A-Za-z0-9_]", "_", emo["id"])
         frame_idents = []
         for idx, frame in enumerate(emo["frames"]):
-            rgb = load_frame_rgb(emo["kind"], frame["file"])
+            rgb = load_frame_rgb(frame["file"])
             rgb_name = f"kRgb_{ident}_{idx:02d}"
             chunks.append(f"const std::uint8_t {rgb_name}[] = {{")
             chunks.append(cpp_bytes(rgb))
             chunks.append("};")
             chunks.append("")
             frame_idents.append((rgb_name, int(frame.get("ms", 500))))
-        hud = make_hud(load_frame_rgb(emo["kind"], emo["frames"][0]["file"]))
+        hud = make_hud(load_frame_rgb(emo["frames"][0]["file"]))
         hud_name = f"kHud_{ident}"
         chunks.append(f"const std::uint8_t {hud_name}[] = {{")
         chunks.append(cpp_bytes(hud))
@@ -467,7 +466,7 @@ def emit_bitmaps() -> None:
     ]
     table_rows: list[str] = []
     for sprite_id, filename in SYSTEM_SPRITES:
-        path = UI_DIR / filename
+        path = ASSETS / filename
         if not path.exists():
             raise SystemExit(f"missing {path}")
         width, height, rows = read_png_bw(path)

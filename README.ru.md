@@ -78,13 +78,13 @@ $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 Ещё:
 
 - сеты лиц, авто-пул, подписи HUD: `assets/emotions.json` (собирается в `firmware/src/assets/emotions.cpp`)
-- OLED-спрайты 1bpp: чёрно-белые PNG в `assets/ui/` (собирается в `firmware/src/assets/bitmaps.cpp`)
+- OLED-спрайты 1bpp: чёрно-белые `visor.png` / `splash1.png` / `splash2.png` в `assets/` (собирается в `firmware/src/assets/bitmaps.cpp`)
 - блоб настроек: `firmware/include/koto/settings.hpp`
 - биты Mocute: `firmware/include/koto/protocol/mocute.hpp`
 - кольцо: `firmware/include/koto/hal/led_ring.hpp` (12 светодиодов, на плате дважды)
 - версия: `firmware/include/koto/version.hpp`
 
-PNG в `assets/faces/` — готовые RGB-лица. Спрайты OLED HUD в `assets/ui/` — только чёрный и белый. Пакер вшивает их в прошивку (плюс миниатюры OLED из RGB-лиц) и не пересобирает пиксели из Toaster Blaster.
+PNG в `assets/` — готовые RGB-лица (`Name_N.png`) и спрайты OLED HUD (только чёрный и белый). Пакер вшивает их в прошивку (плюс миниатюры OLED из RGB-лиц) и не пересобирает пиксели из Toaster Blaster.
 
 Пересборка таблиц после правок PNG или `assets/emotions.json`:
 
@@ -125,7 +125,7 @@ GAME-репорт, 6 байт: X, Y, hat, кнопки, режим, 0. Кноп�
 firmware/           ядро: лица, HUD, HID, HAL, конфиг
 platforms/sim/      HTTP + браузер
 platforms/esp32/    каркас IDF, заглушки HAL
-assets/             emotions.json + RGB-лица + чёрно-белые UI-спрайты
+assets/             emotions.json + RGB-лица + чёрно-белые HUD-спрайты (плоско)
 tools/              pack_assets.py (PNG → прошивка)
 trash/              старый пайплайн Toaster, на всякий случай
 tests/              тест ядра без браузера

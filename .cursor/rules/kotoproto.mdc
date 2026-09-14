@@ -9,9 +9,8 @@ alwaysApply: true
 - License is AGPL-3.0 because of Toaster Blaster. Keep LICENSE, NOTICE, AUTHORS. Credit Kotaz and https://github.com/diodeface/ToasterBlaster.
 - Answer the user in Russian.
 - Config: `firmware/include/koto/config.hpp`. Do not invent GPIO; pins stay -1.
-- Emotions live in `assets/emotions.json` + RGB PNG under `assets/faces/classic|special`. OLED HUD sprites are black/white PNG in `assets/ui/`. Pack with `python tools/pack_assets.py` (PNG → firmware only; no Toaster regen).
+- Emotions live in `assets/emotions.json` + RGB `Name_N.png` and black/white HUD PNGs in `assets/`. Pack with `python tools/pack_assets.py` (PNG → firmware only; no Toaster regen).
 - Classic faces get blink/mouth/boop as runtime overlays on eye `(0,0) 32×16` and mouth `y=16 64×16`; special faces do not. Snarl follows `mouth_enabled`. Effects are enum hooks (`snarl`, `dizzy`, `wink`, `randomize`), not JSON scripts.
-- Classic part atlas: `assets/faces/classic/atlas.py pack|unpack` (purple grid, no plain copy). NOPE is special, not in that atlas.
 - Mouth orientation is baked into the PNG. Do not add a runtime `flip_mouth`.
 - HUD thumbs are generated 42×16 1bpp from the RGB frame at pack time.
 - Retired Toaster import/adapt lives in `trash/`; do not restore it into the live tree.

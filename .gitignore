@@ -47,3 +47,4 @@ dependencies.lock
 .esp-idf/
 *.hex
 .cursor/projects/
+assets/faces/

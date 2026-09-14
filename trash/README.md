@@ -1,8 +1,8 @@
 # trash — retired Toaster pipeline
 
-Kept so the live tree can show the final face layout: `assets/emotions.json` + `assets/faces/`.
+Kept so the live tree can show the final face layout: flat `assets/*.png` + `assets/emotions.json`.
 
-This folder is **not** an input to the firmware. Do not wire these files back into `tools/pack_assets.py`. Live codegen is `assets/faces/` + `assets/emotions.json` → `emotions.cpp` and black/white `assets/ui/` → `bitmaps.cpp`.
+This folder is **not** an input to the firmware. Do not wire these files back into `tools/pack_assets.py`. Live codegen is flat `assets/` PNG + `emotions.json` → `emotions.cpp` / `bitmaps.cpp`.
 
 | Path | What it was |
 | --- | --- |
@@ -14,4 +14,4 @@ This folder is **not** an input to the firmware. Do not wire these files back in
 | `toaster-pipeline/tools-face/` | pixel editor |
 | `toaster-pipeline/firmware/face_p3.*` | last 1bpp C++ tables |
 
-Live faces to edit by hand: `assets/faces/classic/` and `assets/faces/special/`.
+Live faces to edit by hand: RGB `assets/Name_N.png`. HUD marks: `assets/visor.png`, `splash1.png`, `splash2.png`.
