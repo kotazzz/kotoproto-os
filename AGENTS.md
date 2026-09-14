@@ -104,6 +104,7 @@ Special faces skip both. Wink uses its own eye effect and disables the shared bl
 - Stick dead zone for activity and octant: ±64 (`kStickDeadzone`); apply face on return to center **unless OK is held**
 - OK starts blink only if stick is near center; displaced stick + OK = cancel pending face, no blink
 - Header name follows the **hovered** octant while the stick is out
+- FaceSet HUD: selected thumb is inverted with black `draw_corners` (length 3) for rounding; hovered octant gets white corner brackets, not a full rectangle
 - Microphone default **on** (`mouth_enabled` / `kFlagMouth`); bars only, never changes the Emotion
 - Auto HUD: original `visor` 54×38 at (0,26) plus generated thumb at (8,42)
 - Blink covers **left eye 32×16 only**; do not paint over the nose

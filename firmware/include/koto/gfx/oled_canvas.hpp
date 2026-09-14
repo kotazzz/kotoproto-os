@@ -24,6 +24,7 @@ class OledCanvas {
   void draw_hline(int x, int y, int w, bool on);
   void draw_vline(int x, int y, int h, bool on);
   void draw_rect(int x, int y, int w, int h, bool on);
+  void draw_corners(int x, int y, int w, int h, int len, bool on);
   void draw_line(int x0, int y0, int x1, int y1, bool on);
   void blit_bitmap_1bpp(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* data,
                         std::size_t size, int dst_w, int dst_h, bool on = true, bool invert = false);

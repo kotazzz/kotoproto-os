@@ -1403,13 +1403,22 @@ void App::render_oled_settings(std::uint32_t now_ms) {
 void App::render_oled_faceset() {
   const int set = std::max(1, std::min(3, state_.faceset)) - 1;
   const char* current_id = emotion_ != nullptr ? emotion_->id : "";
+  int current_i = -1;
   for (int i = 0; i < 8; ++i) {
     const char* id = assets::kFaceSets[set][i];
     const bool current = std::strcmp(current_id, id) == 0;
-    draw_face_thumb(kThumbPos[i][0], kThumbPos[i][1], id, current);
-    if (state_.octant == i && !joystick_centered_) {
-      oled_fb_.draw_rect(kThumbPos[i][0], kThumbPos[i][1], kHudThumbW, kHudThumbH, true);
+    if (current) {
+      current_i = i;
     }
+    draw_face_thumb(kThumbPos[i][0], kThumbPos[i][1], id, current);
+  }
+  if (current_i >= 0) {
+    oled_fb_.draw_corners(kThumbPos[current_i][0], kThumbPos[current_i][1], kHudThumbW, kHudThumbH,
+                          kHudCornerLen, false);
+  }
+  if (!joystick_centered_ && state_.octant >= 0 && state_.octant <= 7 && state_.octant != current_i) {
+    oled_fb_.draw_corners(kThumbPos[state_.octant][0], kThumbPos[state_.octant][1], kHudThumbW,
+                          kHudThumbH, kHudCornerLen, true);
   }
   const int line_x = state_.pad.x / 2;
   const int line_y = 16 + static_cast<int>(state_.pad.y * 48 / 255);

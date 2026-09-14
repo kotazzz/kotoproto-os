@@ -30,6 +30,7 @@ inline constexpr int kMouthY0 = 16;
 inline constexpr int kMouthH = 16;
 inline constexpr int kHudThumbW = 42;
 inline constexpr int kHudThumbH = 16;
+inline constexpr int kHudCornerLen = 3;
 
 inline constexpr int kBoopTriggerCount = 4;
 inline constexpr int kBoopTriggersMax = 6;

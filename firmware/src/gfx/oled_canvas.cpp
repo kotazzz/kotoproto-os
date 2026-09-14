@@ -82,6 +82,20 @@ void OledCanvas::draw_rect(int x, int y, int w, int h, bool on) {
   draw_vline(x + w - 1, y, h, on);
 }
 
+void OledCanvas::draw_corners(int x, int y, int w, int h, int len, bool on) {
+  if (w <= 0 || h <= 0 || len <= 0) {
+    return;
+  }
+  draw_hline(x, y, len, on);
+  draw_vline(x, y, len, on);
+  draw_hline(x + w - len, y, len, on);
+  draw_vline(x + w - 1, y, len, on);
+  draw_hline(x, y + h - 1, len, on);
+  draw_vline(x, y + h - len, len, on);
+  draw_hline(x + w - len, y + h - 1, len, on);
+  draw_vline(x + w - 1, y + h - len, len, on);
+}
+
 void OledCanvas::draw_line(int x0, int y0, int x1, int y1, bool on) {
   int dx = std::abs(x1 - x0);
   int sx = x0 < x1 ? 1 : -1;
