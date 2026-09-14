@@ -14,8 +14,9 @@ inline constexpr int kOledH = 64;
 // P3 left half-face. Firmware draws this 64×32 half only; the atlas UI mirrors
 // it in CSS. One RGB sprite is the whole face. Runtime overlays clip these
 // regions after blit: blink paints the left eye only, microphone/snarl stretch
-// the mouth. Snarl follows mouth_enabled. Gyro nudge always translates the
-// full framebuffer (yaw is stored, not used).
+// the mouth. The default Blink face transition also wipes only that eye; mouth
+// and nose swap immediately. Snarl follows mouth_enabled. Gyro nudge always
+// translates the full framebuffer (yaw is stored, not used).
 inline constexpr int kFaceW = 64;
 inline constexpr int kFaceH = 32;
 inline constexpr int kEyeLX = 0;

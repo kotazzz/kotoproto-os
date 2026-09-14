@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "koto/config.hpp"
+
 namespace koto {
 namespace face {
 namespace {
@@ -57,6 +59,14 @@ void blit(gfx::Framebuffer& dst, const Color* src, int w, int h, int ox, int oy)
       if (lit(c)) {
         dst.set_pixel(x + ox, y + oy, c);
       }
+    }
+  }
+}
+
+void copy_rect(gfx::Framebuffer& dst, const Color* src, int w, int h, int x0, int y0, int rw, int rh) {
+  for (int y = 0; y < rh; ++y) {
+    for (int x = 0; x < rw; ++x) {
+      dst.set_pixel(x0 + x, y0 + y, sample(src, w, h, x0 + x, y0 + y));
     }
   }
 }
@@ -156,10 +166,15 @@ void apply_transition(gfx::Framebuffer& dst, const Color* from, const Color* to,
       break;
 
     case TransitionKind::Blink: {
+      // New mouth and nose stay visible; the lid wipe is the left eye only.
+      blit(dst, to, width, height, 0, 0);
       const float cover = t < 0.5f ? t * 2.0f : (1.0f - t) * 2.0f;
-      blit(dst, t < 0.5f ? from : to, width, height, 0, 0);
-      const int rows = static_cast<int>(cover * static_cast<float>(height) * 0.55f);
-      dst.fill_rect(0, 0, width, rows, Color::black());
+      const Color* eye_src = t < 0.5f ? from : to;
+      copy_rect(dst, eye_src, width, height, kEyeLX, kEyeY0, kEyeW, kEyeH);
+      const int rows = std::min(kEyeH, static_cast<int>(cover * static_cast<float>(kEyeH) + 0.5f));
+      if (rows > 0) {
+        dst.fill_rect(kEyeLX, kEyeY0, kEyeW, rows, Color::black());
+      }
       break;
     }
 

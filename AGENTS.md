@@ -73,6 +73,7 @@ One object per face in `assets/emotions.json`. Codegen emits `Emotion(id, Kind, 
 - **Effects** (hardcoded hooks): `none`, `snarl`, `dizzy`, `wink`, `randomize`
 - **Randomize** (special): every `kRandomizePeriodMs` (100) picks a classic frame with ≤70% lit pixels; blink/mouth overlays stay off
 - **Snarl** stretches the mouth band only when `mouth_enabled`
+- Default **Blink** face transition: new mouth and nose appear immediately; the lid wipe covers the left eye `32×16` only
 - Face pixels are RGB; no runtime tint. Accent color is for the LED ring.
 - Mouth flip is baked into PNG, not a runtime flag
 - HUD thumbs are generated 42×16 1bpp from the first RGB frame
@@ -96,6 +97,8 @@ The PNG is a finished 64×32 RGB picture, not layered eye/mouth files. After `bl
 2. **Blink** — `fill_rect` black over the left eye `32×16` at `(0,0)` from the top, then a lid line in `accent`. Nose `16×16` at `(48,0)` is never painted.
 
 Special faces skip both. Wink uses its own eye effect and disables the shared blink.
+
+The default **Blink** emotion transition uses the same eye rectangle: mouth and nose come from the new frame immediately; only the left eye gets the closing/opening lid wipe.
 
 ## Controls (parity notes)
 
