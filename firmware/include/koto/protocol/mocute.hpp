@@ -53,6 +53,7 @@ struct DeviceState {
   int faceset = 1;
   int octant = 2;
   int setting_index = 255;
+  int game_index = 0;
   bool blinking = false;
   bool boop = false;
   bool dizzy = false;
@@ -63,9 +64,15 @@ struct DeviceState {
   bool led_enabled = true;
   bool hid_connected = true;
   std::uint8_t boop_sensitivity = 127;
+  std::uint8_t mouth_sensitivity = 192;
   std::uint8_t fan_speed = 255;
   std::uint8_t rare_chance = 25;
   int snake_score = 0;
+  int dino_score = 0;
+  int flappy_score = 0;
+  int tetris_score = 0;
+  int dvd_hits = 0;
+  int bsod_bars = 0;
   int boop_count = 0;
   int fps = 0;
   std::uint32_t heap = 0;

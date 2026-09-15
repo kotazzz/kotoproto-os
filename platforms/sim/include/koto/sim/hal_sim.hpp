@@ -101,11 +101,13 @@ class Store final : public hal::IStore {
 
 class Sensors final : public hal::ISensors {
  public:
-  float microphone() const override { return mic_; }
+  float microphone() const override;
+  int copy_microphone_pcm(float* out, int max) const override;
   hal::GyroSample gyro() const override { return gyro_; }
   float proximity() const override { return proximity_; }
 
-  void set_microphone(float value) { mic_ = value; }
+  void set_microphone(float value);
+  void set_microphone_pcm(const float* samples, int count);
   void set_gyro(float pitch, float roll, float yaw) {
     gyro_.pitch_deg = pitch;
     gyro_.roll_deg = roll;
@@ -114,9 +116,14 @@ class Sensors final : public hal::ISensors {
   void set_proximity(float value) { proximity_ = value; }
 
  private:
+  void fill_sine();
+  static float level_of(const float* samples, int count);
+
   float mic_ = 0;
+  float amp_ = 0;
   float proximity_ = 0;
   hal::GyroSample gyro_{};
+  std::vector<float> pcm_;
 };
 
 class Fan final : public hal::IFan {

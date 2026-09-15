@@ -54,7 +54,7 @@ void Framebuffer::draw_hline(int x, int y, int w, Color color) {
 }
 
 void Framebuffer::blit_rgb(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* rgb,
-                            std::size_t size) {
+                            std::size_t size, bool skip_black) {
   if (rgb == nullptr || bitmap_w <= 0 || bitmap_h <= 0) {
     return;
   }
@@ -65,6 +65,9 @@ void Framebuffer::blit_rgb(int x, int y, int bitmap_w, int bitmap_h, const std::
   for (int row = 0; row < bitmap_h; ++row) {
     for (int col = 0; col < bitmap_w; ++col) {
       const std::size_t i = static_cast<std::size_t>((row * bitmap_w + col) * 3);
+      if (skip_black && (rgb[i] | rgb[i + 1] | rgb[i + 2]) == 0) {
+        continue;
+      }
       set_pixel(x + col, y + row, Color{rgb[i], rgb[i + 1], rgb[i + 2]});
     }
   }
@@ -145,6 +148,56 @@ void Framebuffer::translate_rect(int x, int y, int w, int h, int dx, int dy) {
   for (int row = 0; row < h; ++row) {
     for (int col = 0; col < w; ++col) {
       set_pixel(x + col + dx, y + row + dy, tmp[static_cast<std::size_t>(row * w + col)]);
+    }
+  }
+}
+
+void Framebuffer::hue_cycle_lit(std::uint8_t phase, std::uint16_t mix) {
+  if (mix == 0 || width_ <= 0 || height_ <= 0) {
+    return;
+  }
+  if (mix > 256) {
+    mix = 256;
+  }
+  Color* px = pixels_.data();
+  const int w = width_;
+  const int h = height_;
+  const std::uint16_t inv = static_cast<std::uint16_t>(256 - mix);
+  Color wheel[64];
+  const int cols = w < 64 ? w : 64;
+  for (int x = 0; x < cols; ++x) {
+    wheel[x] = hue_rgb(static_cast<std::uint8_t>(static_cast<std::uint32_t>(x) * 256u /
+                                                static_cast<std::uint32_t>(w) +
+                                                phase));
+  }
+  for (int y = 0; y < h; ++y) {
+    Color* row = px + y * w;
+    for (int x = 0; x < w; ++x) {
+      Color& c = row[x];
+      const std::uint8_t v = c.r > c.g ? (c.r > c.b ? c.r : c.b) : (c.g > c.b ? c.g : c.b);
+      if (v == 0) {
+        continue;
+      }
+      const Color rain = x < cols ? wheel[x]
+                                   : hue_rgb(static_cast<std::uint8_t>(
+                                         static_cast<std::uint32_t>(x) * 256u /
+                                             static_cast<std::uint32_t>(w) +
+                                         phase));
+      const std::uint8_t tr =
+          static_cast<std::uint8_t>((static_cast<std::uint16_t>(rain.r) * v) / 255);
+      const std::uint8_t tg =
+          static_cast<std::uint8_t>((static_cast<std::uint16_t>(rain.g) * v) / 255);
+      const std::uint8_t tb =
+          static_cast<std::uint8_t>((static_cast<std::uint16_t>(rain.b) * v) / 255);
+      c.r = static_cast<std::uint8_t>((static_cast<std::uint16_t>(c.r) * inv +
+                                       static_cast<std::uint16_t>(tr) * mix) >>
+                                      8);
+      c.g = static_cast<std::uint8_t>((static_cast<std::uint16_t>(c.g) * inv +
+                                       static_cast<std::uint16_t>(tg) * mix) >>
+                                      8);
+      c.b = static_cast<std::uint8_t>((static_cast<std::uint16_t>(c.b) * inv +
+                                       static_cast<std::uint16_t>(tb) * mix) >>
+                                      8);
     }
   }
 }

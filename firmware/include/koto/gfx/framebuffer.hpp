@@ -25,11 +25,13 @@ class Framebuffer {
   void fill_rect(int x, int y, int w, int h, Color color);
   void draw_rect(int x, int y, int w, int h, Color color);
   void draw_hline(int x, int y, int w, Color color);
-  void blit_rgb(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* rgb, std::size_t size);
+  void blit_rgb(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* rgb, std::size_t size,
+               bool skip_black = false);
   void expand_column_y(int x, int y0, int h, int amount);
   void rotate_square_cw(int x, int y, int size, int turns);
   void translate_rect(int x, int y, int w, int h, int dx, int dy);
   void glitch_rows(int y0, int h, int amplitude, std::uint32_t seed);
+  void hue_cycle_lit(std::uint8_t phase, std::uint16_t mix);
   int draw_char(int x, int y, char ch, Color color);
   int draw_text(int x, int y, std::string_view text, Color color);
 

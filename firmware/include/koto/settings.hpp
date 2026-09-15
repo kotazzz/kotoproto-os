@@ -24,7 +24,8 @@ struct SettingsBlob {
   std::uint8_t boop_sensitivity = 127;
   std::uint8_t rare_chance = 25;
   std::uint8_t fan_speed = 255;
-  std::uint8_t reserved[2] = {0, 0};
+  std::uint8_t mouth_sensitivity = 192;
+  std::uint8_t reserved[1] = {0};
   std::uint32_t checksum = 0;
 };
 

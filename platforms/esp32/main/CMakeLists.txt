@@ -3,7 +3,14 @@ idf_component_register(
     "main.cpp"
     "hal_esp32.cpp"
     "../../../firmware/src/app.cpp"
+    "../../../firmware/src/assets/badapple.cpp"
     "../../../firmware/src/assets/bitmaps.cpp"
+    "../../../firmware/src/assets/casino.cpp"
+    "../../../firmware/src/assets/dino.cpp"
+    "../../../firmware/src/assets/flappy.cpp"
+    "../../../firmware/src/assets/tetris.cpp"
+    "../../../firmware/src/assets/dvd.cpp"
+    "../../../firmware/src/assets/bsod.cpp"
     "../../../firmware/src/assets/emotions.cpp"
     "../../../firmware/src/face/transition.cpp"
     "../../../firmware/src/gfx/framebuffer.cpp"
@@ -13,6 +20,8 @@ idf_component_register(
   INCLUDE_DIRS
     "."
     "../../../firmware/include"
+  EMBED_FILES
+    "../../../assets/badapple.ba1p"
   REQUIRES
     nvs_flash
     bt

@@ -481,6 +481,10 @@ refresh();
 sendHid();
 
 const micEl = document.getElementById("mic");
+const micSimpleEl = document.getElementById("mic-simple");
+const micSensorEl = document.getElementById("mic-sensor");
+const spectrumEl = document.getElementById("spectrum");
+const spectrumCtx = spectrumEl.getContext("2d");
 const proxEl = document.getElementById("prox");
 const pitchEl = document.getElementById("pitch");
 const rollEl = document.getElementById("roll");
@@ -488,8 +492,13 @@ const yawEl = document.getElementById("yaw");
 const micVal = document.getElementById("mic-val");
 const proxVal = document.getElementById("prox-val");
 
+const MIC_PCM = 256;
+const MIC_LIVE_FFT = 2048;
+const MIC_LIVE_GAIN = 5;
+
 const sensors = {
   mic: 0,
+  pcmHex: "",
   prox: 0,
   pitch: 0,
   roll: 0,
@@ -497,25 +506,18 @@ const sensors = {
 };
 
 let snsBusy = false;
-let snsQueued = false;
+let snsQueued = null;
+let audioCtx = null;
+let analyser = null;
+let micSource = null;
+let micStream = null;
+let liveMicOn = false;
+const pcmScratch = new Float32Array(MIC_PCM);
+const liveScratch = new Float32Array(MIC_LIVE_FFT);
 
-function sensorBody(extra) {
-  const parts = [
-    `mic=${sensors.mic.toFixed(3)}`,
-    `prox=${sensors.prox.toFixed(3)}`,
-    `pitch=${sensors.pitch.toFixed(1)}`,
-    `roll=${sensors.roll.toFixed(1)}`,
-    `yaw=${sensors.yaw.toFixed(1)}`,
-  ];
-  if (extra) {
-    parts.push(extra);
-  }
-  return parts.join("&");
-}
-
-async function sendSensors(extra) {
+async function sendSensors(body) {
   if (snsBusy) {
-    snsQueued = extra || true;
+    snsQueued = body;
     return;
   }
   snsBusy = true;
@@ -523,14 +525,14 @@ async function sendSensors(extra) {
     await fetch("/api/sensors", {
       method: "POST",
       headers: { "Content-Type": "text/plain; charset=utf-8" },
-      body: sensorBody(typeof extra === "string" ? extra : ""),
+      body,
     });
   } finally {
     snsBusy = false;
-    if (snsQueued) {
+    if (snsQueued != null) {
       const queued = snsQueued;
-      snsQueued = false;
-      sendSensors(queued === true ? "" : queued);
+      snsQueued = null;
+      sendSensors(queued);
     }
   }
 }
@@ -548,7 +550,6 @@ function syncRangeFill(el) {
 }
 
 function readSensorInputs() {
-  sensors.mic = Number(micEl.value) / 100;
   sensors.prox = Number(proxEl.value) / 100;
   sensors.pitch = Number(pitchEl.value);
   sensors.roll = Number(rollEl.value);
@@ -557,27 +558,217 @@ function readSensorInputs() {
   syncSensorLabels();
 }
 
-[micEl, proxEl, pitchEl, rollEl, yawEl].forEach((el) => {
+function pcmLevel(pcm) {
+  let acc = 0;
+  for (let i = 0; i < pcm.length; i += 1) {
+    acc += pcm[i] * pcm[i];
+  }
+  return Math.min(1, Math.sqrt(acc / pcm.length) * Math.SQRT2);
+}
+
+function fillSine(amp, out) {
+  if (amp <= 0) {
+    out.fill(0);
+    return;
+  }
+  // Exactly one cycle in the window so RMS equals the slider (phase-invariant).
+  const step = (2 * Math.PI) / out.length;
+  for (let i = 0; i < out.length; i += 1) {
+    out[i] = amp * Math.sin(i * step);
+  }
+}
+
+function encodePcmHex(pcm) {
+  let hex = "";
+  for (let i = 0; i < pcm.length; i += 1) {
+    const v = Math.max(-1, Math.min(1, pcm[i]));
+    const s = (Math.round(v * 127) + 256) % 256;
+    hex += s.toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
+function fftMags(pcm) {
+  const n = pcm.length;
+  const bars = 32;
+  const mags = new Float32Array(bars);
+  for (let b = 0; b < bars; b += 1) {
+    const k = b + 1;
+    const w = (2 * Math.PI * k) / n;
+    let re = 0;
+    let im = 0;
+    for (let t = 0; t < n; t += 1) {
+      re += pcm[t] * Math.cos(w * t);
+      im += pcm[t] * Math.sin(w * t);
+    }
+    mags[b] = Math.hypot(re, im) * (2 / n);
+  }
+  return mags;
+}
+
+function drawSpectrum(pcm, level) {
+  const w = spectrumEl.width;
+  const h = spectrumEl.height;
+  spectrumCtx.fillStyle = "#05060a";
+  spectrumCtx.fillRect(0, 0, w, h);
+  spectrumCtx.fillStyle = "#2a3144";
+  spectrumCtx.fillRect(0, h - 2, w, 2);
+  if (level < 0.02) {
+    return;
+  }
+  const mags = fftMags(pcm);
+  const bars = mags.length;
+  const gap = 2;
+  const barW = (w - (bars - 1) * gap) / bars;
+  let peak = 0.08;
+  for (let i = 0; i < bars; i += 1) {
+    if (mags[i] > peak) {
+      peak = mags[i];
+    }
+  }
+  for (let i = 0; i < bars; i += 1) {
+    const nrm = Math.min(1, mags[i] / peak);
+    const bh = Math.max(mags[i] > 0.02 ? 3 : 1, Math.round(nrm * (h - 6)));
+    const x = i * (barW + gap);
+    spectrumCtx.fillStyle = i % 4 === 0 ? "#ff8a5c" : "#4ad6ff";
+    spectrumCtx.fillRect(x, h - 3 - bh, barW, bh);
+  }
+}
+
+function fillCurrentPcm(out) {
+  if (!micSimpleEl.checked && analyser) {
+    analyser.getFloatTimeDomainData(liveScratch);
+    const step = liveScratch.length / out.length;
+    for (let i = 0; i < out.length; i += 1) {
+      const sample = liveScratch[Math.floor(i * step)] * MIC_LIVE_GAIN;
+      out[i] = Math.max(-1, Math.min(1, sample));
+    }
+    return;
+  }
+  fillSine(Number(micEl.value) / 100, out);
+}
+
+function pushSensors(extra) {
+  readSensorInputs();
+  fillCurrentPcm(pcmScratch);
+  const level = pcmLevel(pcmScratch);
+  sensors.pcmHex = encodePcmHex(pcmScratch);
+  sensors.mic = level;
+  drawSpectrum(pcmScratch, level);
+  syncSensorLabels();
+  const parts = [
+    `mic=${sensors.mic.toFixed(3)}`,
+    `pcm=${sensors.pcmHex}`,
+    `prox=${sensors.prox.toFixed(3)}`,
+    `pitch=${sensors.pitch.toFixed(1)}`,
+    `roll=${sensors.roll.toFixed(1)}`,
+    `yaw=${sensors.yaw.toFixed(1)}`,
+  ];
+  if (extra) {
+    parts.push(extra);
+  }
+  sendSensors(parts.join("&"));
+}
+
+function pushMic() {
+  pushSensors();
+}
+
+function pushGyro() {
+  pushSensors();
+}
+
+function pushProx() {
+  pushSensors();
+}
+
+async function startLiveMic() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) {
+    throw new Error("Web Audio is unavailable");
+  }
+  if (!audioCtx) {
+    audioCtx = new AudioCtx();
+  }
+  if (audioCtx.state === "suspended") {
+    await audioCtx.resume();
+  }
+  micStream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+  });
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = MIC_LIVE_FFT;
+  analyser.smoothingTimeConstant = 0.2;
+  micSource = audioCtx.createMediaStreamSource(micStream);
+  micSource.connect(analyser);
+  liveMicOn = true;
+}
+
+function stopLiveMic() {
+  liveMicOn = false;
+  if (micSource) {
+    micSource.disconnect();
+    micSource = null;
+  }
+  if (micStream) {
+    micStream.getTracks().forEach((track) => track.stop());
+    micStream = null;
+  }
+  analyser = null;
+}
+
+function setSimpleMode(on) {
+  micEl.disabled = !on;
+  micSensorEl.classList.toggle("live", !on);
+}
+
+[pitchEl, rollEl, yawEl].forEach((el) => {
   el.addEventListener("input", () => {
-    readSensorInputs();
-    sendSensors();
+    pushGyro();
   });
 });
+proxEl.addEventListener("input", () => {
+  pushProx();
+});
+micEl.addEventListener("input", () => {
+  pushMic();
+});
+micSimpleEl.addEventListener("change", async () => {
+  const simple = micSimpleEl.checked;
+  if (simple) {
+    stopLiveMic();
+    setSimpleMode(true);
+    pushMic();
+    return;
+  }
+  try {
+    await startLiveMic();
+    setSimpleMode(false);
+    pushMic();
+  } catch (err) {
+    liveMicOn = false;
+    micSimpleEl.checked = true;
+    setSimpleMode(true);
+    stopLiveMic();
+    pushMic();
+  }
+});
+setSimpleMode(true);
 readSensorInputs();
+pushSensors();
+setInterval(pushMic, 50);
 
 const boopBtn = document.getElementById("boop");
 boopBtn.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   boopBtn.classList.add("held");
   proxEl.value = "100";
-  readSensorInputs();
-  sendSensors();
+  pushProx();
 });
 const releaseBoop = () => {
   boopBtn.classList.remove("held");
   proxEl.value = "0";
-  readSensorInputs();
-  sendSensors();
+  pushProx();
 };
 boopBtn.addEventListener("pointerup", releaseBoop);
 boopBtn.addEventListener("pointerleave", () => {
@@ -587,8 +778,7 @@ boopBtn.addEventListener("pointerleave", () => {
 });
 
 document.getElementById("calibrate").addEventListener("click", () => {
-  readSensorInputs();
-  sendSensors("calibrate=1");
+  pushSensors("calibrate=1");
 });
 
 let shaking = false;
@@ -600,8 +790,7 @@ document.getElementById("shake").addEventListener("click", () => {
     window.clearInterval(shakeTimer);
     pitchEl.value = "0";
     rollEl.value = "0";
-    readSensorInputs();
-    sendSensors();
+    pushGyro();
     return;
   }
   let t = 0;
@@ -609,8 +798,7 @@ document.getElementById("shake").addEventListener("click", () => {
     t += 1;
     pitchEl.value = String(Math.round(Math.sin(t / 2) * 48));
     rollEl.value = String(Math.round(Math.cos(t / 3) * 42));
-    readSensorInputs();
-    sendSensors();
+    pushGyro();
   }, 80);
 });
 

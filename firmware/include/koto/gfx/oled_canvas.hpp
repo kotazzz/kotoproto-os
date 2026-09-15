@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <vector>
@@ -28,6 +29,7 @@ class OledCanvas {
   void draw_line(int x0, int y0, int x1, int y1, bool on);
   void blit_bitmap_1bpp(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* data,
                         std::size_t size, int dst_w, int dst_h, bool on = true, bool invert = false);
+  void blit_packed_shift(const std::uint8_t* src, int dx);
   int draw_char(int x, int y, char ch, bool on, int scale = 1);
   int draw_text(int x, int y, std::string_view text, bool on, int scale = 1);
 

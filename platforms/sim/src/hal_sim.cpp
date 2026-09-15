@@ -1,11 +1,13 @@
 #include "koto/sim/hal_sim.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <fstream>
 #include <utility>
 #include <vector>
 
+#include "koto/config.hpp"
 #include "koto/protocol/mocute.hpp"
 
 namespace koto {
@@ -131,6 +133,54 @@ bool Store::save(const std::uint8_t* data, std::size_t size) {
 
 std::uint32_t Store::free_heap() const {
   return 8u * 1024u * 1024u;
+}
+
+float Sensors::level_of(const float* samples, int count) {
+  if (samples == nullptr || count <= 0) {
+    return 0;
+  }
+  float acc = 0;
+  for (int i = 0; i < count; ++i) {
+    acc += samples[i] * samples[i];
+  }
+  return std::min(1.0f, std::sqrt(acc / static_cast<float>(count)) * 1.41421356f);
+}
+
+void Sensors::fill_sine() {
+  pcm_.assign(static_cast<std::size_t>(kMicPcmSize), 0.0f);
+  const float step = 6.2831853f / static_cast<float>(kMicPcmSize);
+  for (int i = 0; i < kMicPcmSize; ++i) {
+    pcm_[static_cast<std::size_t>(i)] = amp_ * std::sin(step * static_cast<float>(i));
+  }
+  mic_ = level_of(pcm_.data(), kMicPcmSize);
+}
+
+void Sensors::set_microphone(float value) {
+  amp_ = std::clamp(value, 0.0f, 1.0f);
+  fill_sine();
+}
+
+void Sensors::set_microphone_pcm(const float* samples, int count) {
+  if (samples == nullptr || count <= 0) {
+    pcm_.clear();
+    mic_ = 0;
+    return;
+  }
+  pcm_.assign(samples, samples + count);
+  mic_ = level_of(pcm_.data(), static_cast<int>(pcm_.size()));
+}
+
+float Sensors::microphone() const {
+  return mic_;
+}
+
+int Sensors::copy_microphone_pcm(float* out, int max) const {
+  if (out == nullptr || max <= 0 || pcm_.empty()) {
+    return 0;
+  }
+  const int n = std::min(max, static_cast<int>(pcm_.size()));
+  std::copy(pcm_.begin(), pcm_.begin() + n, out);
+  return n;
 }
 
 }  // namespace sim

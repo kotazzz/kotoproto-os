@@ -166,11 +166,15 @@ void apply_transition(gfx::Framebuffer& dst, const Color* from, const Color* to,
       break;
 
     case TransitionKind::Blink: {
-      // New mouth and nose stay visible; the lid wipe is the left eye only.
+      // New face (eye, nose, mouth) is already on screen; then a lid wipe
+      // plays over the left eye only. The eye is never kept from `from`.
       blit(dst, to, width, height, 0, 0);
-      const float cover = t < 0.5f ? t * 2.0f : (1.0f - t) * 2.0f;
-      const Color* eye_src = t < 0.5f ? from : to;
-      copy_rect(dst, eye_src, width, height, kEyeLX, kEyeY0, kEyeW, kEyeH);
+      constexpr float kHold = 0.18f;
+      if (t <= kHold) {
+        break;
+      }
+      const float u = (t - kHold) / (1.0f - kHold);
+      const float cover = u < 0.5f ? u * 2.0f : (1.0f - u) * 2.0f;
       const int rows = std::min(kEyeH, static_cast<int>(cover * static_cast<float>(kEyeH) + 0.5f));
       if (rows > 0) {
         dst.fill_rect(kEyeLX, kEyeY0, kEyeW, rows, Color::black());

@@ -47,6 +47,9 @@ std::string mime_of(const std::string& path) {
   if (path.size() >= 5 && path.compare(path.size() - 5, 5, ".json") == 0) {
     return "application/json; charset=utf-8";
   }
+  if (path.size() >= 4 && path.compare(path.size() - 4, 4, ".png") == 0) {
+    return "image/png";
+  }
   return "application/octet-stream";
 }
 
@@ -132,6 +135,7 @@ void send_response(socket_t fd, const HttpResponse& res) {
   out << "HTTP/1.1 " << res.status << " OK\r\n"
       << "Content-Type: " << res.content_type << "\r\n"
       << "Content-Length: " << res.body.size() << "\r\n"
+      << "Cache-Control: no-store\r\n"
       << "Access-Control-Allow-Origin: *\r\n"
       << "Connection: close\r\n\r\n"
       << res.body;

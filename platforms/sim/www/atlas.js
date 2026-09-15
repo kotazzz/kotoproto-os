@@ -120,7 +120,7 @@ document.getElementById("blink").addEventListener("click", async () => {
 
 function micBody(prox) {
   const mic = Number(micEl.value) / 100;
-  return `mic=${mic.toFixed(3)}&prox=${prox}&pitch=0&roll=0&yaw=0`;
+  return `mic=${mic.toFixed(3)}&prox=${prox}`;
 }
 
 const boopBtn = document.getElementById("boop");

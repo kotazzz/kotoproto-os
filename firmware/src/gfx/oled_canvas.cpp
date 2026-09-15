@@ -1,6 +1,7 @@
 #include "koto/gfx/oled_canvas.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 
 #include "koto/gfx/font5x7.hpp"
@@ -137,6 +138,25 @@ void OledCanvas::blit_bitmap_1bpp(int x, int y, int bitmap_w, int bitmap_h, cons
       const bool lit = (data[index] & bit) != 0;
       if (lit != invert) {
         set_pixel(x + col, y + row, on);
+      }
+    }
+  }
+}
+
+void OledCanvas::blit_packed_shift(const std::uint8_t* src, int dx) {
+  if (src == nullptr) {
+    return;
+  }
+  for (int y = 0; y < height_; ++y) {
+    for (int x = 0; x < width_; ++x) {
+      const int sx = x - dx;
+      if (sx < 0 || sx >= width_) {
+        continue;
+      }
+      const int index = y * bytes_per_row_ + (sx / 8);
+      const std::uint8_t mask = static_cast<std::uint8_t>(0x80 >> (sx % 8));
+      if ((src[static_cast<std::size_t>(index)] & mask) != 0) {
+        set_pixel(x, y, true);
       }
     }
   }

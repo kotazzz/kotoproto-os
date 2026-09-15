@@ -69,8 +69,15 @@
             <canvas id="ring" width="180" height="180" aria-label="RGB LED ring"></canvas>
           </div>
           <div class="sensors">
-            <div class="sensor">
-              <label for="mic">Микрофон <b id="mic-val">0%</b></label>
+            <div class="sensor mic-sensor" id="mic-sensor">
+              <div class="sensor-head">
+                <label for="mic">Микрофон <b id="mic-val">0%</b></label>
+              </div>
+              <canvas id="spectrum" width="280" height="64" aria-label="Спектрометр"></canvas>
+              <label class="mic-mode" title="Выкл: живой микрофон. Вкл: синус с ползунка.">
+                <input id="mic-simple" type="checkbox" checked>
+                Упрощенный режим
+              </label>
               <input id="mic" type="range" min="0" max="100" value="0">
             </div>
             <div class="sensor gyro">

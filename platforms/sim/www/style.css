@@ -220,7 +220,7 @@ dd {
 
 .sensors {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr;
+  grid-template-columns: 1.45fr 1.1fr 1fr;
   gap: 12px;
   min-width: 0;
   min-height: 0;
@@ -258,6 +258,44 @@ dd {
   font-family: ui-monospace, Consolas, monospace;
   font-weight: 600;
   font-size: 14px;
+}
+
+.mic-sensor {
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+#spectrum {
+  display: block;
+  width: 100%;
+  height: 64px;
+  background: #05060a;
+  border: 1px solid #2a3144;
+  border-radius: 8px;
+}
+
+.mic-mode {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.mic-mode input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.mic-sensor.live #mic {
+  display: none;
 }
 
 input[type="range"] {
@@ -627,6 +665,10 @@ body.atlas-page {
   height: 100dvh;
 }
 
+.atlas-page main.atlas > .panel:first-child {
+  overflow: auto;
+}
+
 .atlas-stage {
   grid-column: 2;
   grid-row: 1 / span 2;
@@ -727,6 +769,31 @@ body.atlas-page {
   font-size: 13px;
   color: var(--muted);
   margin: 0;
+}
+
+.atlas-sheets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.atlas-sheets h3 {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.atlas-sheet {
+  display: block;
+  width: auto;
+  max-width: none;
+  image-rendering: pixelated;
+  background: #ff00ff;
+  border: 1px solid var(--line);
 }
 
 @media (max-width: 1100px) {

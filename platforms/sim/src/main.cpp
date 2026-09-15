@@ -41,6 +41,23 @@ std::string query_value(const std::string& query, const std::string& key, const 
   return fallback;
 }
 
+bool query_has(const std::string& query, const std::string& key) {
+  std::string prefix = key + "=";
+  std::size_t pos = 0;
+  while (pos < query.size()) {
+    const std::size_t amp = query.find('&', pos);
+    const std::string part = query.substr(pos, amp == std::string::npos ? std::string::npos : amp - pos);
+    if (part.compare(0, prefix.size(), prefix) == 0) {
+      return true;
+    }
+    if (amp == std::string::npos) {
+      break;
+    }
+    pos = amp + 1;
+  }
+  return false;
+}
+
 std::string find_www_dir(const char* argv0) {
   namespace fs = std::filesystem;
   std::vector<fs::path> candidates;
@@ -92,6 +109,21 @@ std::vector<std::uint8_t> parse_hex_bytes(const std::string& raw) {
       out.push_back(static_cast<std::uint8_t>((hi << 4) | nibble));
       hi = -1;
     }
+  }
+  return out;
+}
+
+std::vector<float> parse_pcm(const std::string& src) {
+  const std::string hex = query_value(src, "pcm", "");
+  if (hex.empty()) {
+    return {};
+  }
+  const std::vector<std::uint8_t> bytes = parse_hex_bytes(hex);
+  std::vector<float> out;
+  out.reserve(bytes.size());
+  for (std::uint8_t b : bytes) {
+    const float sample = static_cast<float>(static_cast<std::int8_t>(b)) / 127.0f;
+    out.push_back(std::clamp(sample, -1.0f, 1.0f));
   }
   return out;
 }
@@ -196,9 +228,15 @@ int main(int argc, char** argv) {
          << "\"auto_blink\":" << (state.auto_blink ? "true" : "false") << ","
          << "\"mouth\":" << (state.mouth_enabled ? "true" : "false") << ","
          << "\"boop_enabled\":" << (state.boop_enabled ? "true" : "false") << ","
+         << "\"mouth_sensitivity\":" << static_cast<int>(state.mouth_sensitivity) << ","
          << "\"fan\":" << static_cast<int>(state.fan_speed) << ","
          << "\"rare_chance\":" << static_cast<int>(state.rare_chance) << ","
          << "\"snake_score\":" << state.snake_score << ","
+         << "\"dino_score\":" << state.dino_score << ","
+         << "\"flappy_score\":" << state.flappy_score << ","
+         << "\"tetris_score\":" << state.tetris_score << ","
+         << "\"dvd_hits\":" << state.dvd_hits << ","
+         << "\"bsod_bars\":" << state.bsod_bars << ","
          << "\"transition\":\"" << koto::sim::json_escape(state.transition) << "\","
          << "\"sensors\":{"
          << "\"mic\":" << state.mic << ","
@@ -324,6 +362,7 @@ int main(int argc, char** argv) {
     const std::string src = req.body.empty() ? req.query : req.body;
     try {
       const float mic = std::clamp(parse_form_float(src, "mic", 0.0f), 0.0f, 1.0f);
+      const std::vector<float> pcm = parse_pcm(src);
       const float prox = std::clamp(parse_form_float(src, "prox", 0.0f), 0.0f, 1.0f);
       const float pitch = parse_form_float(src, "pitch", 0.0f);
       const float roll = parse_form_float(src, "roll", 0.0f);
@@ -331,21 +370,52 @@ int main(int argc, char** argv) {
       const bool calibrate = query_value(src, "calibrate", "0") == "1";
       {
         std::lock_guard<std::mutex> lock(mu);
-        sensors.set_microphone(mic);
-        sensors.set_proximity(prox);
-        sensors.set_gyro(pitch, roll, yaw);
+        if (query_has(src, "pcm")) {
+          if (!pcm.empty()) {
+            sensors.set_microphone_pcm(pcm.data(), static_cast<int>(pcm.size()));
+            if (sensors.microphone() < 0.02f && query_has(src, "mic") && mic > 0.02f) {
+              sensors.set_microphone(mic);
+            }
+          } else if (query_has(src, "mic")) {
+            sensors.set_microphone(mic);
+          } else {
+            sensors.set_microphone(0);
+          }
+        } else if (query_has(src, "mic")) {
+          sensors.set_microphone(mic);
+        }
+        if (query_has(src, "prox")) {
+          sensors.set_proximity(prox);
+        }
+        if (query_has(src, "pitch") || query_has(src, "roll") || query_has(src, "yaw")) {
+          koto::hal::GyroSample gyro = sensors.gyro();
+          if (query_has(src, "pitch")) {
+            gyro.pitch_deg = pitch;
+          }
+          if (query_has(src, "roll")) {
+            gyro.roll_deg = roll;
+          }
+          if (query_has(src, "yaw")) {
+            gyro.yaw_deg = yaw;
+          }
+          sensors.set_gyro(gyro.pitch_deg, gyro.roll_deg, gyro.yaw_deg);
+        }
         if (calibrate) {
           app.calibrate_boop();
           hid.log_line("SNS calibrate boop");
         }
+        app.poll_sensors();
         if (!playing.load()) {
           app.tick();
         }
       }
+      std::ostringstream json;
+      json << "{\"ok\":true,\"mic\":" << sensors.microphone()
+           << ",\"pitch\":" << sensors.gyro().pitch_deg << "}";
+      return koto::sim::HttpResponse{200, "application/json; charset=utf-8", json.str()};
     } catch (const std::exception&) {
       return koto::sim::HttpResponse{400, "application/json; charset=utf-8", "{\"ok\":false}"};
     }
-    return koto::sim::HttpResponse{200, "application/json; charset=utf-8", "{\"ok\":true}"};
   });
 
   server.post("/api/play", [&](const koto::sim::HttpRequest&) {
