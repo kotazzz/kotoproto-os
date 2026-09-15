@@ -1,0 +1,266 @@
+"""Casino reel symbols: authoring sheet + firmware RGB tables.
+
+    python tools/casino_atlas.py
+
+PNG is the source after the first run. Missing PNG is created with the
+six 16×16 reel tiles (black ink on purple, black labels). Pack embeds
+the tiles into firmware/src/assets/casino.cpp.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pack_assets import (
+    ATLAS_INK,
+    ATLAS_PURPLE,
+    atlas_fill,
+    atlas_set,
+    atlas_text,
+    cpp_bytes,
+    read_png_rgb,
+    recolor_labels_black,
+    write_png_rgb,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / "assets"
+ATLAS_PNG = ASSETS / "casino_sprites.png"
+ATLAS_JSON = ASSETS / "casino_sprites.json"
+GEN_CPP = ROOT / "firmware" / "src" / "assets" / "casino.cpp"
+
+SIZE = 16
+GAP = 1
+LABEL_W = 48
+TILE_X = LABEL_W + GAP
+TILES = (
+    ("seven", "SEVEN"),
+    ("cherry", "CHERRY"),
+    ("coin", "COIN"),
+    ("bell", "BELL"),
+    ("star", "STAR"),
+    ("cup", "CUP"),
+)
+
+
+def ident(name: str) -> str:
+    return "kCasino_" + re.sub(r"[^A-Za-z0-9_]", "_", name)
+
+
+def set_px(buf: bytearray, x: int, y: int, color: tuple[int, int, int]) -> None:
+    if x < 0 or y < 0 or x >= SIZE or y >= SIZE:
+        return
+    i = (y * SIZE + x) * 3
+    buf[i], buf[i + 1], buf[i + 2] = color
+
+
+def fill_rect(
+    buf: bytearray, x: int, y: int, w: int, h: int, color: tuple[int, int, int]
+) -> None:
+    for row in range(h):
+        for col in range(w):
+            set_px(buf, x + col, y + row, color)
+
+
+def disc(buf: bytearray, cx: int, cy: int, r: int, color: tuple[int, int, int]) -> None:
+    rr = r * r
+    for dy in range(-r, r + 1):
+        for dx in range(-r, r + 1):
+            if dx * dx + dy * dy <= rr:
+                set_px(buf, cx + dx, cy + dy, color)
+
+
+def paint_seven(buf: bytearray) -> None:
+    ink = (255, 50, 50)
+    fill_rect(buf, 3, 2, 10, 2, ink)
+    fill_rect(buf, 10, 3, 3, 9, ink)
+    fill_rect(buf, 3, 11, 10, 3, ink)
+
+
+def paint_cherry(buf: bytearray) -> None:
+    fill_rect(buf, 7, 1, 5, 3, (40, 180, 60))
+    fill_rect(buf, 8, 3, 2, 3, (40, 140, 50))
+    disc(buf, 6, 10, 4, (220, 30, 50))
+    disc(buf, 11, 11, 4, (255, 70, 70))
+
+
+def paint_coin(buf: bytearray) -> None:
+    ink = (255, 210, 40)
+    disc(buf, 8, 8, 6, ink)
+    disc(buf, 8, 8, 4, (255, 240, 90))
+    fill_rect(buf, 1, 7, 14, 3, ink)
+
+
+def paint_bell(buf: bytearray) -> None:
+    ink = (255, 170, 40)
+    disc(buf, 8, 6, 5, ink)
+    fill_rect(buf, 4, 6, 8, 6, ink)
+    fill_rect(buf, 3, 11, 10, 2, (255, 200, 80))
+    fill_rect(buf, 7, 13, 2, 2, (80, 50, 20))
+
+
+def paint_star(buf: bytearray) -> None:
+    ink = (255, 230, 120)
+    fill_rect(buf, 7, 1, 2, 14, ink)
+    fill_rect(buf, 1, 7, 14, 2, ink)
+    fill_rect(buf, 4, 4, 8, 8, (255, 250, 180))
+    set_px(buf, 3, 3, ink)
+    set_px(buf, 12, 3, ink)
+    set_px(buf, 3, 12, ink)
+    set_px(buf, 12, 12, ink)
+
+
+def paint_cup(buf: bytearray) -> None:
+    ink = (40, 210, 255)
+    set_px(buf, 8, 1, ink)
+    fill_rect(buf, 5, 3, 6, 2, ink)
+    fill_rect(buf, 3, 5, 10, 3, ink)
+    fill_rect(buf, 5, 8, 6, 2, ink)
+    fill_rect(buf, 7, 10, 2, 4, ink)
+
+
+PAINTERS = {
+    "seven": paint_seven,
+    "cherry": paint_cherry,
+    "coin": paint_coin,
+    "bell": paint_bell,
+    "star": paint_star,
+    "cup": paint_cup,
+}
+
+
+def tile_y(index: int) -> int:
+    return index * (SIZE + GAP)
+
+
+def init_png() -> None:
+    if ATLAS_PNG.exists():
+        return
+    width = TILE_X + SIZE + 2
+    height = SIZE * len(TILES) + GAP * (len(TILES) - 1)
+    rgb = bytearray(width * height * 3)
+    atlas_fill(rgb, width, height, ATLAS_PURPLE)
+    for index, (sprite_id, label) in enumerate(TILES):
+        oy = tile_y(index)
+        for row in range(SIZE):
+            for col in range(SIZE):
+                atlas_set(rgb, width, TILE_X + col, oy + row, ATLAS_INK)
+        buf = bytearray(SIZE * SIZE * 3)
+        PAINTERS[sprite_id](buf)
+        for row in range(SIZE):
+            for col in range(SIZE):
+                i = (row * SIZE + col) * 3
+                if buf[i] | buf[i + 1] | buf[i + 2]:
+                    atlas_set(
+                        rgb,
+                        width,
+                        TILE_X + col,
+                        oy + row,
+                        (buf[i], buf[i + 1], buf[i + 2]),
+                    )
+        atlas_text(rgb, width, 1, oy + (SIZE - 7) // 2, label)
+    write_png_rgb(ATLAS_PNG, width, height, bytes(rgb))
+    print(f"created {ATLAS_PNG}")
+
+
+def crop_tile(rgb: bytes, width: int, x: int, y: int) -> bytes:
+    out = bytearray(SIZE * SIZE * 3)
+    for row in range(SIZE):
+        src = ((y + row) * width + x) * 3
+        dst = row * SIZE * 3
+        out[dst : dst + SIZE * 3] = rgb[src : src + SIZE * 3]
+    return bytes(out)
+
+
+def emit_cpp(tiles: list[tuple[str, bytes]]) -> None:
+    chunks = [
+        "// GENERATED by tools/casino_atlas.py — do not edit.",
+        '#include "koto/assets/casino.hpp"',
+        "",
+        "namespace koto {",
+        "namespace assets {",
+        "namespace {",
+        "",
+    ]
+    rows: list[str] = []
+    for name, rgb in tiles:
+        var = ident(name)
+        chunks.append(f"const std::uint8_t {var}[] = {{")
+        chunks.append(cpp_bytes(rgb))
+        chunks.append("};")
+        chunks.append("")
+        rows.append(f'    {{"{name}", {SIZE}, {SIZE}, {var}, sizeof({var})}},')
+    chunks.append("}  // namespace")
+    chunks.append("")
+    chunks.append("const CasinoSprite kCasinoSprites[] = {")
+    chunks.append("\n".join(rows))
+    chunks.append("};")
+    chunks.append(
+        "const int kCasinoSpriteCount = static_cast<int>(sizeof(kCasinoSprites) / sizeof(kCasinoSprites[0]));"
+    )
+    chunks.append(
+        """
+const CasinoSprite* find_casino_sprite(std::string_view id) {
+  for (int i = 0; i < kCasinoSpriteCount; ++i) {
+    if (id == kCasinoSprites[i].id) {
+      return &kCasinoSprites[i];
+    }
+  }
+  return nullptr;
+}
+
+}  // namespace assets
+}  // namespace koto
+"""
+    )
+    GEN_CPP.parent.mkdir(parents=True, exist_ok=True)
+    GEN_CPP.write_text("\n".join(chunks), encoding="utf-8")
+    print(f"wrote {GEN_CPP} ({len(tiles)} sprites)")
+
+
+def pack() -> None:
+    init_png()
+    png_w, png_h, raw = read_png_rgb(ATLAS_PNG)
+    rgb = bytearray(raw)
+    rects = [(TILE_X, tile_y(i), SIZE, SIZE) for i in range(len(TILES))]
+    changed = recolor_labels_black(rgb, png_w, png_h, rects)
+    if changed:
+        write_png_rgb(ATLAS_PNG, png_w, png_h, bytes(rgb))
+        print(f"recolored {changed} label pixels black in {ATLAS_PNG.name}")
+    packed: list[tuple[str, bytes]] = []
+    meta_tiles = []
+    for index, (sprite_id, label) in enumerate(TILES):
+        oy = tile_y(index)
+        packed.append((sprite_id, crop_tile(bytes(rgb), png_w, TILE_X, oy)))
+        meta_tiles.append(
+            {
+                "id": sprite_id,
+                "label": label,
+                "label_x": 1,
+                "label_y": oy + (SIZE - 7) // 2,
+                "x": TILE_X,
+                "y": oy,
+                "w": SIZE,
+                "h": SIZE,
+            }
+        )
+    emit_cpp(packed)
+    meta = {
+        "how_to": "python tools/casino_atlas.py  # PNG → firmware RGB tiles",
+        "packed": True,
+        "grid": {"color": list(ATLAS_PURPLE)},
+        "ink": [0, 0, 0],
+        "gap": GAP,
+        "atlas": {"file": ATLAS_PNG.name, "width": png_w, "height": png_h},
+        "tiles": meta_tiles,
+    }
+    ATLAS_JSON.write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"updated {ATLAS_JSON.name}")
+
+
+if __name__ == "__main__":
+    pack()
