@@ -1,0 +1,322 @@
+{
+  "how_to": "python tools/face_components_atlas.py  # unique classic eye/mouth/nose, no labels",
+  "kind": "classic",
+  "gap": 1,
+  "grid": {
+    "color": [
+      255,
+      0,
+      255
+    ]
+  },
+  "lit": [
+    255,
+    255,
+    255
+  ],
+  "ink": [
+    0,
+    0,
+    0
+  ],
+  "atlas": {
+    "file": "face_components.png",
+    "width": 133,
+    "height": 188
+  },
+  "parts": [
+    {
+      "id": "eye",
+      "w": 32,
+      "h": 16,
+      "count": 21
+    },
+    {
+      "id": "mouth",
+      "w": 64,
+      "h": 16,
+      "count": 10
+    }
+  ],
+  "tiles": [
+    {
+      "id": "Neutral_0_eye",
+      "part": "eye",
+      "source": "Neutral_0.png",
+      "x": 1,
+      "y": 1,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Joy_0_eye",
+      "part": "eye",
+      "source": "Joy_0.png",
+      "x": 34,
+      "y": 1,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "JoyBlush_0_eye",
+      "part": "eye",
+      "source": "JoyBlush_0.png",
+      "x": 67,
+      "y": 1,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Blushing_0_eye",
+      "part": "eye",
+      "source": "Blushing_0.png",
+      "x": 100,
+      "y": 1,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Angry_0_eye",
+      "part": "eye",
+      "source": "Angry_0.png",
+      "x": 1,
+      "y": 18,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Annoyed_0_eye",
+      "part": "eye",
+      "source": "Annoyed_0.png",
+      "x": 34,
+      "y": 18,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Spooked_0_eye",
+      "part": "eye",
+      "source": "Spooked_0.png",
+      "x": 67,
+      "y": 18,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Squinting_0_eye",
+      "part": "eye",
+      "source": "Squinting_0.png",
+      "x": 100,
+      "y": 18,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Questioning_0_eye",
+      "part": "eye",
+      "source": "Questioning_0.png",
+      "x": 1,
+      "y": 35,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Exclamation_0_eye",
+      "part": "eye",
+      "source": "Exclamation_0.png",
+      "x": 34,
+      "y": 35,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Exclamation_1_eye",
+      "part": "eye",
+      "source": "Exclamation_1.png",
+      "x": 67,
+      "y": 35,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "UWU_0_eye",
+      "part": "eye",
+      "source": "UWU_0.png",
+      "x": 100,
+      "y": 35,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "OWO_0_eye",
+      "part": "eye",
+      "source": "OWO_0.png",
+      "x": 1,
+      "y": 52,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "HeartEyes_0_eye",
+      "part": "eye",
+      "source": "HeartEyes_0.png",
+      "x": 34,
+      "y": 52,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "HeartEyes_1_eye",
+      "part": "eye",
+      "source": "HeartEyes_1.png",
+      "x": 67,
+      "y": 52,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "HeartEyes_2_eye",
+      "part": "eye",
+      "source": "HeartEyes_2.png",
+      "x": 100,
+      "y": 52,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Dead_0_eye",
+      "part": "eye",
+      "source": "Dead_0.png",
+      "x": 1,
+      "y": 69,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Crying_0_eye",
+      "part": "eye",
+      "source": "Crying_0.png",
+      "x": 34,
+      "y": 69,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Crying_3_eye",
+      "part": "eye",
+      "source": "Crying_3.png",
+      "x": 67,
+      "y": 69,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Dizzy_0_eye",
+      "part": "eye",
+      "source": "Dizzy_0.png",
+      "x": 100,
+      "y": 69,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Dizzy_1_eye",
+      "part": "eye",
+      "source": "Dizzy_1.png",
+      "x": 1,
+      "y": 86,
+      "w": 32,
+      "h": 16
+    },
+    {
+      "id": "Neutral_0_mouth",
+      "part": "mouth",
+      "source": "Neutral_0.png",
+      "x": 1,
+      "y": 103,
+      "w": 64,
+      "h": 16
+    },
+    {
+      "id": "Joy_0_mouth",
+      "part": "mouth",
+      "source": "Joy_0.png",
+      "x": 66,
+      "y": 103,
+      "w": 64,
+      "h": 16
+    },
+    {
+      "id": "Blushing_0_mouth",
+      "part": "mouth",
+      "source": "Blushing_0.png",
+      "x": 1,
+      "y": 120,
+      "w": 64,
+      "h": 16
+    },
+    {
+      "id": "Angry_0_mouth",
+      "part": "mouth",
+      "source": "Angry_0.png",
+      "x": 66,
+      "y": 120,
+      "w": 64,
+      "h": 16
+    },
+    {
+      "id": "Questioning_0_mouth",
+      "part": "mouth",
+      "source": "Questioning_0.png",
+      "x": 1,
+      "y": 137,
+      "w": 64,
+      "h": 16
+    },
+    {
+      "id": "UWU_0_mouth",
+      "part": "mouth",
+      "source": "UWU_0.png",
+      "x": 66,
+      "y": 137,
+      "w": 64,
+      "h": 16
+    },
+    {
+      "id": "Wink_1_mouth",
+      "part": "mouth",
+      "source": "Wink_1.png",
+      "x": 1,
+      "y": 154,
+      "w": 64,
+      "h": 16
+    },
+    {
+      "id": "Dead_0_mouth",
+      "part": "mouth",
+      "source": "Dead_0.png",
+      "x": 66,
+      "y": 154,
+      "w": 64,
+      "h": 16
+    },
+    {
+      "id": "Crying_0_mouth",
+      "part": "mouth",
+      "source": "Crying_0.png",
+      "x": 1,
+      "y": 171,
+      "w": 64,
+      "h": 16
+    },
+    {
+      "id": "Crying_1_mouth",
+      "part": "mouth",
+      "source": "Crying_1.png",
+      "x": 66,
+      "y": 171,
+      "w": 64,
+      "h": 16
+    }
+  ]
+}
