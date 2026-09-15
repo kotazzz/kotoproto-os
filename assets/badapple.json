@@ -1,0 +1,15 @@
+{
+  "file": "badapple.ba1p",
+  "source": "source.mp4",
+  "frames": 5478,
+  "fps": 25,
+  "width": 64,
+  "height": 32,
+  "bpf": 256,
+  "raw_bytes": 1402368,
+  "packed_bytes": 393165,
+  "avg_bytes_per_frame": 71.77,
+  "fits_1mb": true,
+  "format": "BA1P sparse byte-patch, no zlib",
+  "note": "Bad Apple!! PV is a third-party asset, not original kotoproto art"
+}
