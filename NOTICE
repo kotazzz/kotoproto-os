@@ -18,4 +18,16 @@ to a P3 RGB 64x32 visor, with behaviour changed for this helmet. A
 substantial part of the new implementation was written with AI
 assistance in Cursor. It is not an official Toaster Blaster release.
 
+T-Rex runner sprites (assets/dino_offline.png) are from Chromium's
+offline dinosaur game:
+
+  https://chromium.googlesource.com/chromium/src/+/main/components/neterror/resources/
+  Copyright (c) The Chromium Authors
+  BSD-style Chromium license
+
+The packed Bad Apple!! clip (assets/badapple.ba1p) is a 1-bit downscale
+of the Touhou PV (YouTube FtutLA63Cp8). It is a third-party work, not
+original kotoproto art, and is not claimed as such.
+
 Full license text: LICENSE
+

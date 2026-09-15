@@ -9,11 +9,33 @@ alwaysApply: true
 - License is AGPL-3.0 because of Toaster Blaster. Keep LICENSE, NOTICE, AUTHORS. Credit Kotaz and https://github.com/diodeface/ToasterBlaster.
 - Answer the user in Russian.
 - Config: `firmware/include/koto/config.hpp`. Do not invent GPIO; pins stay -1.
-- Emotions live in `assets/emotions.json` + RGB `Name_N.png` and black/white HUD PNGs in `assets/`. Pack with `python tools/pack_assets.py` (PNG → firmware only; no Toaster regen). Frames may omit `file` for a black hold — do not author empty PNGs.
-- Settings icon sheet: `assets/settings_icons.png` + `settings_icons.json` via `python tools/settings_atlas.py`. Empty 9×9 screens / 7×7 params, not packed into firmware.
-- Classic faces get blink/mouth/boop as runtime overlays on eye `(0,0) 32×16` and mouth `y=16 64×16`; special faces do not. Snarl follows `mouth_enabled`. Effects are enum hooks (`snarl`, `dizzy`, `wink`, `randomize`), not JSON scripts.
-- Default Blink face transition: mouth and nose swap immediately; the lid wipe is the left eye `32×16` only.
+- Emotions live in `assets/emotions.json` + RGB `Name_N.png` and black/white HUD PNGs in `assets/`. Pack with `python tools/pack_assets.py` (PNG → firmware only; no Toaster regen). Frames may omit `file` for a black hold (PowerOff, None, flash-off of NOPE). BatteryCheck is two authored PNGs, no flash-off. Do not author empty PNGs.
+- Settings icon sheet: `assets/settings_icons.png` + `settings_icons.json` via `python tools/settings_atlas.py`. Pack embeds 9×9 screen / 7×7 param icons into firmware. Mouth uses `param_mouth`.
+- Games icon sheet: `assets/games_icons.png` + `games_icons.json` via `python tools/games_atlas.py`. Pack embeds 32×32 `game_snake` / `game_casino` / `game_dino` / `game_badapple` / `game_flappy` / `game_tetris` / `game_dvd` / `game_bsod`. Label glyphs are black on the purple gutter.
+- T-Rex sprites: `assets/dino_offline.png` via `python tools/dino_atlas.py` into `assets/dino_sprites.png` (white tiles, purple gaps, black labels) and `firmware/src/assets/dino.cpp`.
+- Casino reel tiles: `assets/casino_sprites.png` via `python tools/casino_atlas.py` into `firmware/src/assets/casino.cpp`.
+- Flappy Bird tiles: `assets/flappy_sprites.png` via `python tools/flappy_atlas.py` into `firmware/src/assets/flappy.cpp`.
+- Tetris tiles: `assets/tetris_sprites.png` via `python tools/tetris_atlas.py` into `firmware/src/assets/tetris.cpp`.
+- DVD logo: `assets/dvd_sprites.png` via `python tools/dvd_atlas.py` into `firmware/src/assets/dvd.cpp`.
+- BSOD tiles: `assets/bsod_sprites.png` via `python tools/bsod_atlas.py` into `firmware/src/assets/bsod.cpp`.
+- Classic face-component sheet: `assets/face_components.png` via `python tools/face_components_atlas.py` (unique 1bpp eye/mouth/nose, purple `#FF00FF` gaps ≥1px, no labels or duplicates). Shown on `/atlas.html`; not packed into firmware.
+- Atlas labels (not packed) are black on purple `#FF00FF`. Icon tiles stay white on black.
+- Finished sprites for games, HUD, and apps go on sprite sheets (`assets/*_sprites.png` / icon atlases): unique tiles, purple gaps, black labels. Do not leave them only as procedural C++ or an unreadable source crop. Pack embeds the tiles; show the sheet on `/atlas.html`.
+- Settings header: page title while the header is focused; the selected control's name/icon while a parameter is selected. CAL/SENSE has B-CAL / M-CAL and B-SNS / M-SNS.
+- Auto HUD: `visor` at (4,26), thumb at (12,42).
+- Sim microphone: spectrometer + checkbox «Упрощенный режим». Checked = slider as a one-cycle sine PCM window (stable RMS); unchecked = live mic with a 5× preamp and 2048-sample window so speech is not crushed to int8. The sim page posts that window together with gyro/prox so a held tilt is not zeroed. Firmware mouth RMS is then scaled by `mouth_sensitivity` (M-SNS on CAL/SENSE, default 192).
+- Classic faces get blink/mouth/boop as runtime overlays on eye `(0,0) 32×16` and mouth `y=16 64×16`; special faces do not. Snarl follows `mouth_enabled`. Effects are enum hooks (`snarl`, `dizzy`, `wink`, `randomize`, `glitch`), not JSON scripts.
+- Long-hold boop (`kBoopHueHoldMs`): the Boop replacement face stays on screen and its lit pixels lerp into a left-to-right hue cycle (0→100% over `kBoopHueRampMs`). Short boop is the Boop sprite + glitch.
+- Default Blink face transition: the new eye/mouth/nose swap immediately; then a lid wipe plays over the left eye `32×16` only.
 - FaceSet HUD selection: invert the current thumb and paint black 3px corner brackets (rounding); the hovered octant gets white corner brackets, not a full frame.
+- Games list: hold ESC. Inverted 16px yellow header with title and chevrons; 32×32 icon in the blue band (`y≥16`). Do not invert the full OLED. Blink starts Snake, Casino, Dino, Apple, Flappy, Tetris, DVD, or BSOD. Short ESC leaves the list; in a game ESC returns to the list.
+- Snake: visor 2×2 cells and a 1px border including the left edge. OLED header is the score, or `DEAD` after a crash.
+- Dino: Chromium T-Rex on the visor. Blink / stick up / Y jumps; stick down / A ducks (speed-drop in air). Visor HUD is `GO` / score / `DEAD`. OLED header is 5-digit score or `DEAD`.
+- Flappy: bird/pipe tiles on the visor. Blink / stick up / Y flaps. Wide gap, slower gravity. Visor HUD is `GO` / score / `DEAD`. OLED header is 5-digit score or `DEAD`.
+- Tetris: 10×12 well, 2×2 cells, 7-bag; score strip on the visor above the well. Blink / stick up / Y rotates; left/right DAS; down / A soft drop. OLED header is 5-digit score or `DEAD`.
+- DVD: bouncing oval logo on the visor. Color changes on each wall hit. OLED shows hit count and `CORNER` after a corner.
+- BSOD: Windows 10 blue, 5×7 `:(` / `Your PC` header, then 2px white bars in sequence. OLED shows the real problem text and a percent.
+- Bad Apple: 64×32 1-bit 25 fps on the visor from `assets/badapple.ba1p` (BA1P, no zlib). Loops. Blink toggles 2.5× playback. Third-party PV.
 - Mouth orientation is baked into the PNG. Do not add a runtime `flip_mouth`.
 - HUD thumbs are generated 42×16 1bpp from the RGB frame at pack time.
 - Retired Toaster import/adapt lives in `trash/`; do not restore it into the live tree.

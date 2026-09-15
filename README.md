@@ -17,10 +17,10 @@ kotoproto-os is released under the **GNU Affero General Public License v3.0** (`
 
 ## What works today (simulator)
 
-- 26 named emotions as P3 64×32 RGB frames (left half; right half is mirrored in the atlas UI)
+- 25 named emotions as P3 64×32 RGB frames (left half; right half is mirrored in the atlas UI)
 - Three Mocute face sets on X / A / Y, MENU cycles BT / Frame / settings, auto-cycle on B
 - OLED HUD: header preview, emotion name, boop box, microphone bar, 8-face ring, Auto visor sprite, 14-item settings
-- Blink, boop glitch, gyro nudge, snake, PWM fan value, rare transitions
+- Blink, boop glitch, long-hold boop hue cycle, gyro nudge, snake, casino, Chromium T-Rex, Flappy Bird, Tetris, DVD screensaver, Windows BSOD, Bad Apple!!, PWM fan value, rare transitions
 - Browser pad: stick, buttons, mic / gyro / proximity sliders
 - Emotion atlas at `/atlas.html` (classic/special lists, visor L+mirror, blink/mouth preview)
 
@@ -41,14 +41,14 @@ python -m venv .tools\venv
 .\.tools\venv\Scripts\pip install ziglang
 $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 & $zig c++ -std=c++17 -O2 -I firmware/include `
-  firmware/src/app.cpp firmware/src/assets/bitmaps.cpp firmware/src/assets/emotions.cpp `
+  firmware/src/app.cpp firmware/src/assets/badapple.cpp firmware/src/assets/badapple_blob.S firmware/src/assets/bitmaps.cpp firmware/src/assets/casino.cpp firmware/src/assets/dino.cpp firmware/src/assets/flappy.cpp firmware/src/assets/tetris.cpp firmware/src/assets/dvd.cpp firmware/src/assets/bsod.cpp firmware/src/assets/emotions.cpp `
   firmware/src/face/transition.cpp firmware/src/gfx/framebuffer.cpp firmware/src/gfx/oled_canvas.cpp `
   firmware/src/gfx/font5x7.cpp firmware/src/protocol/mocute.cpp tests/test_hello.cpp `
   -o build/koto_test_hello.exe
 .\build\koto_test_hello.exe
 
 & $zig c++ -std=c++17 -O2 -I firmware/include -I platforms/sim/include `
-  firmware/src/app.cpp firmware/src/assets/bitmaps.cpp firmware/src/assets/emotions.cpp `
+  firmware/src/app.cpp firmware/src/assets/badapple.cpp firmware/src/assets/badapple_blob.S firmware/src/assets/bitmaps.cpp firmware/src/assets/casino.cpp firmware/src/assets/dino.cpp firmware/src/assets/flappy.cpp firmware/src/assets/tetris.cpp firmware/src/assets/dvd.cpp firmware/src/assets/bsod.cpp firmware/src/assets/emotions.cpp `
   firmware/src/face/transition.cpp firmware/src/gfx/framebuffer.cpp firmware/src/gfx/oled_canvas.cpp `
   firmware/src/gfx/font5x7.cpp firmware/src/protocol/mocute.cpp `
   platforms/sim/src/main.cpp platforms/sim/src/hal_sim.cpp platforms/sim/src/http_server.cpp `
@@ -68,6 +68,7 @@ Tunable sizes, timings, and **placeholder** GPIO numbers live in `firmware/inclu
 | --- | --- | --- |
 | `kMatrixW` / `kMatrixH` | P3 RGB panel | 64×32 |
 | `kOledW` / `kOledH` | SSD1306 HUD | 128×64 |
+| `kOledYellowH` | Dual-color split (1bpp) | 16 yellow / rest blue |
 | `kFaceW` / `kFaceH` | Left half-face bitmap | 64×32 |
 | `kEye*` / `kMouth*` | Eye and mouth overlays | eye 32×16 at (0,0); mouth 64×16 at (0,16) |
 | `kStartupMs` | Splash length | 3000 |
@@ -79,6 +80,15 @@ Other knobs:
 
 - Emotion catalog, stick sets, HUD labels: `assets/emotions.json` (packed into `firmware/src/assets/emotions.cpp`)
 - OLED 1bpp sprites: black/white `visor.png` / `splash1.png` / `logo.png` in `assets/` (packed into `firmware/src/assets/bitmaps.cpp`)
+- Settings / games icon atlases: `assets/settings_icons.png`, `assets/games_icons.png`
+- Bad Apple!!: `assets/badapple.ba1p` (BA1P 64×32 1-bit 25 fps; third-party PV)
+- T-Rex runner: `assets/dino_offline.png` → `assets/dino_sprites.png` + `firmware/src/assets/dino.cpp`
+- Casino reels: `assets/casino_sprites.png` → `firmware/src/assets/casino.cpp`
+- Flappy Bird: `assets/flappy_sprites.png` → `firmware/src/assets/flappy.cpp`
+- Tetris: `assets/tetris_sprites.png` → `firmware/src/assets/tetris.cpp`
+- DVD: `assets/dvd_sprites.png` → `firmware/src/assets/dvd.cpp`
+- BSOD: `assets/bsod_sprites.png` → `firmware/src/assets/bsod.cpp`
+- Classic face components (authoring): `assets/face_components.png` on `/atlas.html`
 - Settings blob / EEPROM-style flags: `firmware/include/koto/settings.hpp`
 - Mocute button bits: `firmware/include/koto/protocol/mocute.hpp`
 - LED ring count: `firmware/include/koto/hal/led_ring.hpp` (`kLedRingCount = 12`, drawn twice on device)
@@ -137,3 +147,4 @@ AGENTS.md           notes for Cursor / other agents
 
 - Kotaz — kotoproto-os
 - [diodeface / Toaster Blaster](https://github.com/diodeface/ToasterBlaster) — original visor firmware this project is based on (AGPL-3.0)
+- [Chromium Authors](https://chromium.googlesource.com/chromium/src/) — T-Rex runner sprites (BSD-style)

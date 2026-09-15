@@ -17,10 +17,10 @@ kotoproto-os выходит под **GNU Affero General Public License v3.0** (`
 
 ## Что уже можно гонять (сим)
 
-- 26 имён лиц кадрами P3 64×32 RGB (левая половина; правая в атласе зеркалится в UI)
+- 25 имён лиц кадрами P3 64×32 RGB (левая половина; правая в атласе зеркалится в UI)
 - Три сета на X / A / Y, MENU листает BT / Frame / настройки, автосмена на B
 - OLED: шапка, имя эмоции, буп, бар микрофона, кольцо из 8 лиц, спрайт visor в Auto, меню из 14 пунктов
-- Морг, глитч бупа, гироскоп, змейка, вентилятор, редкие переходы
+- Морг, глитч бупа, радуга при долгом бупе, гироскоп, змейка, казино, динозаврик Chromium, Flappy Bird, Tetris, DVD-заставка, Windows BSOD, Bad Apple!!, вентилятор, редкие переходы
 - В браузере: стик, кнопки, слайдеры микрофона / гиро / приближения
 - Атлас эмоций: http://127.0.0.1:8080/atlas.html
 
@@ -41,14 +41,14 @@ python -m venv .tools\venv
 .\.tools\venv\Scripts\pip install ziglang
 $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 & $zig c++ -std=c++17 -O2 -I firmware/include `
-  firmware/src/app.cpp firmware/src/assets/bitmaps.cpp firmware/src/assets/emotions.cpp `
+  firmware/src/app.cpp firmware/src/assets/badapple.cpp firmware/src/assets/badapple_blob.S firmware/src/assets/bitmaps.cpp firmware/src/assets/casino.cpp firmware/src/assets/dino.cpp firmware/src/assets/flappy.cpp firmware/src/assets/tetris.cpp firmware/src/assets/dvd.cpp firmware/src/assets/bsod.cpp firmware/src/assets/emotions.cpp `
   firmware/src/face/transition.cpp firmware/src/gfx/framebuffer.cpp firmware/src/gfx/oled_canvas.cpp `
   firmware/src/gfx/font5x7.cpp firmware/src/protocol/mocute.cpp tests/test_hello.cpp `
   -o build/koto_test_hello.exe
 .\build\koto_test_hello.exe
 
 & $zig c++ -std=c++17 -O2 -I firmware/include -I platforms/sim/include `
-  firmware/src/app.cpp firmware/src/assets/bitmaps.cpp firmware/src/assets/emotions.cpp `
+  firmware/src/app.cpp firmware/src/assets/badapple.cpp firmware/src/assets/badapple_blob.S firmware/src/assets/bitmaps.cpp firmware/src/assets/casino.cpp firmware/src/assets/dino.cpp firmware/src/assets/flappy.cpp firmware/src/assets/tetris.cpp firmware/src/assets/dvd.cpp firmware/src/assets/bsod.cpp firmware/src/assets/emotions.cpp `
   firmware/src/face/transition.cpp firmware/src/gfx/framebuffer.cpp firmware/src/gfx/oled_canvas.cpp `
   firmware/src/gfx/font5x7.cpp firmware/src/protocol/mocute.cpp `
   platforms/sim/src/main.cpp platforms/sim/src/hal_sim.cpp platforms/sim/src/http_server.cpp `
@@ -68,6 +68,7 @@ $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 | --- | --- | --- |
 | `kMatrixW` / `kMatrixH` | панель P3 RGB | 64×32 |
 | `kOledW` / `kOledH` | HUD SSD1306 | 128×64 |
+| `kOledYellowH` | Dual-color 1bpp | 16 жёлтых / остальное голубое |
 | `kFaceW` / `kFaceH` | левая половина лица | 64×32 |
 | `kEye*` / `kMouth*` | глаз и рот | глаз 32×16 в (0,0); рот 64×16 в (0,16) |
 | `kStartupMs` | заставка | 3000 |
@@ -79,6 +80,15 @@ $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 
 - сеты лиц, авто-пул, подписи HUD: `assets/emotions.json` (собирается в `firmware/src/assets/emotions.cpp`)
 - OLED-спрайты 1bpp: чёрно-белые `visor.png` / `splash1.png` / `logo.png` в `assets/` (собирается в `firmware/src/assets/bitmaps.cpp`)
+- атласы иконок настроек и игр: `assets/settings_icons.png`, `assets/games_icons.png`
+- Bad Apple!!: `assets/badapple.ba1p` (BA1P 64×32 1-бит 25 fps; чужой PV)
+- динозаврик: `assets/dino_offline.png` → `assets/dino_sprites.png` + `firmware/src/assets/dino.cpp`
+- казино: `assets/casino_sprites.png` → `firmware/src/assets/casino.cpp`
+- Flappy Bird: `assets/flappy_sprites.png` → `firmware/src/assets/flappy.cpp`
+- Tetris: `assets/tetris_sprites.png` → `firmware/src/assets/tetris.cpp`
+- DVD: `assets/dvd_sprites.png` → `firmware/src/assets/dvd.cpp`
+- BSOD: `assets/bsod_sprites.png` → `firmware/src/assets/bsod.cpp`
+- компоненты classic-лиц (авторский лист): `assets/face_components.png` на `/atlas.html`
 - блоб настроек: `firmware/include/koto/settings.hpp`
 - биты Mocute: `firmware/include/koto/protocol/mocute.hpp`
 - кольцо: `firmware/include/koto/hal/led_ring.hpp` (12 светодиодов, на плате дважды)
@@ -137,3 +147,4 @@ AGENTS.md           заметки для агента
 
 - Kotaz — kotoproto-os
 - [diodeface / Toaster Blaster](https://github.com/diodeface/ToasterBlaster) — исходная прошивка визора, на которой основан проект (AGPL-3.0)
+- [Chromium Authors](https://chromium.googlesource.com/chromium/src/) — спрайты T-Rex (лицензия BSD)
