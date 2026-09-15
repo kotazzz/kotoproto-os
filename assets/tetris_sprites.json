@@ -1,0 +1,114 @@
+{
+  "how_to": "python tools/tetris_atlas.py  # PNG → firmware RGB tiles",
+  "packed": true,
+  "grid": {
+    "color": [
+      255,
+      0,
+      255
+    ]
+  },
+  "ink": [
+    0,
+    0,
+    0
+  ],
+  "gap": 1,
+  "atlas": {
+    "file": "tetris_sprites.png",
+    "width": 59,
+    "height": 82
+  },
+  "tiles": [
+    {
+      "id": "cell_i",
+      "label": "I",
+      "label_x": 1,
+      "label_y": 1,
+      "x": 50,
+      "y": 1,
+      "w": 8,
+      "h": 8
+    },
+    {
+      "id": "cell_o",
+      "label": "O",
+      "label_x": 1,
+      "label_y": 10,
+      "x": 50,
+      "y": 10,
+      "w": 8,
+      "h": 8
+    },
+    {
+      "id": "cell_t",
+      "label": "T",
+      "label_x": 1,
+      "label_y": 19,
+      "x": 50,
+      "y": 19,
+      "w": 8,
+      "h": 8
+    },
+    {
+      "id": "cell_s",
+      "label": "S",
+      "label_x": 1,
+      "label_y": 28,
+      "x": 50,
+      "y": 28,
+      "w": 8,
+      "h": 8
+    },
+    {
+      "id": "cell_z",
+      "label": "Z",
+      "label_x": 1,
+      "label_y": 37,
+      "x": 50,
+      "y": 37,
+      "w": 8,
+      "h": 8
+    },
+    {
+      "id": "cell_j",
+      "label": "J",
+      "label_x": 1,
+      "label_y": 46,
+      "x": 50,
+      "y": 46,
+      "w": 8,
+      "h": 8
+    },
+    {
+      "id": "cell_l",
+      "label": "L",
+      "label_x": 1,
+      "label_y": 55,
+      "x": 50,
+      "y": 55,
+      "w": 8,
+      "h": 8
+    },
+    {
+      "id": "ghost",
+      "label": "GHOST",
+      "label_x": 1,
+      "label_y": 64,
+      "x": 50,
+      "y": 64,
+      "w": 8,
+      "h": 8
+    },
+    {
+      "id": "wall",
+      "label": "WALL",
+      "label_x": 1,
+      "label_y": 73,
+      "x": 50,
+      "y": 73,
+      "w": 2,
+      "h": 8
+    }
+  ]
+}
