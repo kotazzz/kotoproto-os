@@ -17,9 +17,12 @@ struct Bitmap {
 };
 
 const Bitmap* find_system(std::string_view id);
+const Bitmap* find_icon(std::string_view id);
 
 extern const Bitmap kSystem[];
 extern const int kSystemCount;
+extern const Bitmap kIcons[];
+extern const int kIconCount;
 
 }  // namespace assets
 }  // namespace koto

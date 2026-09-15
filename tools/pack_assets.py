@@ -1,7 +1,9 @@
 """Pack hand-authored assets into firmware C++ tables.
 
 All authored files live in assets/: emotions.json, RGB face PNGs, and
-black/white OLED sprites (visor, splash1, logo).
+black/white OLED sprites (visor, splash1, logo), settings/games icon
+atlases, the classic face-component sheet, Chromium's dino sprite,
+and Flappy Bird tiles.
 
 A frame in emotions.json may omit `file` to hold a black screen (PowerOff,
 flash-off). This script does not regenerate faces from Toaster Blaster or
@@ -12,15 +14,118 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import struct
+import subprocess
+import sys
 import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets"
 EMOTIONS_JSON = ASSETS / "emotions.json"
+SETTINGS_JSON = ASSETS / "settings_icons.json"
+GAMES_JSON = ASSETS / "games_icons.json"
+FACE_COMPONENTS_JSON = ASSETS / "face_components.json"
 GEN_CPP = ROOT / "firmware" / "src" / "assets" / "emotions.cpp"
 GEN_BITMAPS = ROOT / "firmware" / "src" / "assets" / "bitmaps.cpp"
+ICON_JSONS = (SETTINGS_JSON, GAMES_JSON)
+
+ATLAS_PURPLE = (255, 0, 255)
+ATLAS_LIT = (255, 255, 255)
+ATLAS_INK = (0, 0, 0)
+ATLAS_LABEL = ATLAS_INK
+
+
+def load_atlas_glyphs() -> dict[str, str]:
+    text = (ROOT / "firmware" / "src" / "gfx" / "font5x7.cpp").read_text(encoding="utf-8")
+    glyphs = {" ": "." * 35}
+    for match in re.finditer(r"case '([^']+)':\s*return\s*((?:\"[X.]+\"\s*)+);", text):
+        ch = match.group(1)
+        bits = "".join(re.findall(r"\"([X.]+)\"", match.group(2)))
+        if len(bits) == 35:
+            glyphs[ch] = bits
+    return glyphs
+
+
+ATLAS_GLYPHS = load_atlas_glyphs()
+
+
+def _glyph5x7(ch: str) -> str:
+    key = ch.upper()
+    raw = ATLAS_GLYPHS.get(key)
+    if raw is not None and len(raw) == 35:
+        return raw
+    return ATLAS_GLYPHS[" "]
+
+
+def atlas_set(rgb: bytearray, width: int, x: int, y: int, color: tuple[int, int, int]) -> None:
+    if x < 0 or y < 0 or x >= width:
+        return
+    i = (y * width + x) * 3
+    if i + 2 >= len(rgb):
+        return
+    rgb[i], rgb[i + 1], rgb[i + 2] = color
+
+
+def atlas_fill(rgb: bytearray, width: int, height: int, color: tuple[int, int, int]) -> None:
+    for i in range(0, width * height * 3, 3):
+        rgb[i], rgb[i + 1], rgb[i + 2] = color
+
+
+def atlas_text(
+    rgb: bytearray,
+    width: int,
+    x: int,
+    y: int,
+    text: str,
+    color: tuple[int, int, int] = ATLAS_LABEL,
+) -> None:
+    cursor = x
+    for ch in text:
+        glyph = _glyph5x7(ch)
+        for row in range(7):
+            for col in range(5):
+                if glyph[row * 5 + col] == "X":
+                    atlas_set(rgb, width, cursor + col, y + row, color)
+        cursor += 6
+
+
+def recolor_labels_black(
+    rgb: bytearray,
+    width: int,
+    height: int,
+    tiles: list[tuple[int, int, int, int]],
+) -> int:
+    changed = 0
+    for row in range(height):
+        for col in range(width):
+            inside = False
+            for x, y, w, h in tiles:
+                if x <= col < x + w and y <= row < y + h:
+                    inside = True
+                    break
+            if inside:
+                continue
+            i = (row * width + col) * 3
+            if rgb[i] >= 240 and rgb[i + 1] >= 240 and rgb[i + 2] >= 240:
+                rgb[i], rgb[i + 1], rgb[i + 2] = ATLAS_LABEL
+                changed += 1
+    return changed
+
+
+def atlas_bits(
+    rgb: bytearray,
+    width: int,
+    x: int,
+    y: int,
+    bits: list[str],
+    color: tuple[int, int, int] = ATLAS_LIT,
+) -> None:
+    for row, line in enumerate(bits):
+        for col, ch in enumerate(line):
+            if ch == "X":
+                atlas_set(rgb, width, x + col, y + row, color)
 
 SYSTEM_SPRITES = (
     ("visor", "visor.png"),
@@ -41,6 +146,7 @@ CPP_EFFECT = {
     "dizzy": "Effect::Dizzy",
     "wink": "Effect::Wink",
     "randomize": "Effect::Randomize",
+    "glitch": "Effect::Glitch",
 }
 CPP_TRANS = {
     "none": "face::TransitionKind::None",
@@ -103,6 +209,7 @@ def read_png_rgb(path: Path) -> tuple[int, int, bytes]:
     width = height = bit_depth = color_type = 0
     raw = bytearray()
     palette = b""
+    trns = b""
     while pos < len(data):
         length = struct.unpack(">I", data[pos : pos + 4])[0]
         tag = data[pos + 4 : pos + 8]
@@ -112,11 +219,35 @@ def read_png_rgb(path: Path) -> tuple[int, int, bytes]:
             width, height, bit_depth, color_type, *_ = struct.unpack(">IIBBBBB", chunk_data)
         elif tag == b"PLTE":
             palette = chunk_data
+        elif tag == b"tRNS":
+            trns = chunk_data
         elif tag == b"IDAT":
             raw.extend(chunk_data)
         elif tag == b"IEND":
             break
     decoded = zlib.decompress(bytes(raw))
+    if color_type == 3:
+        if bit_depth == 8:
+            indices = unfilter(decoded, width, height, 1)
+        elif bit_depth == 4:
+            packed_w = (width + 1) // 2
+            packed = unfilter(decoded, packed_w, height, 1)
+            indices = bytearray(width * height)
+            for y in range(height):
+                for x in range(width):
+                    byte = packed[y * packed_w + x // 2]
+                    indices[y * width + x] = (byte >> 4) if (x % 2) == 0 else (byte & 0x0F)
+        else:
+            raise ValueError(f"unsupported PNG bit depth {bit_depth} in {path}")
+        rgb = bytearray(width * height * 3)
+        for i, idx in enumerate(indices):
+            p = idx * 3
+            if idx < len(trns) and trns[idx] == 0:
+                continue
+            rgb[i * 3] = palette[p]
+            rgb[i * 3 + 1] = palette[p + 1]
+            rgb[i * 3 + 2] = palette[p + 2]
+        return width, height, bytes(rgb)
     if bit_depth != 8:
         raise ValueError(f"unsupported PNG bit depth {bit_depth} in {path}")
     if color_type == 2:
@@ -135,15 +266,6 @@ def read_png_rgb(path: Path) -> tuple[int, int, bytes]:
         rgb = bytearray(width * height * 3)
         for i, v in enumerate(src):
             rgb[i * 3] = rgb[i * 3 + 1] = rgb[i * 3 + 2] = v
-        return width, height, bytes(rgb)
-    if color_type == 3:
-        src = unfilter(decoded, width, height, 1)
-        rgb = bytearray(width * height * 3)
-        for i, idx in enumerate(src):
-            p = idx * 3
-            rgb[i * 3] = palette[p]
-            rgb[i * 3 + 1] = palette[p + 1]
-            rgb[i * 3 + 2] = palette[p + 2]
         return width, height, bytes(rgb)
     raise ValueError(f"unsupported PNG color type {color_type} in {path}")
 
@@ -467,6 +589,8 @@ const char* effect_name(Effect effect) {
       return "wink";
     case Effect::Randomize:
       return "randomize";
+    case Effect::Glitch:
+      return "glitch";
     default:
       return "none";
   }
@@ -514,6 +638,41 @@ def emit_bitmaps() -> None:
     chunks.append("\n".join(table_rows))
     chunks.append("};")
     chunks.append("const int kSystemCount = static_cast<int>(sizeof(kSystem) / sizeof(kSystem[0]));")
+    chunks.append("")
+
+    icon_rows: list[str] = []
+    icon_count = 0
+    chunks.append("namespace {")
+    chunks.append("")
+    for json_path in ICON_JSONS:
+        if not json_path.exists():
+            continue
+        meta = json.loads(json_path.read_text(encoding="utf-8"))
+        for tile in meta.get("tiles", []):
+            bits = tile.get("bits") or []
+            if not bits:
+                continue
+            rows = [[ch == "X" for ch in row] for row in bits]
+            packed_w, packed_h, stride, packed = pack_bw_bits(rows)
+            ident = re.sub(r"[^A-Za-z0-9_]", "_", str(tile["id"]))
+            name = f"kIcon_{ident}"
+            chunks.append(f"const std::uint8_t {name}[] = {{")
+            chunks.append(cpp_bytes(packed))
+            chunks.append("};")
+            chunks.append("")
+            icon_rows.append(
+                f'    {{"{tile["id"]}", {packed_w}, {packed_h}, {stride}, {name}, sizeof({name})}},'
+            )
+            icon_count += 1
+    chunks.append("}  // namespace")
+    chunks.append("")
+    chunks.append("const Bitmap kIcons[] = {")
+    if icon_rows:
+        chunks.append("\n".join(icon_rows))
+    else:
+        chunks.append("    {\"\", 0, 0, 0, nullptr, 0},")
+    chunks.append("};")
+    chunks.append("const int kIconCount = static_cast<int>(sizeof(kIcons) / sizeof(kIcons[0]));")
     chunks.append(
         """
 const Bitmap* find_system(std::string_view id) {
@@ -525,17 +684,59 @@ const Bitmap* find_system(std::string_view id) {
   return nullptr;
 }
 
+const Bitmap* find_icon(std::string_view id) {
+  for (int i = 0; i < kIconCount; ++i) {
+    if (kIcons[i].id != nullptr && id == kIcons[i].id) {
+      return &kIcons[i];
+    }
+  }
+  return nullptr;
+}
+
 }  // namespace assets
 }  // namespace koto
 """
     )
     GEN_BITMAPS.write_text("\n".join(chunks), encoding="utf-8")
-    print(f"wrote {GEN_BITMAPS} ({len(SYSTEM_SPRITES)} sprites)")
+    print(f"wrote {GEN_BITMAPS} ({len(SYSTEM_SPRITES)} sprites, {icon_count} icons)")
+
+
+def run_atlas(script: str) -> None:
+    subprocess.check_call([sys.executable, str(ROOT / "tools" / script)], cwd=str(ROOT))
+
+
+def copy_atlas_pngs() -> None:
+    www = ROOT / "platforms" / "sim" / "www"
+    www.mkdir(parents=True, exist_ok=True)
+    for name in (
+        "settings_icons.png",
+        "games_icons.png",
+        "face_components.png",
+        "dino_sprites.png",
+        "casino_sprites.png",
+        "flappy_sprites.png",
+        "tetris_sprites.png",
+        "dvd_sprites.png",
+        "bsod_sprites.png",
+    ):
+        src = ASSETS / name
+        if src.exists():
+            shutil.copy2(src, www / name)
 
 
 def pack() -> None:
     if not EMOTIONS_JSON.exists():
         raise SystemExit(f"missing {EMOTIONS_JSON}")
+    run_atlas("settings_atlas.py")
+    run_atlas("dino_atlas.py")
+    run_atlas("casino_atlas.py")
+    run_atlas("flappy_atlas.py")
+    run_atlas("tetris_atlas.py")
+    run_atlas("dvd_atlas.py")
+    run_atlas("bsod_atlas.py")
+    run_atlas("games_atlas.py")
+    run_atlas("face_components_atlas.py")
+    copy_atlas_pngs()
     catalog = json.loads(EMOTIONS_JSON.read_text(encoding="utf-8"))
     emit_cpp(catalog)
     emit_bitmaps()

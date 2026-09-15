@@ -1,5 +1,5 @@
 {
-  "how_to": "python tools/settings_atlas.py  # PNG → JSON only, never writes PNG",
+  "how_to": "python tools/settings_atlas.py  # PNG → JSON; adds param_mouth slot if missing",
   "packed": false,
   "grid": {
     "color": [
@@ -27,8 +27,8 @@
   "gap": 1,
   "atlas": {
     "file": "settings_icons.png",
-    "width": 159,
-    "height": 113
+    "width": 160,
+    "height": 122
   },
   "groups": [
     {
@@ -39,7 +39,7 @@
     {
       "id": "params",
       "size": 7,
-      "count": 8
+      "count": 9
     }
   ],
   "tiles": [
@@ -56,13 +56,13 @@
       "empty": false,
       "bits": [
         "XXXXXXXXX",
+        "X.......X",
         "X.X.X.X.X",
-        "XXXXXXXXX",
+        "X.......X",
         "X.X.X.X.X",
-        "XXXXXXXXX",
+        "X.......X",
         "X.X.X.X.X",
-        "XXXXXXXXX",
-        "X.X.X.X.X",
+        "X.......X",
         "XXXXXXXXX"
       ]
     },
@@ -78,15 +78,15 @@
       "h": 9,
       "empty": false,
       "bits": [
-        ".........",
         ".XXXXXXX.",
         "X.......X",
-        "X....XXX.",
-        "X....XXX.",
+        "X...XXX.X",
         "X.......X",
         ".XXXXXXX.",
         ".........",
-        "........."
+        "..XX.....",
+        ".XXXXXXX.",
+        "..XX....."
       ]
     },
     {
@@ -171,11 +171,11 @@
       "empty": false,
       "bits": [
         "XXXXXXX",
+        "X.....X",
         "X.X.X.X",
-        "XXXXXXX",
+        "X.....X",
         "X.X.X.X",
-        "XXXXXXX",
-        "X.X.X.X",
+        "X.....X",
         "XXXXXXX"
       ]
     },
@@ -233,13 +233,13 @@
       "h": 7,
       "empty": false,
       "bits": [
-        "..XXX..",
-        ".X...X.",
-        "X..X..X",
-        "X.XXX.X",
-        "X..X..X",
-        ".X...X.",
-        "..XXX.."
+        "......X",
+        "...X.X.",
+        "...XX..",
+        "...XXX.",
+        "XX.....",
+        ".XX....",
+        "..X...."
       ]
     },
     {
@@ -254,13 +254,13 @@
       "h": 7,
       "empty": false,
       "bits": [
-        "..XX.XX",
-        "X.X..X.",
-        "X.XXX..",
-        "XXXXXXX",
-        "..XXX.X",
-        ".X..X.X",
-        "XX.XX.."
+        "...XX..",
+        "...XX..",
+        "XXXXX..",
+        "XXX.XXX",
+        "..XXXXX",
+        "..XX...",
+        "..XX..."
       ]
     },
     {
@@ -275,13 +275,13 @@
       "h": 7,
       "empty": false,
       "bits": [
-        "X.X....",
-        ".X.....",
-        "X.X.XXX",
-        ".X...X.",
-        "X.X..X.",
-        ".X.....",
-        "X.X...."
+        "X..XXX.",
+        ".X.X..X",
+        "X..XXX.",
+        ".X.X..X",
+        "X......",
+        ".X.XXXX",
+        "X...XX."
       ]
     },
     {
@@ -324,6 +324,27 @@
         ".XXXX.X",
         "...X...",
         "..X...."
+      ]
+    },
+    {
+      "id": "param_mouth",
+      "kind": "param",
+      "label": "MOUTH",
+      "label_x": 0,
+      "label_y": 114,
+      "x": 152,
+      "y": 114,
+      "w": 7,
+      "h": 7,
+      "empty": false,
+      "bits": [
+        "X.X.X.X",
+        "X..X..X",
+        "X.X.X.X",
+        "X.....X",
+        ".XXXXX.",
+        "...X...",
+        "..XXX.."
       ]
     }
   ]
