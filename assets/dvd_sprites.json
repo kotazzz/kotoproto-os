@@ -1,0 +1,34 @@
+{
+  "how_to": "python tools/dvd_atlas.py  # PNG → firmware RGB tiles",
+  "packed": true,
+  "grid": {
+    "color": [
+      255,
+      0,
+      255
+    ]
+  },
+  "ink": [
+    0,
+    0,
+    0
+  ],
+  "gap": 1,
+  "atlas": {
+    "file": "dvd_sprites.png",
+    "width": 75,
+    "height": 13
+  },
+  "tiles": [
+    {
+      "id": "logo",
+      "label": "LOGO",
+      "label_x": 1,
+      "label_y": 3,
+      "x": 50,
+      "y": 1,
+      "w": 24,
+      "h": 11
+    }
+  ]
+}
