@@ -448,12 +448,12 @@
       "label": "Dead",
       "short": "Dead",
       "kind": "classic",
-      "effect": "none",
+      "effect": "glitch",
       "transition": "glitch",
       "accent": [
-        70,
-        200,
-        80
+        255,
+        36,
+        40
       ],
       "loop": true,
       "allow_blink": false,
@@ -507,6 +507,7 @@
           "ms": 250
         },
         {
+          "file": "BatteryCheck_1.png",
           "ms": 250
         }
       ]
@@ -620,28 +621,6 @@
         {
           "file": "Startup_0.png",
           "ms": 0
-        }
-      ]
-    },
-    {
-      "id": "DisplayTest",
-      "label": "DisplayTest",
-      "short": "Test",
-      "kind": "special",
-      "effect": "none",
-      "transition": "blink",
-      "accent": [
-        90,
-        220,
-        255
-      ],
-      "loop": false,
-      "allow_blink": false,
-      "allow_boop": false,
-      "frames": [
-        {
-          "file": "DisplayTest_0.png",
-          "ms": 500
         }
       ]
     },

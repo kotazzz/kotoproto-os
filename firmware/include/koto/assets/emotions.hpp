@@ -11,7 +11,7 @@ namespace koto {
 namespace assets {
 
 enum class Kind : std::uint8_t { Classic, Special };
-enum class Effect : std::uint8_t { None, Snarl, Dizzy, Wink, Randomize };
+enum class Effect : std::uint8_t { None, Snarl, Dizzy, Wink, Randomize, Glitch };
 
 struct EmotionFrame {
   const std::uint8_t* rgb;
