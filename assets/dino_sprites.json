@@ -1,0 +1,200 @@
+{
+  "how_to": "python tools/dino_atlas.py  # Chromium sheet → authoring PNG + firmware",
+  "source": "dino_offline.png",
+  "packed": true,
+  "grid": {
+    "color": [
+      255,
+      0,
+      255
+    ]
+  },
+  "ink": [
+    0,
+    0,
+    0
+  ],
+  "lit": [
+    255,
+    255,
+    255
+  ],
+  "gap": 1,
+  "atlas": {
+    "file": "dino_sprites.png",
+    "width": 251,
+    "height": 244
+  },
+  "tiles": [
+    {
+      "id": "cloud",
+      "label": "CLOUD",
+      "label_x": 1,
+      "label_y": 1,
+      "x": 50,
+      "y": 1,
+      "w": 23,
+      "h": 7
+    },
+    {
+      "id": "bird_0",
+      "label": "BIRD0",
+      "label_x": 1,
+      "label_y": 12,
+      "x": 50,
+      "y": 9,
+      "w": 15,
+      "h": 13
+    },
+    {
+      "id": "bird_1",
+      "label": "BIRD1",
+      "label_x": 1,
+      "label_y": 26,
+      "x": 50,
+      "y": 23,
+      "w": 15,
+      "h": 13
+    },
+    {
+      "id": "cactus_s1",
+      "label": "S1",
+      "label_x": 1,
+      "label_y": 39,
+      "x": 50,
+      "y": 37,
+      "w": 5,
+      "h": 11
+    },
+    {
+      "id": "cactus_s2",
+      "label": "S2",
+      "label_x": 1,
+      "label_y": 51,
+      "x": 50,
+      "y": 49,
+      "w": 11,
+      "h": 11
+    },
+    {
+      "id": "cactus_s3",
+      "label": "S3",
+      "label_x": 1,
+      "label_y": 63,
+      "x": 50,
+      "y": 61,
+      "w": 17,
+      "h": 11
+    },
+    {
+      "id": "cactus_l1",
+      "label": "L1",
+      "label_x": 1,
+      "label_y": 77,
+      "x": 50,
+      "y": 73,
+      "w": 8,
+      "h": 16
+    },
+    {
+      "id": "cactus_l2",
+      "label": "L2",
+      "label_x": 1,
+      "label_y": 94,
+      "x": 50,
+      "y": 90,
+      "w": 16,
+      "h": 16
+    },
+    {
+      "id": "cactus_l3",
+      "label": "L3",
+      "label_x": 1,
+      "label_y": 111,
+      "x": 50,
+      "y": 107,
+      "w": 25,
+      "h": 16
+    },
+    {
+      "id": "horizon",
+      "label": "GROUND",
+      "label_x": 1,
+      "label_y": 124,
+      "x": 50,
+      "y": 125,
+      "w": 200,
+      "h": 4
+    },
+    {
+      "id": "trex_wait_0",
+      "label": "WAIT0",
+      "label_x": 1,
+      "label_y": 136,
+      "x": 50,
+      "y": 132,
+      "w": 14,
+      "h": 15
+    },
+    {
+      "id": "trex_wait_1",
+      "label": "WAIT1",
+      "label_x": 1,
+      "label_y": 152,
+      "x": 50,
+      "y": 148,
+      "w": 14,
+      "h": 15
+    },
+    {
+      "id": "trex_run_0",
+      "label": "RUN0",
+      "label_x": 1,
+      "label_y": 168,
+      "x": 50,
+      "y": 164,
+      "w": 14,
+      "h": 15
+    },
+    {
+      "id": "trex_run_1",
+      "label": "RUN1",
+      "label_x": 1,
+      "label_y": 184,
+      "x": 50,
+      "y": 180,
+      "w": 14,
+      "h": 15
+    },
+    {
+      "id": "trex_crash",
+      "label": "CRASH",
+      "label_x": 1,
+      "label_y": 200,
+      "x": 50,
+      "y": 196,
+      "w": 14,
+      "h": 15
+    },
+    {
+      "id": "trex_duck_0",
+      "label": "DUCK0",
+      "label_x": 1,
+      "label_y": 216,
+      "x": 50,
+      "y": 212,
+      "w": 19,
+      "h": 15
+    },
+    {
+      "id": "trex_duck_1",
+      "label": "DUCK1",
+      "label_x": 1,
+      "label_y": 232,
+      "x": 50,
+      "y": 228,
+      "w": 19,
+      "h": 15
+    }
+  ]
+}
