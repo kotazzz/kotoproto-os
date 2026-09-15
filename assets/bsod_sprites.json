@@ -1,0 +1,44 @@
+{
+  "how_to": "python tools/bsod_atlas.py  # PNG → firmware RGB tiles",
+  "packed": true,
+  "grid": {
+    "color": [
+      255,
+      0,
+      255
+    ]
+  },
+  "ink": [
+    0,
+    0,
+    0
+  ],
+  "gap": 1,
+  "atlas": {
+    "file": "bsod_sprites.png",
+    "width": 115,
+    "height": 22
+  },
+  "tiles": [
+    {
+      "id": "sad",
+      "label": "SAD",
+      "label_x": 1,
+      "label_y": 3,
+      "x": 50,
+      "y": 1,
+      "w": 18,
+      "h": 12
+    },
+    {
+      "id": "bar",
+      "label": "BAR",
+      "label_x": 1,
+      "label_y": 14,
+      "x": 50,
+      "y": 14,
+      "w": 64,
+      "h": 2
+    }
+  ]
+}
