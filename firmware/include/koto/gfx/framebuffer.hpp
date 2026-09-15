@@ -27,6 +27,8 @@ class Framebuffer {
   void draw_hline(int x, int y, int w, Color color);
   void blit_rgb(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* rgb, std::size_t size,
                bool skip_black = false);
+  void blit_pix(int x, int y, int bitmap_w, int bitmap_h, const std::uint8_t* pix, std::size_t size,
+                bool skip_black = false, Color tint = Color::white(), int clip_y0 = 0, int clip_y1 = 0);
   void expand_column_y(int x, int y0, int h, int amount);
   void rotate_square_cw(int x, int y, int size, int turns);
   void translate_rect(int x, int y, int w, int h, int dx, int dy);
@@ -36,9 +38,12 @@ class Framebuffer {
   int draw_text(int x, int y, std::string_view text, Color color);
 
  private:
+  void put_pixel(int x, int y, Color color);
+
   int width_;
   int height_;
   std::vector<Color> pixels_;
+  std::vector<Color> scratch_;
 };
 
 }  // namespace gfx

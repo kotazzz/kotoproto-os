@@ -1,538 +1,93 @@
 #include "koto/gfx/font5x7.hpp"
 
-#include <cctype>
+#include <cstdint>
 
 namespace koto {
 namespace gfx {
 namespace {
 
-const char* kQuestion =
-    "XXXXX"
-    "X...X"
-    "....X"
-    "...X."
-    "..X.."
-    "....."
-    "..X..";
+constexpr char kFontFirst = ' ';
+constexpr int kFontCount = 64;
+
+const std::uint8_t kFontBits[kFontCount][7] = {
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},  // 32  
+    {0x20, 0x20, 0x20, 0x20, 0x20, 0x00, 0x20},  // 33 !
+    {0x50, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00},  // 34 "
+    {0x50, 0xF8, 0x50, 0x50, 0xF8, 0x50, 0x00},  // 35 #
+    {0x20, 0x78, 0xA0, 0x70, 0x28, 0xF0, 0x20},  // 36 $
+    {0xC8, 0xD0, 0x10, 0x20, 0x40, 0xB0, 0x98},  // 37 %
+    {0x60, 0x90, 0xA0, 0x40, 0xA8, 0x90, 0x68},  // 38 &
+    {0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00},  // 39 apos
+    {0x10, 0x20, 0x20, 0x20, 0x20, 0x20, 0x10},  // 40 (
+    {0x40, 0x20, 0x20, 0x20, 0x20, 0x20, 0x40},  // 41 )
+    {0x00, 0x20, 0xA8, 0x70, 0xA8, 0x20, 0x00},  // 42 *
+    {0x00, 0x20, 0x20, 0xF8, 0x20, 0x20, 0x00},  // 43 +
+    {0x00, 0x00, 0x00, 0x00, 0x20, 0x20, 0x40},  // 44 ,
+    {0x00, 0x00, 0x00, 0xF8, 0x00, 0x00, 0x00},  // 45 -
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20},  // 46 .
+    {0x08, 0x10, 0x20, 0x40, 0x80, 0x00, 0x00},  // 47 /
+    {0x70, 0x88, 0x98, 0xA8, 0xC8, 0x88, 0x70},  // 48 0
+    {0x20, 0x60, 0x20, 0x20, 0x20, 0x20, 0x70},  // 49 1
+    {0x70, 0x88, 0x08, 0x10, 0x20, 0x40, 0xF8},  // 50 2
+    {0xF0, 0x08, 0x08, 0x70, 0x08, 0x08, 0xF0},  // 51 3
+    {0x10, 0x30, 0x50, 0x90, 0xF8, 0x10, 0x10},  // 52 4
+    {0xF8, 0x80, 0xF0, 0x08, 0x08, 0x88, 0x70},  // 53 5
+    {0x70, 0x80, 0x80, 0xF0, 0x88, 0x88, 0x70},  // 54 6
+    {0xF8, 0x08, 0x10, 0x20, 0x40, 0x40, 0x40},  // 55 7
+    {0x70, 0x88, 0x88, 0x70, 0x88, 0x88, 0x70},  // 56 8
+    {0x70, 0x88, 0x88, 0x78, 0x08, 0x08, 0x70},  // 57 9
+    {0x00, 0x20, 0x00, 0x00, 0x00, 0x20, 0x00},  // 58 :
+    {0x00, 0x20, 0x00, 0x00, 0x20, 0x20, 0x40},  // 59 ;
+    {0x10, 0x20, 0x40, 0x80, 0x40, 0x20, 0x10},  // 60 <
+    {0x00, 0x00, 0xF8, 0x00, 0xF8, 0x00, 0x00},  // 61 =
+    {0x40, 0x20, 0x10, 0x08, 0x10, 0x20, 0x40},  // 62 >
+    {0xF8, 0x88, 0x08, 0x10, 0x20, 0x00, 0x20},  // 63 ?
+    {0x70, 0x88, 0xB8, 0xA8, 0xB8, 0x80, 0x70},  // 64 @
+    {0x70, 0x88, 0x88, 0xF8, 0x88, 0x88, 0x88},  // 65 A
+    {0xF0, 0x88, 0x88, 0xF0, 0x88, 0x88, 0xF0},  // 66 B
+    {0x70, 0x88, 0x80, 0x80, 0x80, 0x88, 0x70},  // 67 C
+    {0xF0, 0x88, 0x88, 0x88, 0x88, 0x88, 0xF0},  // 68 D
+    {0xF8, 0x80, 0x80, 0xF0, 0x80, 0x80, 0xF8},  // 69 E
+    {0xF8, 0x80, 0x80, 0xF0, 0x80, 0x80, 0x80},  // 70 F
+    {0x70, 0x88, 0x80, 0xB8, 0x88, 0x88, 0x70},  // 71 G
+    {0x88, 0x88, 0x88, 0xF8, 0x88, 0x88, 0x88},  // 72 H
+    {0x70, 0x20, 0x20, 0x20, 0x20, 0x20, 0x70},  // 73 I
+    {0x38, 0x10, 0x10, 0x10, 0x10, 0x90, 0x60},  // 74 J
+    {0x88, 0x90, 0xA0, 0xC0, 0xA0, 0x90, 0x88},  // 75 K
+    {0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xF8},  // 76 L
+    {0x88, 0xD8, 0xA8, 0xA8, 0x88, 0x88, 0x88},  // 77 M
+    {0x88, 0xC8, 0xA8, 0xA8, 0x98, 0x88, 0x88},  // 78 N
+    {0x70, 0x88, 0x88, 0x88, 0x88, 0x88, 0x70},  // 79 O
+    {0xF0, 0x88, 0x88, 0xF0, 0x80, 0x80, 0x80},  // 80 P
+    {0x70, 0x88, 0x88, 0x88, 0xA8, 0x90, 0x68},  // 81 Q
+    {0xF0, 0x88, 0x88, 0xF0, 0xA0, 0x90, 0x88},  // 82 R
+    {0x78, 0x80, 0x80, 0x70, 0x08, 0x08, 0xF0},  // 83 S
+    {0xF8, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20},  // 84 T
+    {0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x70},  // 85 U
+    {0x88, 0x88, 0x88, 0x88, 0x88, 0x50, 0x20},  // 86 V
+    {0x88, 0x88, 0x88, 0xA8, 0xA8, 0xD8, 0x88},  // 87 W
+    {0x88, 0x88, 0x50, 0x20, 0x50, 0x88, 0x88},  // 88 X
+    {0x88, 0x88, 0x50, 0x20, 0x20, 0x20, 0x20},  // 89 Y
+    {0xF8, 0x08, 0x10, 0x20, 0x40, 0x80, 0xF8},  // 90 Z
+    {0x70, 0x40, 0x40, 0x40, 0x40, 0x40, 0x70},  // 91 [
+    {0x80, 0x40, 0x20, 0x10, 0x08, 0x00, 0x00},  // 92 backslash
+    {0x70, 0x10, 0x10, 0x10, 0x10, 0x10, 0x70},  // 93 ]
+    {0x20, 0x50, 0x88, 0x00, 0x00, 0x00, 0x00},  // 94 ^
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF8},  // 95 _
+};
 
 }  // namespace
 
-const char* glyph5x7(char ch) {
-  const unsigned char uc = static_cast<unsigned char>(ch);
+const std::uint8_t* glyph5x7(char ch) {
+  unsigned char uc = static_cast<unsigned char>(ch);
   if (uc >= 'a' && uc <= 'z') {
-    ch = static_cast<char>(std::toupper(uc));
+    uc = static_cast<unsigned char>(uc - ('a' - 'A'));
   }
-
-  switch (ch) {
-    case ' ':
-      return "....."
-             "....."
-             "....."
-             "....."
-             "....."
-             "....."
-             ".....";
-    case '!':
-      return "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             "....."
-             "..X..";
-    case '"':
-      return ".X.X."
-             ".X.X."
-             "....."
-             "....."
-             "....."
-             "....."
-             ".....";
-    case '#':
-      return ".X.X."
-             "XXXXX"
-             ".X.X."
-             ".X.X."
-             "XXXXX"
-             ".X.X."
-             ".....";
-    case '$':
-      return "..X.."
-             ".XXXX"
-             "X.X.."
-             ".XXX."
-             "..X.X"
-             "XXXX."
-             "..X..";
-    case '%':
-      return "XX..X"
-             "XX.X."
-             "...X."
-             "..X.."
-             ".X..."
-             "X.XX."
-             "X..XX";
-    case '&':
-      return ".XX.."
-             "X..X."
-             "X.X.."
-             ".X..."
-             "X.X.X"
-             "X..X."
-             ".XX.X";
-    case '\'':
-      return "..X.."
-             "..X.."
-             "....."
-             "....."
-             "....."
-             "....."
-             ".....";
-    case '(':
-      return "...X."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             "...X.";
-    case ')':
-      return ".X..."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             ".X...";
-    case '*':
-      return "....."
-             "..X.."
-             "X.X.X"
-             ".XXX."
-             "X.X.X"
-             "..X.."
-             ".....";
-    case '+':
-      return "....."
-             "..X.."
-             "..X.."
-             "XXXXX"
-             "..X.."
-             "..X.."
-             ".....";
-    case ',':
-      return "....."
-             "....."
-             "....."
-             "....."
-             "..X.."
-             "..X.."
-             ".X...";
-    case '-':
-      return "....."
-             "....."
-             "....."
-             "XXXXX"
-             "....."
-             "....."
-             ".....";
-    case '.':
-      return "....."
-             "....."
-             "....."
-             "....."
-             "....."
-             "....."
-             "..X..";
-    case '/':
-      return "....X"
-             "...X."
-             "..X.."
-             ".X..."
-             "X...."
-             "....."
-             ".....";
-    case '0':
-      return ".XXX."
-             "X...X"
-             "X..XX"
-             "X.X.X"
-             "XX..X"
-             "X...X"
-             ".XXX.";
-    case '1':
-      return "..X.."
-             ".XX.."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             ".XXX.";
-    case '2':
-      return ".XXX."
-             "X...X"
-             "....X"
-             "...X."
-             "..X.."
-             ".X..."
-             "XXXXX";
-    case '3':
-      return "XXXX."
-             "....X"
-             "....X"
-             ".XXX."
-             "....X"
-             "....X"
-             "XXXX.";
-    case '4':
-      return "...X."
-             "..XX."
-             ".X.X."
-             "X..X."
-             "XXXXX"
-             "...X."
-             "...X.";
-    case '5':
-      return "XXXXX"
-             "X...."
-             "XXXX."
-             "....X"
-             "....X"
-             "X...X"
-             ".XXX.";
-    case '6':
-      return ".XXX."
-             "X...."
-             "X...."
-             "XXXX."
-             "X...X"
-             "X...X"
-             ".XXX.";
-    case '7':
-      return "XXXXX"
-             "....X"
-             "...X."
-             "..X.."
-             ".X..."
-             ".X..."
-             ".X...";
-    case '8':
-      return ".XXX."
-             "X...X"
-             "X...X"
-             ".XXX."
-             "X...X"
-             "X...X"
-             ".XXX.";
-    case '9':
-      return ".XXX."
-             "X...X"
-             "X...X"
-             ".XXXX"
-             "....X"
-             "....X"
-             ".XXX.";
-    case ':':
-      return "....."
-             "..X.."
-             "....."
-             "....."
-             "....."
-             "..X.."
-             ".....";
-    case ';':
-      return "....."
-             "..X.."
-             "....."
-             "....."
-             "..X.."
-             "..X.."
-             ".X...";
-    case '<':
-      return "...X."
-             "..X.."
-             ".X..."
-             "X...."
-             ".X..."
-             "..X.."
-             "...X.";
-    case '=':
-      return "....."
-             "....."
-             "XXXXX"
-             "....."
-             "XXXXX"
-             "....."
-             ".....";
-    case '>':
-      return ".X..."
-             "..X.."
-             "...X."
-             "....X"
-             "...X."
-             "..X.."
-             ".X...";
-    case '?':
-      return kQuestion;
-    case '@':
-      return ".XXX."
-             "X...X"
-             "X.XXX"
-             "X.X.X"
-             "X.XXX"
-             "X...."
-             ".XXX.";
-    case 'A':
-      return ".XXX."
-             "X...X"
-             "X...X"
-             "XXXXX"
-             "X...X"
-             "X...X"
-             "X...X";
-    case 'B':
-      return "XXXX."
-             "X...X"
-             "X...X"
-             "XXXX."
-             "X...X"
-             "X...X"
-             "XXXX.";
-    case 'C':
-      return ".XXX."
-             "X...X"
-             "X...."
-             "X...."
-             "X...."
-             "X...X"
-             ".XXX.";
-    case 'D':
-      return "XXXX."
-             "X...X"
-             "X...X"
-             "X...X"
-             "X...X"
-             "X...X"
-             "XXXX.";
-    case 'E':
-      return "XXXXX"
-             "X...."
-             "X...."
-             "XXXX."
-             "X...."
-             "X...."
-             "XXXXX";
-    case 'F':
-      return "XXXXX"
-             "X...."
-             "X...."
-             "XXXX."
-             "X...."
-             "X...."
-             "X....";
-    case 'G':
-      return ".XXX."
-             "X...X"
-             "X...."
-             "X.XXX"
-             "X...X"
-             "X...X"
-             ".XXX.";
-    case 'H':
-      return "X...X"
-             "X...X"
-             "X...X"
-             "XXXXX"
-             "X...X"
-             "X...X"
-             "X...X";
-    case 'I':
-      return ".XXX."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             ".XXX.";
-    case 'J':
-      return "..XXX"
-             "...X."
-             "...X."
-             "...X."
-             "...X."
-             "X..X."
-             ".XX..";
-    case 'K':
-      return "X...X"
-             "X..X."
-             "X.X.."
-             "XX..."
-             "X.X.."
-             "X..X."
-             "X...X";
-    case 'L':
-      return "X...."
-             "X...."
-             "X...."
-             "X...."
-             "X...."
-             "X...."
-             "XXXXX";
-    case 'M':
-      return "X...X"
-             "XX.XX"
-             "X.X.X"
-             "X.X.X"
-             "X...X"
-             "X...X"
-             "X...X";
-    case 'N':
-      return "X...X"
-             "XX..X"
-             "X.X.X"
-             "X.X.X"
-             "X..XX"
-             "X...X"
-             "X...X";
-    case 'O':
-      return ".XXX."
-             "X...X"
-             "X...X"
-             "X...X"
-             "X...X"
-             "X...X"
-             ".XXX.";
-    case 'P':
-      return "XXXX."
-             "X...X"
-             "X...X"
-             "XXXX."
-             "X...."
-             "X...."
-             "X....";
-    case 'Q':
-      return ".XXX."
-             "X...X"
-             "X...X"
-             "X...X"
-             "X.X.X"
-             "X..X."
-             ".XX.X";
-    case 'R':
-      return "XXXX."
-             "X...X"
-             "X...X"
-             "XXXX."
-             "X.X.."
-             "X..X."
-             "X...X";
-    case 'S':
-      return ".XXXX"
-             "X...."
-             "X...."
-             ".XXX."
-             "....X"
-             "....X"
-             "XXXX.";
-    case 'T':
-      return "XXXXX"
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X..";
-    case 'U':
-      return "X...X"
-             "X...X"
-             "X...X"
-             "X...X"
-             "X...X"
-             "X...X"
-             ".XXX.";
-    case 'V':
-      return "X...X"
-             "X...X"
-             "X...X"
-             "X...X"
-             "X...X"
-             ".X.X."
-             "..X..";
-    case 'W':
-      return "X...X"
-             "X...X"
-             "X...X"
-             "X.X.X"
-             "X.X.X"
-             "XX.XX"
-             "X...X";
-    case 'X':
-      return "X...X"
-             "X...X"
-             ".X.X."
-             "..X.."
-             ".X.X."
-             "X...X"
-             "X...X";
-    case 'Y':
-      return "X...X"
-             "X...X"
-             ".X.X."
-             "..X.."
-             "..X.."
-             "..X.."
-             "..X..";
-    case 'Z':
-      return "XXXXX"
-             "....X"
-             "...X."
-             "..X.."
-             ".X..."
-             "X...."
-             "XXXXX";
-    case '[':
-      return ".XXX."
-             ".X..."
-             ".X..."
-             ".X..."
-             ".X..."
-             ".X..."
-             ".XXX.";
-    case '\\':
-      return "X...."
-             ".X..."
-             "..X.."
-             "...X."
-             "....X"
-             "....."
-             ".....";
-    case ']':
-      return ".XXX."
-             "...X."
-             "...X."
-             "...X."
-             "...X."
-             "...X."
-             ".XXX.";
-    case '^':
-      return "..X.."
-             ".X.X."
-             "X...X"
-             "....."
-             "....."
-             "....."
-             ".....";
-    case '_':
-      return "....."
-             "....."
-             "....."
-             "....."
-             "....."
-             "....."
-             "XXXXX";
-    default:
-      return nullptr;
+  if (uc < static_cast<unsigned char>(kFontFirst) ||
+      uc >= static_cast<unsigned char>(kFontFirst) + kFontCount) {
+    uc = static_cast<unsigned char>('?');
   }
+  return kFontBits[uc - static_cast<unsigned char>(kFontFirst)];
 }
 
 }  // namespace gfx

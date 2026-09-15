@@ -11,6 +11,7 @@ idf_component_register(
     "../../../firmware/src/assets/tetris.cpp"
     "../../../firmware/src/assets/dvd.cpp"
     "../../../firmware/src/assets/bsod.cpp"
+    "../../../firmware/src/assets/spectrum.cpp"
     "../../../firmware/src/assets/emotions.cpp"
     "../../../firmware/src/face/transition.cpp"
     "../../../firmware/src/gfx/framebuffer.cpp"

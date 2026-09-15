@@ -22,13 +22,13 @@
   "atlas": {
     "file": "games_icons.png",
     "width": 83,
-    "height": 263
+    "height": 296
   },
   "groups": [
     {
       "id": "games",
       "size": 32,
-      "count": 8
+      "count": 9
     }
   ],
   "tiles": [
@@ -396,6 +396,52 @@
         "....XXXXXXXXXXXXXXXXXXXXXXXX....",
         "....XXXXXXXXXXXXXXXXXXXXXXXX....",
         "................................",
+        "................................"
+      ],
+      "empty": false
+    },
+    {
+      "id": "game_spectrum",
+      "kind": "game",
+      "label": "SPECTRUM",
+      "label_x": 1,
+      "label_y": 276,
+      "x": 49,
+      "y": 264,
+      "w": 32,
+      "h": 32,
+      "bits": [
+        "................................",
+        "................................",
+        "................................",
+        "................................",
+        "..............XXX...............",
+        "..............XXX...............",
+        "..............XXX...............",
+        "..............XXX...............",
+        "..........XXX.XXX...............",
+        "..........XXX.XXX...............",
+        "..........XXX.XXX.XXX...........",
+        "..........XXX.XXX.XXX...........",
+        "..........XXX.XXX.XXX...........",
+        "..........XXX.XXX.XXX...........",
+        "..........XXX.XXX.XXX.XXX.......",
+        "..........XXX.XXX.XXX.XXX.......",
+        "......XXX.XXX.XXX.XXX.XXX.......",
+        "......XXX.XXX.XXX.XXX.XXX.......",
+        "......XXX.XXX.XXX.XXX.XXX.......",
+        "......XXX.XXX.XXX.XXX.XXX.......",
+        "......XXX.XXX.XXX.XXX.XXX.XXX...",
+        "......XXX.XXX.XXX.XXX.XXX.XXX...",
+        "..XXX.XXX.XXX.XXX.XXX.XXX.XXX...",
+        "..XXX.XXX.XXX.XXX.XXX.XXX.XXX...",
+        "..XXX.XXX.XXX.XXX.XXX.XXX.XXX.XX",
+        "..XXX.XXX.XXX.XXX.XXX.XXX.XXX.XX",
+        "..XXX.XXX.XXX.XXX.XXX.XXX.XXX.XX",
+        "..XXX.XXX.XXX.XXX.XXX.XXX.XXX.XX",
+        "..XXX.XXX.XXX.XXX.XXX.XXX.XXX.XX",
+        "..XXX.XXX.XXX.XXX.XXX.XXX.XXX.XX",
+        "..XXXXXXXXXXXXXXXXXXXXXXXXXXXX..",
         "................................"
       ],
       "empty": false

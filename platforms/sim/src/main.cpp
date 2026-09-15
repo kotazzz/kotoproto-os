@@ -291,7 +291,6 @@ int main(int argc, char** argv) {
         json << ",";
       }
       json << "{\"id\":\"" << koto::sim::json_escape(e->id) << "\","
-           << "\"label\":\"" << koto::sim::json_escape(e->label) << "\","
            << "\"short\":\"" << koto::sim::json_escape(e->short_label) << "\","
            << "\"kind\":\"" << koto::assets::kind_name(e->kind) << "\","
            << "\"effect\":\"" << koto::assets::effect_name(e->effect) << "\","

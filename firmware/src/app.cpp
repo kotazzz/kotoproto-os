@@ -16,9 +16,11 @@
 #include "koto/assets/tetris.hpp"
 #include "koto/assets/dvd.hpp"
 #include "koto/assets/bsod.hpp"
+#include "koto/assets/spectrum.hpp"
 #include "koto/assets/emotions.hpp"
 #include "koto/config.hpp"
 #include "koto/gfx/font5x7.hpp"
+#include "koto/gfx/pix.hpp"
 #include "koto/settings.hpp"
 #include "koto/version.hpp"
 
@@ -61,9 +63,10 @@ constexpr int kReelY = 7;
 const int kReelX[3] = {5, 24, 43};
 const char* kSlotId[kSlotCount] = {"seven", "cherry", "coin", "bell", "star", "cup"};
 const char* kGameTitle[kGameCount] = {"SNAKE", "CASINO", "DINO", "APPLE", "FLAPPY", "TETRIS", "DVD",
-                                      "BSOD"};
+                                      "BSOD", "SPECTRUM"};
 const char* kGameIconId[kGameCount] = {"game_snake", "game_casino", "game_dino", "game_badapple",
-                                      "game_flappy", "game_tetris", "game_dvd", "game_bsod"};
+                                      "game_flappy", "game_tetris", "game_dvd", "game_bsod",
+                                      "game_spectrum"};
 
 constexpr int kDinoX = 2;
 constexpr int kDinoGroundY = 16;
@@ -191,14 +194,11 @@ void blit_tetris_cell(gfx::Framebuffer& fb, int type, int px, int py, int cell) 
     for (int x = 0; x < cell; ++x) {
       const int sx = (x * sprite->width) / cell;
       const int sy = (y * sprite->height) / cell;
-      const std::size_t i = static_cast<std::size_t>(sy * sprite->width + sx) * 3;
-      if (i + 2 >= sprite->size) {
+      const Color c = gfx::pix_at(sprite->pix, sprite->size, sprite->width, sprite->height, sx, sy);
+      if ((c.r | c.g | c.b) == 0) {
         continue;
       }
-      if ((sprite->rgb[i] | sprite->rgb[i + 1] | sprite->rgb[i + 2]) == 0) {
-        continue;
-      }
-      fb.set_pixel(px + x, py + y, Color{sprite->rgb[i], sprite->rgb[i + 1], sprite->rgb[i + 2]});
+      fb.set_pixel(px + x, py + y, c);
     }
   }
 }
@@ -211,11 +211,8 @@ void blit_tetris_wall_col(gfx::Framebuffer& fb, int x, int y0, int h) {
   }
   for (int y = 0; y < h; ++y) {
     const int sy = y % wall->height;
-    const std::size_t i = static_cast<std::size_t>(sy * wall->width) * 3;
-    if (i + 2 >= wall->size) {
-      continue;
-    }
-    fb.set_pixel(x, y0 + y, Color{wall->rgb[i], wall->rgb[i + 1], wall->rgb[i + 2]});
+    const Color c = gfx::pix_at(wall->pix, wall->size, wall->width, wall->height, 0, sy);
+    fb.set_pixel(x, y0 + y, c);
   }
 }
 
@@ -235,29 +232,10 @@ void blit_tetris_piece(gfx::Framebuffer& fb, int gx, int gy, int type, int rot, 
 
 void blit_dvd_logo(gfx::Framebuffer& fb, int x, int y, Color tint) {
   const assets::DvdSprite* sprite = assets::find_dvd_sprite("logo");
-  if (sprite == nullptr || sprite->width <= 0 || sprite->height <= 0) {
+  if (sprite == nullptr) {
     return;
   }
-  for (int row = 0; row < sprite->height; ++row) {
-    for (int col = 0; col < sprite->width; ++col) {
-      const std::size_t i = static_cast<std::size_t>((row * sprite->width + col) * 3);
-      if (i + 2 >= sprite->size) {
-        continue;
-      }
-      if ((sprite->rgb[i] | sprite->rgb[i + 1] | sprite->rgb[i + 2]) == 0) {
-        continue;
-      }
-      const Color pix{
-          static_cast<std::uint8_t>((sprite->rgb[i] * tint.r) / 255),
-          static_cast<std::uint8_t>((sprite->rgb[i + 1] * tint.g) / 255),
-          static_cast<std::uint8_t>((sprite->rgb[i + 2] * tint.b) / 255),
-      };
-      if ((pix.r | pix.g | pix.b) == 0) {
-        continue;
-      }
-      fb.set_pixel(x + col, y + row, pix);
-    }
-  }
+  fb.blit_pix(x, y, sprite->width, sprite->height, sprite->pix, sprite->size, true, tint);
 }
 
 void blit_bsod_sprite(gfx::Framebuffer& fb, const char* id, int x, int y) {
@@ -265,8 +243,38 @@ void blit_bsod_sprite(gfx::Framebuffer& fb, const char* id, int x, int y) {
   if (sprite == nullptr) {
     return;
   }
-  fb.blit_rgb(x, y, sprite->width, sprite->height, sprite->rgb, sprite->size, true);
+  fb.blit_pix(x, y, sprite->width, sprite->height, sprite->pix, sprite->size, true);
 }
+
+void blit_spectrum_sprite(gfx::Framebuffer& fb, const char* id, int x, int y, Color tint) {
+  const assets::SpectrumSprite* sprite = assets::find_spectrum_sprite(id);
+  if (sprite == nullptr) {
+    return;
+  }
+  fb.blit_pix(x, y, sprite->width, sprite->height, sprite->pix, sprite->size, true, tint);
+}
+
+float goertzel_mag(const float* samples, int count, int k) {
+  if (samples == nullptr || count <= 0 || k <= 0 || k >= count / 2) {
+    return 0.0f;
+  }
+  const float omega =
+      static_cast<float>(2.0 * M_PI * static_cast<double>(k) / static_cast<double>(count));
+  const float coeff = 2.0f * std::cos(omega);
+  float s1 = 0.0f;
+  float s2 = 0.0f;
+  for (int i = 0; i < count; ++i) {
+    const float s0 = samples[i] + coeff * s1 - s2;
+    s2 = s1;
+    s1 = s0;
+  }
+  const float real = s1 - s2 * std::cos(omega);
+  const float imag = s2 * std::sin(omega);
+  return std::sqrt(real * real + imag * imag) / (0.5f * static_cast<float>(count));
+}
+
+constexpr int kSpectrumK[kSpectrumBands] = {1,  2,  3,  4,  6,  8,  11, 15,
+                                               20, 27, 36, 48, 64, 86, 110, 127};
 
 const char* kDinoCactusS[3] = {"cactus_s1", "cactus_s2", "cactus_s3"};
 const char* kDinoCactusL[3] = {"cactus_l1", "cactus_l2", "cactus_l3"};
@@ -277,7 +285,7 @@ void blit_dino_sprite(gfx::Framebuffer& fb, const char* id, int x, int y) {
   if (sprite == nullptr) {
     return;
   }
-  fb.blit_rgb(x, y, sprite->width, sprite->height, sprite->rgb, sprite->size, true);
+  fb.blit_pix(x, y, sprite->width, sprite->height, sprite->pix, sprite->size, true);
 }
 
 void blit_flappy_sprite(gfx::Framebuffer& fb, const char* id, int x, int y) {
@@ -285,18 +293,14 @@ void blit_flappy_sprite(gfx::Framebuffer& fb, const char* id, int x, int y) {
   if (sprite == nullptr) {
     return;
   }
-  fb.blit_rgb(x, y, sprite->width, sprite->height, sprite->rgb, sprite->size, true);
+  fb.blit_pix(x, y, sprite->width, sprite->height, sprite->pix, sprite->size, true);
 }
 
 bool flappy_sprite_lit(const assets::FlappySprite* sprite, int x, int y) {
-  if (sprite == nullptr || x < 0 || y < 0 || x >= sprite->width || y >= sprite->height) {
+  if (sprite == nullptr) {
     return false;
   }
-  const std::size_t i = static_cast<std::size_t>(y * sprite->width + x) * 3;
-  if (i + 2 >= sprite->size) {
-    return false;
-  }
-  return (sprite->rgb[i] | sprite->rgb[i + 1] | sprite->rgb[i + 2]) != 0;
+  return gfx::pix_lit_at(sprite->pix, sprite->size, sprite->width, sprite->height, x, y);
 }
 
 void blit_flappy_pipe(gfx::Framebuffer& fb, int px, int gap_y, int gap_h, int ground_y) {
@@ -324,14 +328,10 @@ const char* flappy_bird_id(bool crash, int wing) {
 }
 
 bool dino_sprite_lit(const assets::DinoSprite* sprite, int x, int y) {
-  if (sprite == nullptr || x < 0 || y < 0 || x >= sprite->width || y >= sprite->height) {
+  if (sprite == nullptr) {
     return false;
   }
-  const std::size_t i = static_cast<std::size_t>(y * sprite->width + x) * 3;
-  if (i + 2 >= sprite->size) {
-    return false;
-  }
-  return (sprite->rgb[i] | sprite->rgb[i + 1] | sprite->rgb[i + 2]) != 0;
+  return gfx::pix_lit_at(sprite->pix, sprite->size, sprite->width, sprite->height, x, y);
 }
 
 const char* dino_obstacle_id(int kind, int size, int bird_frame) {
@@ -492,22 +492,11 @@ void draw_oled_chevron(gfx::OledCanvas& oled, int x, int y, int dir, bool on) {
 void blit_casino_tile(gfx::Framebuffer& fb, int x, int y, int id, int y0, int y1) {
   const int index = ((id % kSlotCount) + kSlotCount) % kSlotCount;
   const assets::CasinoSprite* sprite = assets::find_casino_sprite(kSlotId[index]);
-  if (sprite == nullptr || sprite->rgb == nullptr) {
+  if (sprite == nullptr || sprite->pix == nullptr) {
     return;
   }
-  for (int row = 0; row < sprite->height; ++row) {
-    const int py = y + row;
-    if (py < y0 || py >= y1) {
-      continue;
-    }
-    for (int col = 0; col < sprite->width; ++col) {
-      const std::size_t i = static_cast<std::size_t>((row * sprite->width + col) * 3);
-      if ((sprite->rgb[i] | sprite->rgb[i + 1] | sprite->rgb[i + 2]) == 0) {
-        continue;
-      }
-      fb.set_pixel(x + col, py, Color{sprite->rgb[i], sprite->rgb[i + 1], sprite->rgb[i + 2]});
-    }
-  }
+  fb.blit_pix(x, y, sprite->width, sprite->height, sprite->pix, sprite->size, true, Color::white(), y0,
+              y1);
 }
 
 bool pressed(bool now, bool was) {
@@ -548,29 +537,18 @@ int stick_octant(const PadState& pad) {
 }
 
 bool rgb_blank(const assets::EmotionFrame* frame) {
-  if (frame == nullptr || frame->rgb == nullptr) {
+  if (frame == nullptr || frame->pix == nullptr) {
     return true;
   }
-  for (std::size_t i = 0; i < frame->size; ++i) {
-    if (frame->rgb[i] != 0) {
-      return false;
-    }
-  }
-  return true;
+  return !gfx::pix_any_lit(frame->pix, frame->size, kFaceW, kFaceH);
 }
 
 bool rgb_hot(const assets::EmotionFrame* frame) {
-  if (frame == nullptr || frame->rgb == nullptr || frame->size < 3) {
+  if (frame == nullptr || frame->pix == nullptr) {
     return false;
   }
-  const int pixels = static_cast<int>(frame->size / 3);
-  int lit = 0;
-  for (int i = 0; i < pixels; ++i) {
-    const std::size_t o = static_cast<std::size_t>(i * 3);
-    if ((frame->rgb[o] | frame->rgb[o + 1] | frame->rgb[o + 2]) != 0) {
-      ++lit;
-    }
-  }
+  const int pixels = kFaceW * kFaceH;
+  const int lit = gfx::pix_lit_count(frame->pix, frame->size, kFaceW, kFaceH);
   return lit * 10 > pixels * 7;
 }
 
@@ -708,6 +686,10 @@ void App::restart() {
   frame_index_ = 0;
   boop_triggers_ = 0;
   mouth_level_ = 0;
+  mouth_calibrate_left_ = 0;
+  boop_calibrate_left_ = 0;
+  calib_percent_ = 0;
+  prev_pad_ = {};
   snake_reset();
   load_settings();
   mode_ = Mode::Startup;
@@ -726,8 +708,6 @@ void App::calibrate_boop() {
   boop_cal_acc_ = 0;
   calib_percent_ = 0;
   action_done_ = false;
-  std::snprintf(toast_, sizeof(toast_), "Boop cal");
-  toast_until_ms_ = clock_.millis() + 1200;
 }
 
 void App::calibrate_mouth() {
@@ -737,8 +717,6 @@ void App::calibrate_mouth() {
   mouth_peak_ = 0.18f;
   calib_percent_ = 0;
   action_done_ = false;
-  std::snprintf(toast_, sizeof(toast_), "Mouth cal");
-  toast_until_ms_ = clock_.millis() + 1200;
 }
 
 void App::set_fan_speed(std::uint8_t duty) {
@@ -895,7 +873,7 @@ bool App::in_minigame() const {
 bool App::in_arcade() const {
   return mode_ == Mode::Snake || mode_ == Mode::Casino || mode_ == Mode::Dino ||
          mode_ == Mode::BadApple || mode_ == Mode::Flappy || mode_ == Mode::Tetris ||
-         mode_ == Mode::Dvd || mode_ == Mode::Bsod;
+         mode_ == Mode::Dvd || mode_ == Mode::Bsod || mode_ == Mode::Spectrum;
 }
 
 void App::enter_games() {
@@ -968,6 +946,21 @@ void App::enter_bsod() {
   mode_ = Mode::Bsod;
   state_.scene = "bsod";
   bsod_reset();
+}
+
+void App::enter_spectrum() {
+  mode_ = Mode::Spectrum;
+  state_.scene = "spectrum";
+  spectrum_ = Spectrum{};
+}
+
+void App::handle_spectrum_pad(const PadState& pad, const PadState& prev) {
+  if (!pressed(pad.ok(), prev.ok())) {
+    return;
+  }
+  for (int i = 0; i < kSpectrumBands; ++i) {
+    spectrum_.peak[i] = 0.0f;
+  }
 }
 
 void App::enter_safe_mode() {
@@ -1187,6 +1180,8 @@ void App::apply_pad(const PadState& pad) {
           enter_dvd();
         } else if (state_.game_index == 7) {
           enter_bsod();
+        } else if (state_.game_index == 8) {
+          enter_spectrum();
         } else {
           enter_snake();
         }
@@ -1203,6 +1198,8 @@ void App::apply_pad(const PadState& pad) {
       handle_badapple_pad(pad, prev);
     } else if (mode_ == Mode::Tetris) {
       handle_tetris_pad(pad, prev);
+    } else if (mode_ == Mode::Spectrum) {
+      handle_spectrum_pad(pad, prev);
     }
     blink_held_ = false;
   } else {
@@ -2605,6 +2602,28 @@ void App::update_bsod(std::uint32_t now_ms) {
   state_.bsod_bars = bsod_.bars;
 }
 
+void App::update_spectrum(std::uint32_t now_ms) {
+  (void)now_ms;
+  if (mode_ != Mode::Spectrum) {
+    return;
+  }
+  float max_band = 0.02f;
+  for (int i = 0; i < kSpectrumBands; ++i) {
+    const float mag = goertzel_mag(mic_pcm_, mic_pcm_count_, kSpectrumK[i]);
+    spectrum_.level[i] = spectrum_.level[i] * 0.45f + mag * 0.55f;
+    if (spectrum_.level[i] > spectrum_.peak[i]) {
+      spectrum_.peak[i] = spectrum_.level[i];
+    } else {
+      spectrum_.peak[i] *= 0.88f;
+    }
+    max_band = std::max(max_band, spectrum_.level[i]);
+  }
+  spectrum_.norm = std::max(max_band, spectrum_.norm * 0.96f);
+  if (spectrum_.norm < 0.04f) {
+    spectrum_.norm = 0.04f;
+  }
+}
+
 void App::update_fps(std::uint32_t now_ms) {
   ++fps_ticks_;
   if (now_ms - fps_window_ms_ < 1000) {
@@ -2746,6 +2765,27 @@ void App::render_bsod(std::uint32_t now_ms) {
   const int y0 = bsod_bar_y0();
   for (int i = 0; i < bsod_.bars; ++i) {
     blit_bsod_sprite(matrix_fb_, "bar", 0, y0 + i * kBsodBarH);
+  }
+}
+
+void App::render_spectrum() {
+  matrix_fb_.clear(Color::black());
+  blit_spectrum_sprite(matrix_fb_, "baseline", 0, kSpectrumPlotH, Color::white());
+  for (int i = 0; i < kSpectrumBands; ++i) {
+    const float scale = 1.0f / spectrum_.norm;
+    const int h = std::clamp(static_cast<int>(spectrum_.level[i] * scale * static_cast<float>(kSpectrumPlotH)),
+                             0, kSpectrumPlotH);
+    const int peak_h =
+        std::clamp(static_cast<int>(spectrum_.peak[i] * scale * static_cast<float>(kSpectrumPlotH)), 0,
+                   kSpectrumPlotH);
+    const int x = i * kSpectrumBarW;
+    const Color bar = hue_rgb(static_cast<std::uint8_t>(170 - i * 9));
+    if (h > 0) {
+      matrix_fb_.fill_rect(x, kSpectrumPlotH - h, kSpectrumBarW - 1, h, bar);
+    }
+    if (peak_h > 0) {
+      blit_spectrum_sprite(matrix_fb_, "peak", x, kSpectrumPlotH - peak_h - 1, bar);
+    }
   }
 }
 
@@ -2923,6 +2963,18 @@ void App::render_oled_bsod() {
   oled_fb_.draw_text((kOledW - pw) / 2, 46, line, true);
 }
 
+void App::render_oled_spectrum() {
+  oled_fb_.fill_rect(0, 0, kOledW, kOledYellowH, true);
+  const int title_w = text_width("SPECTRUM");
+  oled_fb_.draw_text((kOledW - title_w) / 2, 4, "SPECTRUM", false);
+  const int pct = std::clamp(static_cast<int>(state_.mic * 100.0f + 0.5f), 0, 100);
+  char line[12];
+  std::snprintf(line, sizeof(line), "%d%%", pct);
+  const int pw = text_width(line) * 2;
+  oled_fb_.draw_text((kOledW - pw) / 2, 22, line, true, 2);
+  oled_fb_.draw_text((kOledW - text_width("BLINK PEAK")) / 2, 46, "BLINK PEAK", true);
+}
+
 void App::render_oled_casino() {
   oled_fb_.fill_rect(0, 0, kOledW, kOledYellowH, true);
   const int title_w = text_width("CASINO");
@@ -2984,7 +3036,7 @@ void App::render_face(std::uint32_t now_ms) {
     const assets::Emotion* boop = assets::find_emotion("Boop");
     const assets::EmotionFrame* frame = frame_at(boop, 0);
     if (frame != nullptr) {
-      matrix_fb_.blit_rgb(0, 0, kFaceW, kFaceH, frame->rgb, frame->size);
+      matrix_fb_.blit_pix(0, 0, kFaceW, kFaceH, frame->pix, frame->size);
     }
     apply_boop_overlay(now_ms);
     apply_boop_hue(now_ms);
@@ -2994,7 +3046,7 @@ void App::render_face(std::uint32_t now_ms) {
       frame = frame_at(assets::find_emotion("Neutral"), 0);
     }
     if (frame != nullptr) {
-      matrix_fb_.blit_rgb(0, 0, kFaceW, kFaceH, frame->rgb, frame->size);
+      matrix_fb_.blit_pix(0, 0, kFaceW, kFaceH, frame->pix, frame->size);
     }
     apply_effect(now_ms);
     // Classic faces keep one static RGB sprite. Overlays then rewrite pixels in
@@ -3508,10 +3560,6 @@ void App::render_oled_faceset() {
   const int line_x = state_.pad.x / 2;
   const int line_y = 16 + static_cast<int>(state_.pad.y * 48 / 255);
   oled_fb_.draw_line(64, 40, line_x, line_y, true);
-  if (clock_.millis() < toast_until_ms_ && toast_[0] != '\0') {
-    oled_fb_.fill_rect(0, 56, 128, 8, false);
-    oled_fb_.draw_text(0, 56, toast_, true);
-  }
 }
 
 void App::render_oled_auto(std::uint32_t now_ms) {
@@ -3607,6 +3655,10 @@ void App::render_oled(std::uint32_t now_ms) {
     render_oled_bsod();
     return;
   }
+  if (mode_ == Mode::Spectrum) {
+    render_oled_spectrum();
+    return;
+  }
   render_oled_header();
   if (mode_ == Mode::Auto) {
     render_oled_auto(now_ms);
@@ -3664,6 +3716,7 @@ void App::tick() {
   update_tetris(now);
   update_dvd(now);
   update_bsod(now);
+  update_spectrum(now);
   update_fps(now);
 
   if (mode_ == Mode::Snake) {
@@ -3682,6 +3735,8 @@ void App::tick() {
     render_dvd(now);
   } else if (mode_ == Mode::Bsod) {
     render_bsod(now);
+  } else if (mode_ == Mode::Spectrum) {
+    render_spectrum();
   } else if (!state_.matrix_enabled) {
     matrix_fb_.clear(Color::black());
   } else {
@@ -3692,17 +3747,19 @@ void App::tick() {
 
   const Color* src = matrix_fb_.data();
   const int count = matrix_fb_.width() * matrix_fb_.height();
-  std::vector<Color> dimmed(static_cast<std::size_t>(count));
+  const Color* out = src;
   if (!state_.matrix_enabled && !in_arcade()) {
     for (int i = 0; i < count; ++i) {
-      dimmed[static_cast<std::size_t>(i)] = Color::black();
+      present_dim_[static_cast<std::size_t>(i)] = Color::black();
     }
-  } else {
+    out = present_dim_;
+  } else if (state_.brightness != 255) {
     for (int i = 0; i < count; ++i) {
-      dimmed[static_cast<std::size_t>(i)] = scale(src[i], state_.brightness);
+      present_dim_[static_cast<std::size_t>(i)] = scale(src[i], state_.brightness);
     }
+    out = present_dim_;
   }
-  matrix_.present(dimmed.data(), matrix_fb_.width(), matrix_fb_.height());
+  matrix_.present(out, matrix_fb_.width(), matrix_fb_.height());
   oled_.present(oled_fb_.packed(), oled_fb_.width(), oled_fb_.height());
 }
 

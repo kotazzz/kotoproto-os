@@ -163,17 +163,14 @@ void OledCanvas::blit_packed_shift(const std::uint8_t* src, int dx) {
 }
 
 int OledCanvas::draw_char(int x, int y, char ch, bool on, int scale) {
-  const char* glyph = glyph5x7(ch);
-  if (glyph == nullptr) {
-    glyph = glyph5x7('?');
-  }
-  if (glyph == nullptr) {
-    return (kFontWidth + kFontSpacing) * std::max(1, scale);
-  }
+  const std::uint8_t* glyph = glyph5x7(ch);
   const int s = std::max(1, scale);
+  if (glyph == nullptr) {
+    return (kFontWidth + kFontSpacing) * s;
+  }
   for (int row = 0; row < kFontHeight; ++row) {
     for (int col = 0; col < kFontWidth; ++col) {
-      if (glyph[row * kFontWidth + col] == 'X') {
+      if (glyph5x7_dot(glyph, col, row)) {
         fill_rect(x + col * s, y + row * s, s, s, on);
       }
     }

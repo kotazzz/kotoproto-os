@@ -21,6 +21,8 @@ import sys
 import zlib
 from pathlib import Path
 
+from pix_pack import pack_pix
+
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets"
 EMOTIONS_JSON = ASSETS / "emotions.json"
@@ -39,12 +41,19 @@ ATLAS_LABEL = ATLAS_INK
 
 def load_atlas_glyphs() -> dict[str, str]:
     text = (ROOT / "firmware" / "src" / "gfx" / "font5x7.cpp").read_text(encoding="utf-8")
-    glyphs = {" ": "." * 35}
-    for match in re.finditer(r"case '([^']+)':\s*return\s*((?:\"[X.]+\"\s*)+);", text):
-        ch = match.group(1)
-        bits = "".join(re.findall(r"\"([X.]+)\"", match.group(2)))
+    glyphs: dict[str, str] = {" ": "." * 35}
+    rows = re.findall(
+        r"\{((?:0x[0-9A-Fa-f]{2},\s*){6}0x[0-9A-Fa-f]{2})\},\s*//\s*(\d+)",
+        text,
+    )
+    for hexes, code in rows:
+        bits = ""
+        for byte in re.findall(r"0x([0-9A-Fa-f]{2})", hexes):
+            val = int(byte, 16)
+            for col in range(5):
+                bits += "X" if val & (0x80 >> col) else "."
         if len(bits) == 35:
-            glyphs[ch] = bits
+            glyphs[chr(int(code))] = bits
     return glyphs
 
 
@@ -494,9 +503,10 @@ def emit_cpp(catalog: dict) -> None:
             if not first_file:
                 first_file = filename
             rgb = load_frame_rgb(filename)
-            rgb_name = f"kRgb_{ident}_{idx:02d}"
+            pix = pack_pix(FACE_W, FACE_H, rgb)
+            rgb_name = f"kPix_{ident}_{idx:02d}"
             chunks.append(f"const std::uint8_t {rgb_name}[] = {{")
-            chunks.append(cpp_bytes(rgb))
+            chunks.append(cpp_bytes(pix))
             chunks.append("};")
             chunks.append("")
             frame_idents.append((rgb_name, ms))
@@ -522,7 +532,7 @@ def emit_cpp(catalog: dict) -> None:
         accent = emo.get("accent", [90, 220, 255])
         emotion_rows.append(
             "    {"
-            f'"{emo["id"]}", "{emo.get("label", emo["id"])}", "{emo.get("short", emo["id"])}", '
+            f'"{emo["id"]}", "{emo.get("short", emo["id"])}", '
             f'{CPP_KIND[emo["kind"]]}, {CPP_EFFECT.get(emo["effect"], "Effect::None")}, '
             f'{CPP_TRANS.get(emo.get("transition", "blink"), "face::TransitionKind::Blink")}, '
             f'Color{{{int(accent[0])}, {int(accent[1])}, {int(accent[2])}}}, '
@@ -718,6 +728,7 @@ def copy_atlas_pngs() -> None:
         "tetris_sprites.png",
         "dvd_sprites.png",
         "bsod_sprites.png",
+        "spectrum_sprites.png",
     ):
         src = ASSETS / name
         if src.exists():
@@ -734,6 +745,7 @@ def pack() -> None:
     run_atlas("tetris_atlas.py")
     run_atlas("dvd_atlas.py")
     run_atlas("bsod_atlas.py")
+    run_atlas("spectrum_atlas.py")
     run_atlas("games_atlas.py")
     run_atlas("face_components_atlas.py")
     copy_atlas_pngs()

@@ -9,6 +9,7 @@ add_library(koto_core
   src/assets/tetris.cpp
   src/assets/dvd.cpp
   src/assets/bsod.cpp
+  src/assets/spectrum.cpp
   src/assets/emotions.cpp
   src/gfx/framebuffer.cpp
   src/gfx/oled_canvas.cpp

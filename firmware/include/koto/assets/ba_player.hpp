@@ -12,6 +12,8 @@ inline constexpr int kBaWidth = 64;
 inline constexpr int kBaHeight = 32;
 inline constexpr int kBaBpf = 256;
 inline constexpr std::uint8_t kBaRaw = 0xFFu;
+inline constexpr std::uint8_t kBaMask = 0xFEu;
+inline constexpr int kBaMaskBytes = 32;
 
 #if defined(_MSC_VER)
 #pragma pack(push, 1)
@@ -71,6 +73,22 @@ inline bool ba_next(BaPlayer& s) {
     }
     std::memcpy(s.pixels, s.p, kBaBpf);
     s.p += kBaBpf;
+  } else if (n == kBaMask) {
+    if (s.p + kBaMaskBytes > s.end) {
+      return false;
+    }
+    const std::uint8_t* mask = s.p;
+    s.p += kBaMaskBytes;
+    for (int i = 0; i < kBaBpf; ++i) {
+      const std::uint8_t bit = static_cast<std::uint8_t>(0x80 >> (i & 7));
+      if ((mask[i >> 3] & bit) == 0) {
+        continue;
+      }
+      if (s.p >= s.end) {
+        return false;
+      }
+      s.pixels[i] = *s.p++;
+    }
   } else {
     if (s.p + static_cast<std::uint16_t>(n) * 2u > s.end) {
       return false;

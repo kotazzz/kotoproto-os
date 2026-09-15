@@ -7,9 +7,9 @@
   "height": 32,
   "bpf": 256,
   "raw_bytes": 1402368,
-  "packed_bytes": 393165,
-  "avg_bytes_per_frame": 71.77,
+  "packed_bytes": 323331,
+  "avg_bytes_per_frame": 59.02,
   "fits_1mb": true,
-  "format": "BA1P sparse byte-patch, no zlib",
+  "format": "BA1P patch / 0xFE byte-mask / raw, no zlib",
   "note": "Bad Apple!! PV is a third-party asset, not original kotoproto art"
 }

@@ -1,4 +1,4 @@
-"""Games icon atlas: 32×32 Snake / Casino / Dino / Apple / Flappy / Tetris / DVD / BSOD tiles.
+"""Games icon atlas: 32×32 Snake / Casino / Dino / Apple / Flappy / Tetris / DVD / BSOD / Spectrum tiles.
 
     python tools/games_atlas.py
 
@@ -45,6 +45,7 @@ TILES = (
     ("game_tetris", TILE_X, (SIZE + GAP) * 5),
     ("game_dvd", TILE_X, (SIZE + GAP) * 6),
     ("game_bsod", TILE_X, (SIZE + GAP) * 7),
+    ("game_spectrum", TILE_X, (SIZE + GAP) * 8),
 )
 
 
@@ -197,6 +198,18 @@ def blit_dvd(rgb: bytearray, width: int, ox: int, oy: int) -> None:
         atlas_set(rgb, width, ox + x, oy + 19, ATLAS_INK)
 
 
+def blit_spectrum(rgb: bytearray, width: int, ox: int, oy: int) -> None:
+    heights = (8, 14, 22, 26, 20, 16, 10, 6)
+    for i, h in enumerate(heights):
+        x = ox + 2 + i * 4
+        y0 = oy + SIZE - 2 - h
+        for row in range(h):
+            for dx in range(3):
+                atlas_set(rgb, width, x + dx, y0 + row, ATLAS_LIT)
+    for x in range(2, 30):
+        atlas_set(rgb, width, ox + x, oy + 30, ATLAS_LIT)
+
+
 def blit_bsod(rgb: bytearray, width: int, ox: int, oy: int) -> None:
     sad = (
         "###           ####",
@@ -222,7 +235,7 @@ def blit_bsod(rgb: bytearray, width: int, ox: int, oy: int) -> None:
 
 
 def ensure_canvas() -> None:
-    need_h = SIZE * 8 + GAP * 7
+    need_h = SIZE * 9 + GAP * 8
     need_w = TILE_X + SIZE + 2
     if not ATLAS_PNG.exists():
         return
@@ -244,7 +257,7 @@ def init_png() -> None:
         ensure_canvas()
         return
     width = TILE_X + SIZE + 2
-    height = SIZE * 8 + GAP * 7
+    height = SIZE * 9 + GAP * 8
     rgb = bytearray(width * height * 3)
     atlas_fill(rgb, width, height, ATLAS_PURPLE)
     for _, ox, oy in TILES:
@@ -264,6 +277,8 @@ def init_png() -> None:
     blit_dvd(rgb, width, TILE_X, (SIZE + GAP) * 6)
     atlas_text(rgb, width, 1, (SIZE + GAP) * 7 + 12, "BSOD")
     blit_bsod(rgb, width, TILE_X, (SIZE + GAP) * 7)
+    atlas_text(rgb, width, 1, (SIZE + GAP) * 8 + 12, "SPECTRUM")
+    blit_spectrum(rgb, width, TILE_X, (SIZE + GAP) * 8)
     write_png_rgb(ATLAS_PNG, width, height, bytes(rgb))
     print(f"created {ATLAS_PNG}")
 
@@ -386,6 +401,30 @@ def paint_bsod_if_empty() -> None:
     atlas_text(rgb, png_w, 1, oy + 12, "BSOD")
     write_png_rgb(ATLAS_PNG, png_w, png_h, bytes(rgb))
     print(f"painted game_bsod icon in {ATLAS_PNG.name}")
+
+
+def paint_spectrum_if_empty() -> None:
+    png_w, png_h, raw = read_png_rgb(ATLAS_PNG)
+    ox, oy = TILE_X, (SIZE + GAP) * 8
+    if oy + SIZE > png_h:
+        return
+    lit = False
+    for row in range(SIZE):
+        for col in range(SIZE):
+            i = ((oy + row) * png_w + (ox + col)) * 3
+            if (raw[i], raw[i + 1], raw[i + 2]) == ATLAS_LIT:
+                lit = True
+                break
+        if lit:
+            break
+    if lit:
+        return
+    rgb = bytearray(raw)
+    fill_rect(rgb, png_w, ox, oy, SIZE, SIZE, ATLAS_INK)
+    blit_spectrum(rgb, png_w, ox, oy)
+    atlas_text(rgb, png_w, 1, oy + 12, "SPECTRUM")
+    write_png_rgb(ATLAS_PNG, png_w, png_h, bytes(rgb))
+    print(f"painted game_spectrum icon in {ATLAS_PNG.name}")
 
 
 def paint_tile_ink() -> None:
@@ -515,6 +554,17 @@ def unpack() -> None:
             "w": SIZE,
             "h": SIZE,
         },
+        {
+            "id": "game_spectrum",
+            "kind": "game",
+            "label": "SPECTRUM",
+            "label_x": 1,
+            "label_y": (SIZE + GAP) * 8 + 12,
+            "x": TILE_X,
+            "y": (SIZE + GAP) * 8,
+            "w": SIZE,
+            "h": SIZE,
+        },
     ]
     for tile in tiles:
         bits = extract_bits(rgb, png_w, tile["x"], tile["y"], tile["w"], tile["h"])
@@ -528,7 +578,7 @@ def unpack() -> None:
         "lit": [255, 255, 255],
         "gap": GAP,
         "atlas": {"file": ATLAS_PNG.name, "width": png_w, "height": png_h},
-        "groups": [{"id": "games", "size": SIZE, "count": 8}],
+        "groups": [{"id": "games", "size": SIZE, "count": 9}],
         "tiles": tiles,
     }
     ATLAS_JSON.write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -542,5 +592,6 @@ if __name__ == "__main__":
     paint_tetris_if_empty()
     paint_dvd_if_empty()
     paint_bsod_if_empty()
+    paint_spectrum_if_empty()
     paint_tile_ink()
     unpack()

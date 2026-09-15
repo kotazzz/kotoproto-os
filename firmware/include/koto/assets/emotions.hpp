@@ -14,14 +14,13 @@ enum class Kind : std::uint8_t { Classic, Special };
 enum class Effect : std::uint8_t { None, Snarl, Dizzy, Wink, Randomize, Glitch };
 
 struct EmotionFrame {
-  const std::uint8_t* rgb;
+  const std::uint8_t* pix;
   std::size_t size;
   int duration_ms;
 };
 
 struct Emotion {
   const char* id;
-  const char* label;
   const char* short_label;
   Kind kind;
   Effect effect;

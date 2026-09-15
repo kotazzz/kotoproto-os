@@ -11,7 +11,7 @@ struct TetrisSprite {
   const char* id;
   int width;
   int height;
-  const std::uint8_t* rgb;
+  const std::uint8_t* pix;
   std::size_t size;
 };
 

@@ -62,7 +62,6 @@
   "emotions": [
     {
       "id": "Neutral",
-      "label": "Neutral",
       "short": "Neutral",
       "kind": "classic",
       "effect": "none",
@@ -84,7 +83,6 @@
     },
     {
       "id": "Joy",
-      "label": "Joy",
       "short": "Joy",
       "kind": "classic",
       "effect": "none",
@@ -106,7 +104,6 @@
     },
     {
       "id": "JoyBlush",
-      "label": "JoyBlush",
       "short": "JoyBlush",
       "kind": "classic",
       "effect": "none",
@@ -128,7 +125,6 @@
     },
     {
       "id": "Blushing",
-      "label": "Blushing",
       "short": "Blush",
       "kind": "classic",
       "effect": "none",
@@ -150,7 +146,6 @@
     },
     {
       "id": "Angry",
-      "label": "Angry",
       "short": "Angry",
       "kind": "classic",
       "effect": "snarl",
@@ -172,7 +167,6 @@
     },
     {
       "id": "AngryHappy",
-      "label": "AngryHappy",
       "short": "AngHappy",
       "kind": "classic",
       "effect": "none",
@@ -194,7 +188,6 @@
     },
     {
       "id": "Annoyed",
-      "label": "Annoyed",
       "short": "Annoyed",
       "kind": "classic",
       "effect": "snarl",
@@ -216,7 +209,6 @@
     },
     {
       "id": "Spooked",
-      "label": "Spooked",
       "short": "Spooked",
       "kind": "classic",
       "effect": "none",
@@ -238,7 +230,6 @@
     },
     {
       "id": "Squinting",
-      "label": "Squinting",
       "short": "Squint",
       "kind": "classic",
       "effect": "none",
@@ -260,7 +251,6 @@
     },
     {
       "id": "Questioning",
-      "label": "Questioning",
       "short": "Ques",
       "kind": "classic",
       "effect": "none",
@@ -282,7 +272,6 @@
     },
     {
       "id": "Exclamation",
-      "label": "Exclamation",
       "short": "Excl",
       "kind": "classic",
       "effect": "none",
@@ -308,7 +297,6 @@
     },
     {
       "id": "UWU",
-      "label": "UWU",
       "short": "UWU",
       "kind": "classic",
       "effect": "none",
@@ -330,7 +318,6 @@
     },
     {
       "id": "OWO",
-      "label": "OWO",
       "short": "OWO",
       "kind": "classic",
       "effect": "none",
@@ -352,7 +339,6 @@
     },
     {
       "id": "NOPE",
-      "label": "NOPE",
       "short": "NOPE",
       "kind": "special",
       "effect": "none",
@@ -377,7 +363,6 @@
     },
     {
       "id": "Wink",
-      "label": "Wink",
       "short": "Wink",
       "kind": "classic",
       "effect": "wink",
@@ -403,7 +388,6 @@
     },
     {
       "id": "HeartEyes",
-      "label": "HeartEyes",
       "short": "Hearts",
       "kind": "classic",
       "effect": "none",
@@ -445,7 +429,6 @@
     },
     {
       "id": "Dead",
-      "label": "Dead",
       "short": "Dead",
       "kind": "classic",
       "effect": "glitch",
@@ -467,7 +450,6 @@
     },
     {
       "id": "PowerOff",
-      "label": "PowerOff",
       "short": "Off",
       "kind": "special",
       "effect": "none",
@@ -488,7 +470,6 @@
     },
     {
       "id": "BatteryCheck",
-      "label": "BatteryCheck",
       "short": "Batt",
       "kind": "special",
       "effect": "none",
@@ -514,7 +495,6 @@
     },
     {
       "id": "Crying",
-      "label": "Crying",
       "short": "Crying",
       "kind": "classic",
       "effect": "none",
@@ -556,7 +536,6 @@
     },
     {
       "id": "Dizzy",
-      "label": "Dizzy",
       "short": "Dizzy",
       "kind": "classic",
       "effect": "dizzy",
@@ -582,7 +561,6 @@
     },
     {
       "id": "Randomize",
-      "label": "Randomize",
       "short": "Rnd",
       "kind": "special",
       "effect": "randomize",
@@ -604,7 +582,6 @@
     },
     {
       "id": "Startup",
-      "label": "Startup",
       "short": "Hello",
       "kind": "special",
       "effect": "none",
@@ -626,7 +603,6 @@
     },
     {
       "id": "None",
-      "label": "None",
       "short": "none",
       "kind": "special",
       "effect": "none",
@@ -647,7 +623,6 @@
     },
     {
       "id": "Boop",
-      "label": "Boop",
       "short": "Boop",
       "kind": "special",
       "effect": "none",

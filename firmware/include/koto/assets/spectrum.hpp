@@ -7,7 +7,7 @@
 namespace koto {
 namespace assets {
 
-struct DinoSprite {
+struct SpectrumSprite {
   const char* id;
   int width;
   int height;
@@ -15,10 +15,10 @@ struct DinoSprite {
   std::size_t size;
 };
 
-extern const DinoSprite kDinoSprites[];
-extern const int kDinoSpriteCount;
+extern const SpectrumSprite kSpectrumSprites[];
+extern const int kSpectrumSpriteCount;
 
-const DinoSprite* find_dino_sprite(std::string_view id);
+const SpectrumSprite* find_spectrum_sprite(std::string_view id);
 
 }  // namespace assets
 }  // namespace koto

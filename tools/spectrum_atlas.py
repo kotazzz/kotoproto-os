@@ -1,10 +1,10 @@
-"""Windows BSOD tiles: authoring sheet + firmware RGB tables.
+"""Spectrum analyzer tiles: authoring sheet + firmware RGB tables.
 
-    python tools/bsod_atlas.py
+    python tools/spectrum_atlas.py
 
 PNG is the source after the first run. Missing PNG is created with the
-white ":(" header and a 64×2 bar (black labels). Pack embeds the tiles
-into firmware/src/assets/bsod.cpp and paints the 32×32 game_bsod icon
+peak marker and 64×2 baseline (black labels). Pack embeds the tiles into
+firmware/src/assets/spectrum.cpp and paints the 32×32 game_spectrum icon
 into games_icons.png.
 """
 
@@ -32,48 +32,39 @@ from pix_pack import pack_pix
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets"
-ATLAS_PNG = ASSETS / "bsod_sprites.png"
-ATLAS_JSON = ASSETS / "bsod_sprites.json"
+ATLAS_PNG = ASSETS / "spectrum_sprites.png"
+ATLAS_JSON = ASSETS / "spectrum_sprites.json"
 GAMES_PNG = ASSETS / "games_icons.png"
-GEN_CPP = ROOT / "firmware" / "src" / "assets" / "bsod.cpp"
+GEN_CPP = ROOT / "firmware" / "src" / "assets" / "spectrum.cpp"
 
 GAP = 1
 MARGIN = 1
 LABEL_W = 48
 ICON = 32
 GAMES_TILE_X = LABEL_W + GAP
-SAD_W = 18
-SAD_H = 12
-BAR_W = 64
-BAR_H = 2
+PEAK_W = 3
+PEAK_H = 2
+BASE_W = 64
+BASE_H = 2
 
 INK = (0, 0, 0)
 LIT = (255, 255, 255)
 
 TILES = (
-    ("sad", "SAD", SAD_W, SAD_H),
-    ("bar", "BAR", BAR_W, BAR_H),
+    ("peak", "PEAK", PEAK_W, PEAK_H),
+    ("baseline", "BASE", BASE_W, BASE_H),
 )
 
-# Windows 10 BSOD header ":(" — white on black, tinted by the visor blue fill.
-SAD = (
-    "###           ####",
-    "###          #   #",
-    "###         #     ",
-    "            #     ",
-    "            #     ",
-    "###         #     ",
-    "###         #     ",
-    "###         #     ",
-    "             #   #",
-    "              ####",
-    "                  ",
-    "                  ",
+PEAK = (
+    ".X.",
+    "X.X",
 )
+
+ICON_BARS = (8, 14, 22, 26, 20, 16, 10, 6)
 
 
 def ident(name: str) -> str:
-    return "kBsod_" + re.sub(r"[^A-Za-z0-9_]", "_", name)
+    return "kSpectrum_" + re.sub(r"[^A-Za-z0-9_]", "_", name)
 
 
 def tile_y(index: int, heights: list[int]) -> int:
@@ -83,34 +74,32 @@ def tile_y(index: int, heights: list[int]) -> int:
     return y
 
 
-def set_px(buf: bytearray, w: int, h: int, x: int, y: int, color: tuple[int, int, int]) -> None:
-    if x < 0 or y < 0 or x >= w or y >= h:
-        return
-    i = (y * w + x) * 3
-    buf[i], buf[i + 1], buf[i + 2] = color
-
-
-def paint_sad(buf: bytearray, w: int, h: int) -> None:
-    for y, row in enumerate(SAD):
+def paint_peak(buf: bytearray, w: int, h: int) -> None:
+    for y, row in enumerate(PEAK):
         if y >= h:
             break
         for x, ch in enumerate(row):
-            if ch == "#":
-                set_px(buf, w, h, x, y, LIT)
+            if ch == "X" and x < w:
+                i = (y * w + x) * 3
+                buf[i], buf[i + 1], buf[i + 2] = LIT
 
 
-def paint_bar(buf: bytearray, w: int, h: int) -> None:
-    for y in range(h):
-        for x in range(w):
-            set_px(buf, w, h, x, y, LIT)
+def paint_baseline(buf: bytearray, w: int, h: int) -> None:
+    for x in range(w):
+        if h > 1:
+            i = (1 * w + x) * 3
+            buf[i], buf[i + 1], buf[i + 2] = LIT
+        if x % 4 == 0:
+            i = x * 3
+            buf[i], buf[i + 1], buf[i + 2] = LIT
 
 
 def make_tile(name: str, w: int, h: int) -> bytes:
     buf = bytearray(w * h * 3)
-    if name == "sad":
-        paint_sad(buf, w, h)
-    elif name == "bar":
-        paint_bar(buf, w, h)
+    if name == "peak":
+        paint_peak(buf, w, h)
+    elif name == "baseline":
+        paint_baseline(buf, w, h)
     return bytes(buf)
 
 
@@ -156,23 +145,22 @@ def init_png() -> None:
     print(f"created {ATLAS_PNG}")
 
 
-def paint_icon_sad(rgb: bytearray, width: int, ox: int, oy: int) -> None:
-    for y, row in enumerate(SAD):
-        for x, ch in enumerate(row):
-            if ch == "#":
-                atlas_set(rgb, width, ox + 7 + x, oy + 4 + y, ATLAS_LIT)
-    for i in range(3):
-        y = 22 + i * 3
-        for x in range(4, 28):
-            atlas_set(rgb, width, ox + x, oy + y, ATLAS_LIT)
-            atlas_set(rgb, width, ox + x, oy + y + 1, ATLAS_LIT)
+def paint_icon_bars(rgb: bytearray, width: int, ox: int, oy: int) -> None:
+    for i, h in enumerate(ICON_BARS):
+        x = ox + 2 + i * 4
+        y0 = oy + ICON - 2 - h
+        for y in range(h):
+            for dx in range(3):
+                atlas_set(rgb, width, x + dx, y0 + y, ATLAS_LIT)
+    for x in range(2, 30):
+        atlas_set(rgb, width, ox + x, oy + 30, ATLAS_LIT)
 
 
 def paint_game_icon() -> None:
     if not GAMES_PNG.exists():
         return
     png_w, png_h, raw = read_png_rgb(GAMES_PNG)
-    tile_y0 = (ICON + GAP) * 7
+    tile_y0 = (ICON + GAP) * 8
     need_h = tile_y0 + ICON
     need_w = max(png_w, GAMES_TILE_X + ICON + 2)
     if png_h < need_h or png_w < need_w:
@@ -189,16 +177,16 @@ def paint_game_icon() -> None:
     for row in range(ICON):
         for col in range(ICON):
             atlas_set(rgb, png_w, ox + col, oy + row, ATLAS_INK)
-    paint_icon_sad(rgb, png_w, ox, oy)
-    atlas_text(rgb, png_w, 1, oy + 12, "BSOD")
+    paint_icon_bars(rgb, png_w, ox, oy)
+    atlas_text(rgb, png_w, 1, oy + 12, "SPECTRUM")
     write_png_rgb(GAMES_PNG, png_w, png_h, bytes(rgb))
-    print(f"painted game_bsod icon in {GAMES_PNG.name}")
+    print(f"painted game_spectrum icon in {GAMES_PNG.name}")
 
 
 def emit_cpp(tiles: list[tuple[str, int, int, bytes]]) -> None:
     chunks = [
-        "// GENERATED by tools/bsod_atlas.py — do not edit.",
-        '#include "koto/assets/bsod.hpp"',
+        "// GENERATED by tools/spectrum_atlas.py — do not edit.",
+        '#include "koto/assets/spectrum.hpp"',
         "",
         "namespace koto {",
         "namespace assets {",
@@ -215,18 +203,19 @@ def emit_cpp(tiles: list[tuple[str, int, int, bytes]]) -> None:
         rows.append(f'    {{"{name}", {w}, {h}, {var}, sizeof({var})}},')
     chunks.append("}  // namespace")
     chunks.append("")
-    chunks.append("const BsodSprite kBsodSprites[] = {")
+    chunks.append("const SpectrumSprite kSpectrumSprites[] = {")
     chunks.append("\n".join(rows))
     chunks.append("};")
     chunks.append(
-        "const int kBsodSpriteCount = static_cast<int>(sizeof(kBsodSprites) / sizeof(kBsodSprites[0]));"
+        "const int kSpectrumSpriteCount = "
+        "static_cast<int>(sizeof(kSpectrumSprites) / sizeof(kSpectrumSprites[0]));"
     )
     chunks.append(
         """
-const BsodSprite* find_bsod_sprite(std::string_view id) {
-  for (int i = 0; i < kBsodSpriteCount; ++i) {
-    if (id == kBsodSprites[i].id) {
-      return &kBsodSprites[i];
+const SpectrumSprite* find_spectrum_sprite(std::string_view id) {
+  for (int i = 0; i < kSpectrumSpriteCount; ++i) {
+    if (id == kSpectrumSprites[i].id) {
+      return &kSpectrumSprites[i];
     }
   }
   return nullptr;
@@ -270,23 +259,36 @@ def pack() -> None:
     if changed:
         write_png_rgb(ATLAS_PNG, png_w, png_h, bytes(rgb))
         print(f"recolored {changed} label pixels black in {ATLAS_PNG.name}")
+        raw = bytes(rgb)
         packed = []
         for index, (name, _label, w, h) in enumerate(TILES):
             oy = tile_y(index, heights)
-            packed.append((name, w, h, crop_tile(bytes(rgb), png_w, tx, oy, w, h)))
+            packed.append((name, w, h, crop_tile(raw, png_w, tx, oy, w, h)))
+    paint_game_icon()
     emit_cpp(packed)
     meta = {
-        "how_to": "python tools/bsod_atlas.py  # PNG → firmware RGB tiles",
+        "how_to": "python tools/spectrum_atlas.py  # PNG → firmware RGB tiles",
         "packed": True,
         "grid": {"color": list(ATLAS_PURPLE)},
         "ink": [0, 0, 0],
+        "lit": [255, 255, 255],
         "gap": GAP,
         "atlas": {"file": ATLAS_PNG.name, "width": png_w, "height": png_h},
         "tiles": meta_tiles,
     }
+    for tile, (_n, w, h, rgb) in zip(meta["tiles"], packed):
+        bits = []
+        for row in range(h):
+            cells = []
+            for col in range(w):
+                i = (row * w + col) * 3
+                lit = (rgb[i], rgb[i + 1], rgb[i + 2]) == LIT
+                cells.append("X" if lit else ".")
+            bits.append("".join(cells))
+        tile["bits"] = bits
+        tile["empty"] = not any("X" in row for row in bits)
     ATLAS_JSON.write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"updated {ATLAS_JSON.name}")
-    paint_game_icon()
+    print(f"updated {ATLAS_JSON.name} from {ATLAS_PNG.name}")
 
 
 if __name__ == "__main__":

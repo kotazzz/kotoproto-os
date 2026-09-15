@@ -1,0 +1,59 @@
+{
+  "how_to": "python tools/spectrum_atlas.py  # PNG → firmware RGB tiles",
+  "packed": true,
+  "grid": {
+    "color": [
+      255,
+      0,
+      255
+    ]
+  },
+  "ink": [
+    0,
+    0,
+    0
+  ],
+  "lit": [
+    255,
+    255,
+    255
+  ],
+  "gap": 1,
+  "atlas": {
+    "file": "spectrum_sprites.png",
+    "width": 115,
+    "height": 17
+  },
+  "tiles": [
+    {
+      "id": "peak",
+      "label": "PEAK",
+      "label_x": 1,
+      "label_y": 1,
+      "x": 50,
+      "y": 1,
+      "w": 3,
+      "h": 2,
+      "bits": [
+        ".X.",
+        "X.X"
+      ],
+      "empty": false
+    },
+    {
+      "id": "baseline",
+      "label": "BASE",
+      "label_x": 1,
+      "label_y": 9,
+      "x": 50,
+      "y": 9,
+      "w": 64,
+      "h": 2,
+      "bits": [
+        "X...X...X...X...X...X...X...X...X...X...X...X...X...X...X...X...",
+        "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+      ],
+      "empty": false
+    }
+  ]
+}

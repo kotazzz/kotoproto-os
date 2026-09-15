@@ -17,12 +17,14 @@
 #include "koto/assets/tetris.hpp"
 #include "koto/assets/dvd.hpp"
 #include "koto/assets/bsod.hpp"
+#include "koto/assets/spectrum.hpp"
 #include "koto/assets/emotions.hpp"
 #include "koto/config.hpp"
 #include "koto/face/transition.hpp"
 #include "koto/gfx/font5x7.hpp"
 #include "koto/gfx/framebuffer.hpp"
 #include "koto/gfx/oled_canvas.hpp"
+#include "koto/gfx/pix.hpp"
 #include "koto/hal/clock.hpp"
 #include "koto/hal/fan.hpp"
 #include "koto/hal/hid_host.hpp"
@@ -40,6 +42,7 @@ class MockClock final : public koto::hal::IClock {
  public:
   std::uint32_t millis() const override { return ms_; }
   void advance(std::uint32_t dt) { ms_ += dt; }
+  void reset() { ms_ = 0; }
 
  private:
   std::uint32_t ms_ = 0;
@@ -231,6 +234,21 @@ bool visor_has_hud(const koto::App& app, const char* text) {
   return true;
 }
 
+int oled_text_mismatch(const koto::App& app, int x, int y, const char* text) {
+  koto::gfx::OledCanvas expected(koto::kOledW, koto::kOledH);
+  expected.draw_text(x, y, text, true);
+  const int w = static_cast<int>(std::strlen(text)) * (koto::gfx::kFontWidth + koto::gfx::kFontSpacing);
+  int mismatch = 0;
+  for (int row = y; row < y + koto::gfx::kFontHeight; ++row) {
+    for (int col = x; col < x + w; ++col) {
+      if (app.oled_buffer().get_pixel(col, row) != expected.get_pixel(col, row)) {
+        ++mismatch;
+      }
+    }
+  }
+  return mismatch;
+}
+
 }  // namespace
 
 int main() {
@@ -275,14 +293,14 @@ int main() {
   require(app.state().scene == "startup", "boot splash");
   {
     const koto::assets::Emotion* off = koto::assets::find_emotion("PowerOff");
-    require(off != nullptr && off->frame_count == 1 && off->frames[0].rgb == nullptr, "PowerOff has no sprite");
+    require(off != nullptr && off->frame_count == 1 && off->frames[0].pix == nullptr, "PowerOff has no sprite");
     const koto::assets::Emotion* nope = koto::assets::find_emotion("NOPE");
-    require(nope != nullptr && nope->frame_count == 2 && nope->frames[1].rgb == nullptr, "NOPE flash-off has no sprite");
+    require(nope != nullptr && nope->frame_count == 2 && nope->frames[1].pix == nullptr, "NOPE flash-off has no sprite");
     const koto::assets::Emotion* batt = koto::assets::find_emotion("BatteryCheck");
-    require(batt != nullptr && batt->frame_count == 2 && batt->frames[1].rgb != nullptr,
+    require(batt != nullptr && batt->frame_count == 2 && batt->frames[1].pix != nullptr,
             "BatteryCheck has two authored frames");
     const koto::assets::Emotion* hello = koto::assets::find_emotion("Startup");
-    require(hello != nullptr && hello->frame_count == 1 && hello->frames[0].rgb != nullptr, "Startup is one visor frame");
+    require(hello != nullptr && hello->frame_count == 1 && hello->frames[0].pix != nullptr, "Startup is one visor frame");
     const koto::assets::Emotion* dead = koto::assets::find_emotion("Dead");
     require(dead != nullptr && dead->effect == koto::assets::Effect::Glitch, "Dead uses periodic glitch");
     require(dead->accent.r > dead->accent.g && dead->accent.r > dead->accent.b, "Dead accent is red");
@@ -296,8 +314,8 @@ int main() {
     koto::gfx::Framebuffer from_fb(koto::kFaceW, koto::kFaceH);
     koto::gfx::Framebuffer to_fb(koto::kFaceW, koto::kFaceH);
     koto::gfx::Framebuffer dst(koto::kFaceW, koto::kFaceH);
-    from_fb.blit_rgb(0, 0, koto::kFaceW, koto::kFaceH, from_e->frames[0].rgb, from_e->frames[0].size);
-    to_fb.blit_rgb(0, 0, koto::kFaceW, koto::kFaceH, to_e->frames[0].rgb, to_e->frames[0].size);
+    from_fb.blit_pix(0, 0, koto::kFaceW, koto::kFaceH, from_e->frames[0].pix, from_e->frames[0].size);
+    to_fb.blit_pix(0, 0, koto::kFaceW, koto::kFaceH, to_e->frames[0].pix, to_e->frames[0].size);
 
     auto count_eye = [](const koto::gfx::Framebuffer& fb, int& red, int& cyan) {
       red = 0;
@@ -346,9 +364,9 @@ int main() {
     require(dim.r <= 40 && dim.g == 0 && dim.b == 0, "hue cycle keeps original brightness");
 
     const koto::assets::Emotion* neu = koto::assets::find_emotion("Neutral");
-    require(neu != nullptr && neu->frame_count > 0 && neu->frames[0].rgb != nullptr, "Neutral sprite");
+    require(neu != nullptr && neu->frame_count > 0 && neu->frames[0].pix != nullptr, "Neutral sprite");
     koto::gfx::Framebuffer neu_fb(koto::kFaceW, koto::kFaceH);
-    neu_fb.blit_rgb(0, 0, koto::kFaceW, koto::kFaceH, neu->frames[0].rgb, neu->frames[0].size);
+    neu_fb.blit_pix(0, 0, koto::kFaceW, koto::kFaceH, neu->frames[0].pix, neu->frames[0].size);
     int neu_lit = 0;
     for (int i = 0; i < koto::kFaceW * koto::kFaceH; ++i) {
       const koto::Color c = neu_fb.data()[i];
@@ -377,6 +395,18 @@ int main() {
   app.handle_report(skip_report.data(), skip_report.size());
   require(app.state().scene == "faceset", "skip splash opens faceset");
   require(app.state().face == "Neutral", "startup ends on Neutral");
+
+  app.calibrate_mouth();
+  clock.advance(koto::kTickMs);
+  app.tick();
+  require(oled_text_mismatch(app, 0, 56, "Mouth cal") > 0, "mouth cal does not toast on FaceSet");
+  clock.reset();
+  app.restart();
+  app.handle_report(skip_report.data(), skip_report.size());
+  clock.advance(koto::kTickMs);
+  app.tick();
+  require(app.state().scene == "faceset", "restart skip splash opens faceset");
+  require(oled_text_mismatch(app, 0, 56, "Mouth cal") > 0, "mouth cal toast does not survive restart");
 
   sensors.set_proximity(1.0f);
   for (int i = 0; i < 6; ++i) {
@@ -414,10 +444,10 @@ int main() {
     require(black > 100, "hue cycle does not fill the whole face");
     require(left != nullptr && far != nullptr, "hue cycle keeps lit face pixels");
     const koto::assets::Emotion* boop_e = koto::assets::find_emotion("Boop");
-    require(boop_e != nullptr && boop_e->frame_count > 0 && boop_e->frames[0].rgb != nullptr,
+    require(boop_e != nullptr && boop_e->frame_count > 0 && boop_e->frames[0].pix != nullptr,
             "Boop sprite exists");
     koto::gfx::Framebuffer boop_fb(koto::kFaceW, koto::kFaceH);
-    boop_fb.blit_rgb(0, 0, koto::kFaceW, koto::kFaceH, boop_e->frames[0].rgb, boop_e->frames[0].size);
+    boop_fb.blit_pix(0, 0, koto::kFaceW, koto::kFaceH, boop_e->frames[0].pix, boop_e->frames[0].size);
     int mismatch = 0;
     for (int i = 0; i < 64 * 32; ++i) {
       const bool src_lit = (boop_fb.data()[i].r | boop_fb.data()[i].g | boop_fb.data()[i].b) != 0;
@@ -570,6 +600,7 @@ int main() {
   require(koto::assets::find_icon("game_tetris") != nullptr, "tetris game icon packed");
   require(koto::assets::find_icon("game_dvd") != nullptr, "dvd game icon packed");
   require(koto::assets::find_icon("game_bsod") != nullptr, "bsod game icon packed");
+  require(koto::assets::find_icon("game_spectrum") != nullptr, "spectrum game icon packed");
   require(sizeof(koto::assets::BaHeader) == 13, "BA1P header is packed 13 bytes");
   {
     koto::assets::BaPlayer player;
@@ -581,6 +612,60 @@ int main() {
     require(koto::assets::badapple_blob_size() > 200u * 1024u, "packed blob is not empty");
     require(koto::assets::badapple_blob_size() <= 1024u * 1024u, "packed blob fits in 1 MiB");
     require(koto::assets::ba_next(player), "first bad apple frame decodes");
+  }
+  {
+    const std::uint8_t packed2[] = {2, 0, 0, 0, 0, 255, 255, 255, 0x40};
+    require(koto::gfx::pix_at(packed2, sizeof(packed2), 2, 1, 0, 0).r == 0, "kpix packed bit0 is black");
+    const koto::Color w = koto::gfx::pix_at(packed2, sizeof(packed2), 2, 1, 1, 0);
+    require(w.r == 255 && w.g == 255 && w.b == 255, "kpix packed bit1 is white");
+    const std::uint8_t rle2[] = {2, koto::gfx::kPixFlagRle, 0, 0, 0, 255, 0, 0, 2, 0, 2, 1};
+    koto::gfx::Framebuffer rle_fb(4, 1);
+    rle_fb.blit_pix(0, 0, 4, 1, rle2, sizeof(rle2), false);
+    require((rle_fb.get_pixel(0, 0).r | rle_fb.get_pixel(1, 0).r) == 0, "kpix rle run of black");
+    require(rle_fb.get_pixel(2, 0).r == 255 && rle_fb.get_pixel(3, 0).r == 255, "kpix rle run of red");
+    const std::uint8_t four[] = {4, 0, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0x1B};
+    require(koto::gfx::pix_at(four, sizeof(four), 2, 2, 0, 0).r == 0, "kpix 2bpp index0");
+    require(koto::gfx::pix_at(four, sizeof(four), 2, 2, 1, 0).r == 255, "kpix 2bpp index1");
+    require(koto::gfx::pix_at(four, sizeof(four), 2, 2, 0, 1).g == 255, "kpix 2bpp index2");
+    require(koto::gfx::pix_at(four, sizeof(four), 2, 2, 1, 1).b == 255, "kpix 2bpp index3");
+    std::uint8_t many[2 + 18 * 3 + 4];
+    many[0] = 18;
+    many[1] = 0;
+    for (int i = 0; i < 18; ++i) {
+      many[2 + i * 3] = static_cast<std::uint8_t>(i * 7);
+      many[3 + i * 3] = 0;
+      many[4 + i * 3] = 0;
+    }
+    many[2 + 18 * 3] = 17;
+    many[3 + 18 * 3] = 0;
+    many[4 + 18 * 3] = 0;
+    many[5 + 18 * 3] = 0;
+    require(koto::gfx::pix_at(many, sizeof(many), 2, 2, 0, 0).r == 17 * 7, "kpix 8bpp first pixel");
+    require(koto::assets::find_emotion("Neutral")->frames[0].pix[0] == 2, "Neutral has two colors");
+    const koto::assets::CasinoSprite* seven = koto::assets::find_casino_sprite("seven");
+    require(seven != nullptr && seven->pix[0] >= 3, "casino seven keeps more than two colors");
+    const std::uint8_t* glyph_a = koto::gfx::glyph5x7('A');
+    require(glyph_a != nullptr && !koto::gfx::glyph5x7_dot(glyph_a, 0, 0) &&
+                koto::gfx::glyph5x7_dot(glyph_a, 1, 0),
+            "bit font A has a peaked top");
+    require(koto::gfx::glyph5x7_dot(koto::gfx::glyph5x7('?'), 0, 0), "question mark glyph is not empty");
+  }
+  {
+    std::uint8_t mini[13 + 1 + 32 + 1 + 1] = {
+        'B', 'A', '1', 'P', 64, 0, 32, 0, 25, 2, 0, 0, 1,
+    };
+    mini[13] = koto::assets::kBaMask;
+    mini[13 + 1] = 0x80;
+    mini[13 + 1 + 32] = 0xA5;
+    mini[13 + 1 + 32 + 1] = 0x00;
+    koto::assets::BaPlayer masked;
+    require(koto::assets::ba_init(masked, mini, static_cast<std::uint32_t>(sizeof(mini))),
+            "tiny BA1P with mask inits");
+    require(koto::assets::ba_next(masked), "mask frame decodes");
+    require(masked.pixels[0] == 0xA5, "mask writes the first changed byte");
+    require(masked.pixels[1] == 0, "mask leaves other bytes");
+    require(koto::assets::ba_next(masked), "hold frame after mask");
+    require(masked.pixels[0] == 0xA5, "hold keeps masked byte");
   }
   {
     const koto::assets::DinoSprite* trex = koto::assets::find_dino_sprite("trex_run_0");
@@ -610,6 +695,11 @@ int main() {
     const koto::assets::BsodSprite* bar = koto::assets::find_bsod_sprite("bar");
     require(sad != nullptr && sad->width == 18 && sad->height == 12, "bsod sad header packed");
     require(bar != nullptr && bar->width == 64 && bar->height == 2, "bsod bar is 64x2");
+    const koto::assets::SpectrumSprite* peak = koto::assets::find_spectrum_sprite("peak");
+    const koto::assets::SpectrumSprite* baseline = koto::assets::find_spectrum_sprite("baseline");
+    require(peak != nullptr && peak->width == 3 && peak->height == 2, "spectrum peak marker packed");
+    require(baseline != nullptr && baseline->width == 64 && baseline->height == 2,
+            "spectrum baseline is 64x2");
   }
   require(app.state().scene != "snake", "snake is not in the settings menu");
 
@@ -1064,9 +1154,62 @@ int main() {
   app.handle_report(center_report.data(), center_report.size());
   require(app.state().scene == "games", "ESC from bsod returns to games");
 
+  app.handle_report(koto::encode_mocute_report(games_right).data(), koto::kReportSize);
+  require(app.state().game_index == 8, "stick right selects Spectrum");
+  app.handle_report(center_report.data(), center_report.size());
+  app.handle_report(koto::encode_mocute_report(press_ok).data(), koto::kReportSize);
+  require(app.state().scene == "spectrum", "blink starts spectrum");
+  app.handle_report(center_report.data(), center_report.size());
+  sensors.set_pcm_sine(0.8f);
+  for (int i = 0; i < 8; ++i) {
+    clock.advance(koto::kTickMs);
+    app.tick();
+  }
+  {
+    const koto::Color* px = app.matrix_buffer().data();
+    int low = 0;
+    int high = 0;
+    for (int y = 0; y < koto::kSpectrumPlotH; ++y) {
+      for (int x = 0; x < 16; ++x) {
+        const koto::Color c = px[y * 64 + x];
+        if ((c.r | c.g | c.b) != 0) {
+          ++low;
+        }
+      }
+      for (int x = 48; x < 64; ++x) {
+        const koto::Color c = px[y * 64 + x];
+        if ((c.r | c.g | c.b) != 0) {
+          ++high;
+        }
+      }
+    }
+    require(low > 20, "spectrum lights low-frequency bars");
+    require(low > high, "one-cycle sine energy sits on the left");
+  }
+  {
+    koto::gfx::OledCanvas expected(koto::kOledW, koto::kOledH);
+    expected.fill_rect(0, 0, koto::kOledW, 16, true);
+    expected.draw_text((koto::kOledW - 48) / 2, 4, "SPECTRUM", false);
+    int mismatch = 0;
+    for (int y = 4; y < 11; ++y) {
+      for (int x = (koto::kOledW - 48) / 2; x < (koto::kOledW - 48) / 2 + 48; ++x) {
+        if (app.oled_buffer().get_pixel(x, y) != expected.get_pixel(x, y)) {
+          ++mismatch;
+        }
+      }
+    }
+    require(mismatch == 0, "spectrum header shows SPECTRUM");
+  }
+  app.handle_report(koto::encode_mocute_report(press_esc_settings).data(), koto::kReportSize);
+  app.handle_report(center_report.data(), center_report.size());
+  require(app.state().scene == "games", "ESC from spectrum returns to games");
+
   koto::PadState games_left;
   games_left.x = 0;
   games_left.y = 128;
+  app.handle_report(koto::encode_mocute_report(games_left).data(), koto::kReportSize);
+  require(app.state().game_index == 7, "stick left from Spectrum selects BSOD");
+  app.handle_report(center_report.data(), center_report.size());
   app.handle_report(koto::encode_mocute_report(games_left).data(), koto::kReportSize);
   require(app.state().game_index == 6, "stick left from BSOD selects DVD");
   app.handle_report(center_report.data(), center_report.size());

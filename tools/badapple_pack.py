@@ -32,6 +32,8 @@ FPS = 25
 THRESHOLD = 128
 BPF = WIDTH * HEIGHT // 8
 RAW_SENTINEL = 0xFF
+MASK_SENTINEL = 0xFE
+MASK_BYTES = BPF // 8
 HEADER_FMT = "<4sHHBHH"
 
 DOWNLOADS = Path.home() / "Downloads" / "bad-apple-64x128"
@@ -115,16 +117,27 @@ def encode_stream(frames: np.ndarray) -> bytes:
     for frame in frames:
         changed = np.flatnonzero(frame != prev)
         n = int(changed.size)
+        patch_cost = 1 + 2 * n
+        mask_cost = 1 + MASK_BYTES + n
+        raw_cost = 1 + BPF
         if n == 0:
             chunks.append(b"\x00")
-        elif n >= RAW_SENTINEL or (1 + 2 * n) >= (1 + BPF):
-            chunks.append(bytes([RAW_SENTINEL]) + frame.tobytes())
-        else:
+        elif n > 32 and mask_cost < raw_cost and mask_cost <= patch_cost:
+            mask = bytearray(MASK_BYTES)
+            values = bytearray()
+            for idx in changed:
+                index = int(idx)
+                mask[index >> 3] |= 0x80 >> (index & 7)
+                values.append(int(frame[index]))
+            chunks.append(bytes([MASK_SENTINEL]) + bytes(mask) + bytes(values))
+        elif n < RAW_SENTINEL and patch_cost < raw_cost:
             payload = bytearray([n])
             for idx in changed:
                 payload.append(int(idx))
                 payload.append(int(frame[idx]))
             chunks.append(bytes(payload))
+        else:
+            chunks.append(bytes([RAW_SENTINEL]) + frame.tobytes())
         prev = frame
     return b"".join(chunks)
 
@@ -144,6 +157,14 @@ def decode_stream(packed: bytes) -> np.ndarray:
         if n == RAW_SENTINEL:
             prev = np.frombuffer(packed[i : i + bpf], dtype=np.uint8).copy()
             i += bpf
+        elif n == MASK_SENTINEL:
+            mask = packed[i : i + MASK_BYTES]
+            i += MASK_BYTES
+            for byte_i in range(bpf):
+                bit = 0x80 >> (byte_i & 7)
+                if mask[byte_i >> 3] & bit:
+                    prev[byte_i] = packed[i]
+                    i += 1
         else:
             for _ in range(n):
                 pos = packed[i]
@@ -157,9 +178,27 @@ def decode_stream(packed: bytes) -> np.ndarray:
 
 
 def pack() -> None:
-    src = find_source()
-    print(f"source {src}")
-    frames = extract_raw(src)
+    src_name = "badapple.ba1p"
+    frames = None
+    for path in (
+        Path(os.environ.get("BADAPPLE_SOURCE", "")),
+        Path.home() / "Downloads" / "bad-apple-64x128" / "source.mp4",
+        ASSETS / "badapple_source.mp4",
+    ):
+        if path and path.is_file():
+            print(f"source {path}")
+            frames = extract_raw(path)
+            src_name = path.name
+            break
+    if frames is None:
+        if not PACKED.exists():
+            raise SystemExit(
+                "missing source.mp4 and assets/badapple.ba1p — set BADAPPLE_SOURCE"
+            )
+        print(f"transcode {PACKED}")
+        frames, fps = decode_stream(PACKED.read_bytes())
+        if fps != FPS:
+            raise RuntimeError(f"fps {fps} != {FPS}")
     packed = encode_stream(frames)
     decoded, fps = decode_stream(packed)
     if not np.array_equal(decoded, frames):
@@ -171,7 +210,7 @@ def pack() -> None:
     PACKED.write_bytes(packed)
     report = {
         "file": PACKED.name,
-        "source": src.name,
+        "source": src_name,
         "frames": int(len(frames)),
         "fps": FPS,
         "width": WIDTH,
@@ -181,7 +220,7 @@ def pack() -> None:
         "packed_bytes": len(packed),
         "avg_bytes_per_frame": round(len(packed) / len(frames), 2),
         "fits_1mb": True,
-        "format": "BA1P sparse byte-patch, no zlib",
+        "format": "BA1P patch / 0xFE byte-mask / raw, no zlib",
         "note": "Bad Apple!! PV is a third-party asset, not original kotoproto art",
     }
     META.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

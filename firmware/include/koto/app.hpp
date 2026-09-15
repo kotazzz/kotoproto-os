@@ -67,7 +67,8 @@ class App {
     Flappy,
     Tetris,
     Dvd,
-    Bsod
+    Bsod,
+    Spectrum
   };
   enum class BlinkState { Idle, Closing, Closed, Opening };
 
@@ -84,6 +85,7 @@ class App {
   void update_tetris(std::uint32_t now_ms);
   void update_dvd(std::uint32_t now_ms);
   void update_bsod(std::uint32_t now_ms);
+  void update_spectrum(std::uint32_t now_ms);
   void update_fps(std::uint32_t now_ms);
   void render_face(std::uint32_t now_ms);
   void render_snake(std::uint32_t now_ms);
@@ -93,6 +95,7 @@ class App {
   void render_tetris(std::uint32_t now_ms);
   void render_dvd(std::uint32_t now_ms);
   void render_bsod(std::uint32_t now_ms);
+  void render_spectrum();
   void render_oled(std::uint32_t now_ms);
   void render_oled_settings(std::uint32_t now_ms);
   void render_oled_faceset();
@@ -120,6 +123,7 @@ class App {
   void bsod_reset();
   int bsod_bar_y0() const;
   int bsod_bar_max() const;
+  void enter_spectrum();
   void enter_safe_mode();
   void finish_startup();
   void set_sequence(const char* name, bool loop, bool with_transition);
@@ -142,6 +146,7 @@ class App {
   bool flappy_hit() const;
   bool flappy_pipe_at(int x, int y) const;
   void handle_tetris_pad(const PadState& pad, const PadState& prev);
+  void handle_spectrum_pad(const PadState& pad, const PadState& prev);
   void tetris_reset();
   void tetris_spawn();
   void tetris_refill_bag();
@@ -171,6 +176,7 @@ class App {
   void render_oled_tetris();
   void render_oled_dvd();
   void render_oled_bsod();
+  void render_oled_spectrum();
   bool in_minigame() const;
   bool in_arcade() const;
   void add_settings_cursor(int delta);
@@ -292,9 +298,7 @@ class App {
   const assets::Emotion* randomize_pick_ = nullptr;
   int randomize_frame_ = 0;
   std::uint32_t boop_started_ms_ = 0;
-  std::uint32_t toast_until_ms_ = 0;
   std::uint32_t rng_state_ = 0xA341316Cu;
-  char toast_[20] = {};
 
   face::TransitionKind trans_kind_ = face::TransitionKind::None;
   std::uint32_t trans_start_ms_ = 0;
@@ -436,9 +440,16 @@ class App {
     std::uint32_t start_ms = 0;
   } bsod_;
 
+  struct Spectrum {
+    float level[kSpectrumBands]{};
+    float peak[kSpectrumBands]{};
+    float norm = 0.08f;
+  } spectrum_;
+
   assets::BaPlayer badapple_{};
   std::uint32_t badapple_accum_ms_ = 0;
   bool badapple_fast_ = false;
+  Color present_dim_[kMatrixW * kMatrixH]{};
 };
 
 }  // namespace koto

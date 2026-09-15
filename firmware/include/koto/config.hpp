@@ -72,7 +72,10 @@ inline constexpr int kSettingStatus2 = 254;
 inline constexpr std::uint32_t kMenuHoldMs = 600;
 inline constexpr std::uint32_t kEscHoldMs = 600;
 inline constexpr std::uint32_t kSettingsSlideMs = 220;
-inline constexpr int kGameCount = 8;
+inline constexpr int kGameCount = 9;
+inline constexpr int kSpectrumBands = 16;
+inline constexpr int kSpectrumBarW = 4;
+inline constexpr int kSpectrumPlotH = 29;
 // Signed PCM window from the microphone HAL (-1..1). Mouth still uses RMS.
 inline constexpr int kMicPcmSize = 256;
 

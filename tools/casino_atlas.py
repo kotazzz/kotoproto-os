@@ -26,6 +26,7 @@ from pack_assets import (
     recolor_labels_black,
     write_png_rgb,
 )
+from pix_pack import pack_pix
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets"
@@ -190,7 +191,7 @@ def emit_cpp(tiles: list[tuple[str, bytes]]) -> None:
     for name, rgb in tiles:
         var = ident(name)
         chunks.append(f"const std::uint8_t {var}[] = {{")
-        chunks.append(cpp_bytes(rgb))
+        chunks.append(cpp_bytes(pack_pix(SIZE, SIZE, rgb)))
         chunks.append("};")
         chunks.append("")
         rows.append(f'    {{"{name}", {SIZE}, {SIZE}, {var}, sizeof({var})}},')

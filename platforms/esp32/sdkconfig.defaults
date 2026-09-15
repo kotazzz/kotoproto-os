@@ -1,3 +1,10 @@
+# 4 MB flash. Wi-Fi stays off: the visor only needs BLE to a Mocute pad.
+# Do not switch this target to PlatformIO to "avoid IDF" — ESP32 BLE still
+# comes from ESP-IDF (or Arduino-ESP32, which vendors the same IDF). Keep
+# this skeleton and add HUB75 / OLED / ADC with the hardware notes.
+# NimBLE only, as a HID host for Mocute. Bluedroid stays off.
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 CONFIG_BT_ENABLED=y
 CONFIG_BT_NIMBLE_ENABLED=y
+# CONFIG_BT_BLUEDROID_ENABLED is not set
+CONFIG_ESP_WIFI_ENABLED=n
