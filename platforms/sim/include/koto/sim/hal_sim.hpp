@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "koto/config.hpp"
 #include "koto/hal/clock.hpp"
 #include "koto/hal/fan.hpp"
 #include "koto/hal/hid_host.hpp"
@@ -33,14 +34,14 @@ class Matrix final : public hal::IMatrix {
 
   int width() const override { return width_; }
   int height() const override { return height_; }
-  void present(const Color* pixels, int width, int height) override;
+  void present(const Color* pixels, int width, int height, int panel) override;
 
-  void copy_rgb(std::vector<std::uint8_t>& out) const;
+  void copy_rgb(std::vector<std::uint8_t>& out, int panel = 0) const;
 
  private:
   int width_;
   int height_;
-  std::vector<std::uint8_t> rgb_;
+  std::vector<std::uint8_t> rgb_[kMatrixPanels];
 };
 
 class Oled final : public hal::IOled {

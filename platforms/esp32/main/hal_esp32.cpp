@@ -24,7 +24,7 @@ std::uint32_t Clock::millis() const {
 int Matrix::width() const { return kMatrixW; }
 int Matrix::height() const { return kMatrixH; }
 
-void Matrix::present(const Color*, int, int) {
+void Matrix::present(const Color*, int, int, int) {
   ESP_LOGD(kTag, "matrix present stub");
 }
 

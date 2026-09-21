@@ -24,7 +24,7 @@ class Matrix final : public hal::IMatrix {
  public:
   int width() const override;
   int height() const override;
-  void present(const Color* pixels, int width, int height) override;
+  void present(const Color* pixels, int width, int height, int panel) override;
 };
 
 class Oled final : public hal::IOled {

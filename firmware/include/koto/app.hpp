@@ -107,8 +107,8 @@ class App {
   void enter_settings_list();
   void cycle_menu_pages();
   void poll_menu_hold();
-  void poll_esc_hold();
   void enter_games();
+  bool games_shortcut_ready() const;
   void enter_snake();
   void enter_casino();
   void enter_dino();
@@ -179,6 +179,8 @@ class App {
   void render_oled_spectrum();
   bool in_minigame() const;
   bool in_arcade() const;
+  bool copy_right_panel() const;
+  void present_matrix();
   void add_settings_cursor(int delta);
   void nudge_setting(int delta);
   void activate_setting();
@@ -248,8 +250,9 @@ class App {
   std::vector<std::uint8_t> settings_from_;
   bool menu_long_fired_ = false;
   std::uint32_t menu_down_ms_ = 0;
-  bool esc_long_fired_ = false;
-  std::uint32_t esc_down_ms_ = 0;
+  bool esc_double_fired_ = false;
+  std::uint32_t last_esc_press_ms_ = 0;
+  std::uint32_t last_esc_release_ms_ = 0;
   bool games_x_latched_ = false;
   int mouth_calibrate_left_ = 0;
   int boop_calibrate_left_ = 0;
@@ -450,6 +453,7 @@ class App {
   std::uint32_t badapple_accum_ms_ = 0;
   bool badapple_fast_ = false;
   Color present_dim_[kMatrixW * kMatrixH]{};
+  Color present_right_[kMatrixW * kMatrixH]{};
 };
 
 }  // namespace koto

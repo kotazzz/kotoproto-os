@@ -50,33 +50,58 @@ class MockClock final : public koto::hal::IClock {
 
 class MockMatrix final : public koto::hal::IMatrix {
  public:
-  MockMatrix(int w, int h) : w_(w), h_(h), rgb_(static_cast<std::size_t>(w * h * 3), 0) {}
+  MockMatrix(int w, int h)
+      : w_(w), h_(h) {
+    const std::size_t bytes = static_cast<std::size_t>(w * h * 3);
+    rgb_[0].assign(bytes, 0);
+    rgb_[1].assign(bytes, 0);
+  }
   int width() const override { return w_; }
   int height() const override { return h_; }
-  void present(const koto::Color* pixels, int width, int height) override {
+  void present(const koto::Color* pixels, int width, int height, int panel) override {
+    if (panel < 0 || panel > 1 || pixels == nullptr) {
+      return;
+    }
+    std::vector<std::uint8_t>& rgb = rgb_[panel];
     for (int y = 0; y < height; ++y) {
       for (int x = 0; x < width; ++x) {
         const koto::Color c = pixels[y * width + x];
         const std::size_t i = static_cast<std::size_t>((y * w_ + x) * 3);
-        rgb_[i] = c.r;
-        rgb_[i + 1] = c.g;
-        rgb_[i + 2] = c.b;
+        rgb[i] = c.r;
+        rgb[i + 1] = c.g;
+        rgb[i + 2] = c.b;
       }
     }
   }
   bool any_lit() const {
-    for (std::uint8_t v : rgb_) {
-      if (v != 0) {
-        return true;
+    for (int p = 0; p < 2; ++p) {
+      for (std::uint8_t v : rgb_[p]) {
+        if (v != 0) {
+          return true;
+        }
       }
     }
     return false;
+  }
+  bool right_equals_left() const { return rgb_[0] == rgb_[1]; }
+  bool right_is_x_flip() const {
+    for (int y = 0; y < h_; ++y) {
+      for (int x = 0; x < w_; ++x) {
+        const std::size_t li = static_cast<std::size_t>((y * w_ + x) * 3);
+        const std::size_t ri = static_cast<std::size_t>((y * w_ + (w_ - 1 - x)) * 3);
+        if (rgb_[0][li] != rgb_[1][ri] || rgb_[0][li + 1] != rgb_[1][ri + 1] ||
+            rgb_[0][li + 2] != rgb_[1][ri + 2]) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
  private:
   int w_;
   int h_;
-  std::vector<std::uint8_t> rgb_;
+  std::vector<std::uint8_t> rgb_[2];
 };
 
 class MockOled final : public koto::hal::IOled {
@@ -395,6 +420,16 @@ int main() {
   app.handle_report(skip_report.data(), skip_report.size());
   require(app.state().scene == "faceset", "skip splash opens faceset");
   require(app.state().face == "Neutral", "startup ends on Neutral");
+  clock.advance(koto::kTickMs);
+  app.tick();
+  require(matrix.right_is_x_flip(), "Neutral right panel is X-flip");
+  require(!matrix.right_equals_left(), "Neutral right panel is not a copy");
+  require(koto::assets::find_emotion("Questioning") != nullptr &&
+              !koto::assets::find_emotion("Questioning")->mirror,
+          "Questioning does not mirror");
+  require(koto::assets::find_emotion("Exclamation") != nullptr &&
+              !koto::assets::find_emotion("Exclamation")->mirror,
+          "Exclamation does not mirror");
 
   app.calibrate_mouth();
   clock.advance(koto::kTickMs);
@@ -484,6 +519,11 @@ int main() {
     require(red > 20, "Dead face pixels are red");
   }
   require(app.set_face("Neutral", false), "return to Neutral after Dead");
+  require(app.set_face("Questioning", false), "Questioning can be selected");
+  clock.advance(koto::kTickMs);
+  app.tick();
+  require(matrix.right_equals_left(), "Questioning right panel is a copy");
+  require(app.set_face("Neutral", false), "return to Neutral after Questioning");
 
   koto::PadState press_x;
   press_x.buttons = koto::kBtnX;
@@ -780,15 +820,21 @@ int main() {
   app.handle_report(center_report.data(), center_report.size());
   require(app.state().scene == "faceset", "short ESC leaves settings");
 
-  koto::PadState hold_esc;
-  hold_esc.buttons = koto::kBtnEsc;
-  app.handle_report(koto::encode_mocute_report(hold_esc).data(), koto::kReportSize);
-  clock.advance(koto::kEscHoldMs);
+  clock.advance(koto::kEscDoubleMs + 50);
   app.tick();
-  require(app.state().scene == "games", "ESC hold opens games list");
+  koto::PadState tap_esc;
+  tap_esc.buttons = koto::kBtnEsc;
+  app.handle_report(koto::encode_mocute_report(tap_esc).data(), koto::kReportSize);
+  app.handle_report(center_report.data(), center_report.size());
+  clock.advance(120);
+  app.tick();
+  app.handle_report(koto::encode_mocute_report(tap_esc).data(), koto::kReportSize);
+  require(app.state().scene == "games", "double ESC opens games list");
   require(app.state().game_index == 0, "games list starts on Snake");
   app.handle_report(center_report.data(), center_report.size());
-  require(app.state().scene == "games", "releasing held ESC stays in games");
+  clock.advance(33);
+  app.tick();
+  require(app.state().scene == "games", "releasing double ESC stays in games");
   require(app.oled_buffer().get_pixel(64, 0), "games header is inverted");
   require(!app.oled_buffer().get_pixel(0, 63), "games does not invert the blue band");
 
@@ -1236,6 +1282,7 @@ int main() {
   app.handle_report(center_report.data(), center_report.size());
   clock.advance(koto::kTickMs);
   app.tick();
+  require(matrix.right_equals_left(), "snake right panel is a copy");
   require(app.oled_buffer().get_pixel(0, 16), "snake field top border");
   require(app.oled_buffer().get_pixel(0, 63), "snake field bottom border");
   require(app.oled_buffer().get_pixel(127, 16), "snake field top-right border");
@@ -1308,7 +1355,7 @@ int main() {
   }
   require(!app.state().boop, "proximity release ends boop");
 
-  sensors.set_gyro(48.0f, -10.0f, 0.0f);
+  sensors.set_gyro(72.0f, -10.0f, 0.0f);
   clock.advance(33);
   app.tick();
   require(app.state().dizzy, "gyro tilt triggers dizzy");

@@ -29,6 +29,7 @@ struct Emotion {
   bool loop;
   bool allow_blink;
   bool allow_boop;
+  bool mirror;
   const EmotionFrame* frames;
   int frame_count;
   const std::uint8_t* hud;

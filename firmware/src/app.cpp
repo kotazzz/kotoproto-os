@@ -852,18 +852,8 @@ void App::poll_menu_hold() {
   }
 }
 
-void App::poll_esc_hold() {
-  if (mode_ == Mode::Startup || !state_.pad.esc() || esc_long_fired_) {
-    return;
-  }
-  if (esc_down_ms_ == 0) {
-    esc_down_ms_ = clock_.millis();
-    return;
-  }
-  if (clock_.millis() - esc_down_ms_ >= kEscHoldMs) {
-    esc_long_fired_ = true;
-    enter_games();
-  }
+bool App::games_shortcut_ready() const {
+  return mode_ == Mode::FaceSet || mode_ == Mode::Auto;
 }
 
 bool App::in_minigame() const {
@@ -874,6 +864,13 @@ bool App::in_arcade() const {
   return mode_ == Mode::Snake || mode_ == Mode::Casino || mode_ == Mode::Dino ||
          mode_ == Mode::BadApple || mode_ == Mode::Flappy || mode_ == Mode::Tetris ||
          mode_ == Mode::Dvd || mode_ == Mode::Bsod || mode_ == Mode::Spectrum;
+}
+
+bool App::copy_right_panel() const {
+  if (in_arcade()) {
+    return true;
+  }
+  return emotion_ != nullptr && !emotion_->mirror;
 }
 
 void App::enter_games() {
@@ -1245,19 +1242,27 @@ void App::apply_pad(const PadState& pad) {
   }
 
   if (pressed(pad.esc(), prev.esc())) {
-    esc_down_ms_ = clock_.millis();
-    esc_long_fired_ = false;
+    const std::uint32_t now = clock_.millis();
+    const bool had_tap = last_esc_release_ms_ >= last_esc_press_ms_ && last_esc_press_ms_ != 0;
+    const bool in_window = now - last_esc_press_ms_ <= kEscDoubleMs &&
+                           now - last_esc_release_ms_ <= kEscDoubleMs;
+    esc_double_fired_ = false;
+    last_esc_press_ms_ = now;
+    if (had_tap && in_window && games_shortcut_ready()) {
+      esc_double_fired_ = true;
+      enter_games();
+    }
   }
   if (released(pad.esc(), prev.esc())) {
-    if (!esc_long_fired_) {
+    last_esc_release_ms_ = clock_.millis();
+    if (!esc_double_fired_) {
       if (in_arcade()) {
         enter_games();
       } else if (mode_ == Mode::Games || mode_ == Mode::Settings) {
         enter_faceset(state_.faceset);
       }
     }
-    esc_down_ms_ = 0;
-    esc_long_fired_ = false;
+    esc_double_fired_ = false;
   }
 
   if (pressed(pad.select(), prev.select())) {
@@ -2021,9 +2026,6 @@ void App::update_hid_link() {
   const bool connected = hid_.connected();
   state_.hid_connected = connected;
   state_.bt_status = connected ? "MOCUTE" : "----";
-  if (hid_was_connected_ && !connected) {
-    enter_safe_mode();
-  }
   hid_was_connected_ = connected;
 }
 
@@ -2049,14 +2051,15 @@ void App::update_sensors(std::uint32_t now_ms) {
   prev_roll_ = gyro.roll_deg;
   const float motion = std::sqrt(dp * dp + dr * dr);
   const bool dizzy = std::fabs(gyro.pitch_deg - gyro_rest_pitch_) > kGyroDizzyDeg ||
-                     std::fabs(gyro.roll_deg - gyro_rest_roll_) > kGyroDizzyDeg || motion > 12.0f;
+                     std::fabs(gyro.roll_deg - gyro_rest_roll_) > kGyroDizzyDeg ||
+                     motion > kGyroMotionDizzyDeg;
   state_.dizzy = dizzy && !state_.boop;
   if (gyro_last_motion_ms_ == 0) {
     gyro_rest_pitch_ = gyro.pitch_deg;
     gyro_rest_roll_ = gyro.roll_deg;
     gyro_last_motion_ms_ = now_ms;
   }
-  if (motion > 1.2f) {
+  if (motion > kGyroRestMotionDeg) {
     gyro_last_motion_ms_ = now_ms;
   }
   if (motion > kGyroKickDeg) {
@@ -3161,8 +3164,16 @@ void App::apply_dizzy_motion(std::uint32_t now_ms) {
 }
 
 void App::apply_gyro_nudge() {
-  int dx = std::clamp(static_cast<int>((state_.roll - gyro_rest_roll_) / kGyroNudgeDiv), -3, 3);
-  int dy = std::clamp(static_cast<int>(-(state_.pitch - gyro_rest_pitch_) / kGyroNudgeDiv), -3, 3);
+  const float droll = state_.roll - gyro_rest_roll_;
+  const float dpitch = state_.pitch - gyro_rest_pitch_;
+  int dx = 0;
+  int dy = 0;
+  if (std::fabs(droll) >= kGyroNudgeDeadDeg) {
+    dx = std::clamp(static_cast<int>(droll / kGyroNudgeDiv), -3, 3);
+  }
+  if (std::fabs(dpitch) >= kGyroNudgeDeadDeg) {
+    dy = std::clamp(static_cast<int>(-dpitch / kGyroNudgeDiv), -3, 3);
+  }
   if (clock_.millis() < gyro_kick_until_) {
     dx = std::clamp(dx + gyro_kick_x_, -3, 3);
     dy = std::clamp(dy + gyro_kick_y_, -3, 3);
@@ -3703,7 +3714,6 @@ void App::tick() {
 
   update_hid_link();
   poll_menu_hold();
-  poll_esc_hold();
   update_sensors(now);
   update_face_player(now);
   update_auto(now);
@@ -3745,8 +3755,15 @@ void App::tick() {
   render_oled(now);
   render_ring(now);
 
+  present_matrix();
+  oled_.present(oled_fb_.packed(), oled_fb_.width(), oled_fb_.height());
+}
+
+void App::present_matrix() {
   const Color* src = matrix_fb_.data();
-  const int count = matrix_fb_.width() * matrix_fb_.height();
+  const int w = matrix_fb_.width();
+  const int h = matrix_fb_.height();
+  const int count = w * h;
   const Color* out = src;
   if (!state_.matrix_enabled && !in_arcade()) {
     for (int i = 0; i < count; ++i) {
@@ -3759,8 +3776,35 @@ void App::tick() {
     }
     out = present_dim_;
   }
-  matrix_.present(out, matrix_fb_.width(), matrix_fb_.height());
-  oled_.present(oled_fb_.packed(), oled_fb_.width(), oled_fb_.height());
+  if (!state_.hid_connected) {
+    if (out != present_dim_) {
+      for (int i = 0; i < count; ++i) {
+        present_dim_[static_cast<std::size_t>(i)] = out[i];
+      }
+      out = present_dim_;
+    }
+    const Color mark = Color::rgb(255, 0, 0);
+    for (int y = 0; y < kHidLostSize; ++y) {
+      for (int x = 0; x < kHidLostSize; ++x) {
+        const int px = kHidLostX + x;
+        const int py = kHidLostY + y;
+        if (px >= 0 && py >= 0 && px < w && py < h) {
+          present_dim_[static_cast<std::size_t>(py * w + px)] = mark;
+        }
+      }
+    }
+  }
+  matrix_.present(out, w, h, 0);
+  if (copy_right_panel()) {
+    matrix_.present(out, w, h, 1);
+    return;
+  }
+  for (int y = 0; y < h; ++y) {
+    for (int x = 0; x < w; ++x) {
+      present_right_[static_cast<std::size_t>(y * w + (w - 1 - x))] = out[y * w + x];
+    }
+  }
+  matrix_.present(present_right_, w, h, 1);
 }
 
 }  // namespace koto

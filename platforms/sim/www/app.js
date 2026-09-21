@@ -8,8 +8,8 @@ const logEl = document.getElementById("log");
 const playBtn = document.getElementById("play");
 const stickEl = document.getElementById("stick");
 const knobEl = document.getElementById("knob");
-const modeEl = document.getElementById("mode");
 const ledEl = document.getElementById("led");
+const matrixPanelEl = document.getElementById("matrix-panel");
 
 const BTN = {
   a: 1 << 0,
@@ -52,14 +52,6 @@ function decodeBase64(b64) {
   return out;
 }
 
-function formatUptime(ms) {
-  const total = Math.floor(ms / 1000);
-  const s = String(total % 60).padStart(2, "0");
-  const m = String(Math.floor(total / 60) % 60).padStart(2, "0");
-  const h = String(Math.floor(total / 3600)).padStart(2, "0");
-  return `${h}:${m}:${s}`;
-}
-
 function hatFrom(x, y) {
   const dx = x - 128;
   const dy = y - 128;
@@ -78,20 +70,8 @@ function hatFrom(x, y) {
   return 8;
 }
 
-function quantizeAxis(value) {
-  if (value < 88) return 0;
-  if (value > 168) return 255;
-  return 128;
-}
-
 function encodeReport() {
-  let x = pad.x;
-  let y = pad.y;
-  if (pad.mode === 1) {
-    x = quantizeAxis(x);
-    y = quantizeAxis(y);
-  }
-  const bytes = [x, y, hatFrom(x, y), pad.buttons, pad.mode, 0];
+  const bytes = [pad.x, pad.y, hatFrom(pad.x, pad.y), pad.buttons, pad.mode, 0];
   return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
@@ -193,10 +173,6 @@ function applyKeyPad() {
   if (stick.any) {
     pad.x = stick.x;
     pad.y = stick.y;
-    if (pad.mode === 1) {
-      pad.x = quantizeAxis(pad.x);
-      pad.y = quantizeAxis(pad.y);
-    }
     setKnob(pad.x, pad.y);
   } else if (!dragging) {
     pad.x = 128;
@@ -221,10 +197,6 @@ function setStickFromEvent(event) {
   pad.y = Math.round(128 + (dy / max) * 127);
   pad.x = Math.max(0, Math.min(255, pad.x));
   pad.y = Math.max(0, Math.min(255, pad.y));
-  if (pad.mode === 1) {
-    pad.x = quantizeAxis(pad.x);
-    pad.y = quantizeAxis(pad.y);
-  }
   setKnob(pad.x, pad.y);
 }
 
@@ -309,15 +281,11 @@ function drawRing(rgb, n) {
     ringCtx.beginPath();
     ringCtx.arc(x, y, 9, 0, Math.PI * 2);
     if (lit) {
-      ringCtx.shadowColor = `rgb(${r},${g},${b})`;
-      ringCtx.shadowBlur = 12;
       ringCtx.fillStyle = `rgb(${r},${g},${b})`;
     } else {
-      ringCtx.shadowBlur = 0;
       ringCtx.fillStyle = "#161922";
     }
     ringCtx.fill();
-    ringCtx.shadowBlur = 0;
   }
 }
 
@@ -331,22 +299,18 @@ async function fetchState() {
 
 let playing = true;
 
+function matrixRgb(state) {
+  const key = matrixPanelEl && matrixPanelEl.checked ? "right" : "left";
+  const b64 = (state.matrix && (state.matrix[key] || state.matrix.left || state.matrix.rgb)) || "";
+  return b64;
+}
+
 async function refresh() {
+  const tickEl = document.getElementById("tick");
   try {
     const state = await fetchState();
-    const meta = document.getElementById("matrix-meta");
-    meta.textContent = `${state.matrix.w}×${state.matrix.h} RGB`;
-    meta.classList.remove("offline");
-    document.getElementById("tick").textContent = `tick ${state.tick}`;
-    document.getElementById("scene").textContent = state.scene;
-    document.getElementById("text").textContent = state.face || state.text;
-    if (state.transition && state.transition !== "none") {
-      document.getElementById("text").textContent += ` · ${state.transition}`;
-    }
-    document.getElementById("bright").textContent = String(state.brightness);
-    document.getElementById("uptime").textContent = formatUptime(state.uptime_ms);
-    document.getElementById("pad-mode-label").textContent =
-      (state.pad && state.pad.mode === "key") ? "KEY" : "GAME";
+    tickEl.textContent = `tick ${state.tick}`;
+    tickEl.classList.remove("offline");
     playing = state.playing;
     const playIcon = playBtn.querySelector("i");
     if (playIcon) {
@@ -355,7 +319,7 @@ async function refresh() {
     playBtn.title = playing ? "Пауза" : "Пуск";
     playBtn.setAttribute("aria-label", playing ? "Пауза" : "Пуск");
     ledEl.classList.toggle("on", Boolean(state.pad && (state.pad.a || state.pad.ok)));
-    drawMatrix(decodeBase64(state.matrix.rgb), state.matrix.w, state.matrix.h);
+    drawMatrix(decodeBase64(matrixRgb(state)), state.matrix.w, state.matrix.h);
     drawOled(decodeBase64(state.oled.bits), state.oled.w, state.oled.h);
     if (state.ring && state.ring.rgb) {
       drawRing(decodeBase64(state.ring.rgb), state.ring.n || 12);
@@ -363,8 +327,8 @@ async function refresh() {
     logEl.textContent = (state.hid_log || []).join("\n");
     logEl.scrollTop = logEl.scrollHeight;
   } catch (err) {
-    document.getElementById("matrix-meta").textContent = "нет связи";
-    document.getElementById("matrix-meta").className = "offline";
+    tickEl.textContent = "нет связи";
+    tickEl.className = "offline";
   }
 }
 
@@ -385,11 +349,11 @@ document.getElementById("restart").addEventListener("click", async () => {
   await refresh();
 });
 
-modeEl.addEventListener("change", async () => {
-  pad.mode = modeEl.checked ? 0 : 1;
-  applyKeyPad();
-  await sendHid();
-});
+if (matrixPanelEl) {
+  matrixPanelEl.addEventListener("change", () => {
+    refresh();
+  });
+}
 
 document.querySelectorAll("[data-btn]").forEach((btn) => {
   const bit = BTN[btn.dataset.btn];
@@ -775,10 +739,6 @@ boopBtn.addEventListener("pointerleave", () => {
   if (boopBtn.classList.contains("held")) {
     releaseBoop();
   }
-});
-
-document.getElementById("calibrate").addEventListener("click", () => {
-  pushSensors("calibrate=1");
 });
 
 let shaking = false;

@@ -11,61 +11,53 @@
 </head>
 <body>
   <main>
-    <section class="panel matrix-panel">
-      <div class="panel-head">
-        <h2>P3 матрица</h2>
-        <span id="matrix-meta">64×32 RGB</span>
-        <a class="atlas-link" href="/atlas.html">Атлас</a>
-      </div>
-      <div class="matrix-stage">
-        <canvas id="matrix" width="768" height="384" aria-label="P3 LED matrix"></canvas>
-      </div>
-    </section>
-
-    <section class="panel side-panel">
-      <div class="oled-block">
+    <div class="col-left">
+      <section class="panel matrix-panel">
         <div class="panel-head">
-          <h2>OLED</h2>
-          <span>128×64</span>
+          <h2>P3 матрица</h2>
+          <label class="panel-switch" title="Левая / правая панель">
+            <input id="matrix-panel" type="checkbox">
+            <span>L</span>
+            <span>R</span>
+          </label>
+          <a class="atlas-link" href="/atlas.html">Атлас</a>
         </div>
-        <div class="oled-bezel">
-          <canvas id="oled" width="384" height="192" aria-label="OLED display"></canvas>
+        <div class="matrix-stage">
+          <canvas id="matrix" width="768" height="384" aria-label="P3 LED matrix"></canvas>
         </div>
-      </div>
+      </section>
 
-      <div class="dash">
-        <div class="dash-status">
+      <div class="left-bottom">
+        <article class="panel ble">
+          <div class="panel-head">
+            <h2>HID терминал</h2>
+            <span>Mocute BLE report</span>
+          </div>
+          <pre id="log"></pre>
+          <p class="legal">
+            kotoproto-os · AGPL-3.0 · source is this repository ·
+            inspired by <a href="https://github.com/diodeface/ToasterBlaster">Toaster Blaster</a>
+          </p>
+        </article>
+
+        <section class="panel state-panel">
           <div class="panel-head">
             <h2>Состояние</h2>
             <span id="tick">tick 0</span>
           </div>
-          <div class="status-line">
-            <dl class="stats">
-              <div><dt>режим</dt><dd id="scene">startup</dd></div>
-              <div><dt>лицо</dt><dd id="text">Startup</dd></div>
-              <div><dt>яркость</dt><dd id="bright">180</dd></div>
-              <div><dt>uptime</dt><dd id="uptime">00:00:00</dd></div>
-            </dl>
-            <div class="controls">
-              <button id="play" type="button" class="icon-btn" title="Пауза" aria-label="Пауза">
-                <i class="fa-solid fa-pause"></i>
-              </button>
-              <button id="step" type="button" class="icon-btn" title="Шаг" aria-label="Шаг">
-                <i class="fa-solid fa-forward-step"></i>
-              </button>
-              <button id="restart" type="button" class="icon-btn" title="Перезапуск" aria-label="Перезапуск">
-                <i class="fa-solid fa-rotate-right"></i>
-              </button>
-            </div>
+          <div class="controls">
+            <button id="play" type="button" class="icon-btn" title="Пауза" aria-label="Пауза">
+              <i class="fa-solid fa-pause"></i>
+            </button>
+            <button id="step" type="button" class="icon-btn" title="Шаг" aria-label="Шаг">
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+            <button id="restart" type="button" class="icon-btn" title="Перезапуск" aria-label="Перезапуск">
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
           </div>
-        </div>
-
-        <div class="dash-body">
           <div class="ring-block">
-            <div class="panel-head">
-              <h2>Кольцо</h2>
-              <span>WS2812 ×12</span>
-            </div>
+            <h2>Кольцо</h2>
             <canvas id="ring" width="180" height="180" aria-label="RGB LED ring"></canvas>
           </div>
           <div class="sensors">
@@ -92,67 +84,50 @@
               </div>
             </div>
             <div class="sensor">
-              <label for="prox">Приближение <b id="prox-val">0%</b></label>
-              <input id="prox" type="range" min="0" max="100" value="0">
-              <div class="sensor-actions">
+              <div class="sensor-head">
+                <label for="prox">Приближение <b id="prox-val">0%</b></label>
                 <button id="boop" type="button">Boop</button>
-                <button id="calibrate" type="button">Cal</button>
               </div>
+              <input id="prox" type="range" min="0" max="100" value="0">
             </div>
           </div>
-        </div>
+        </section>
       </div>
-    </section>
+    </div>
 
-    <section class="io-row">
-      <article class="panel">
+    <div class="col-right">
+      <section class="panel oled-panel">
+        <div class="panel-head">
+          <h2>OLED</h2>
+        </div>
+        <div class="oled-bezel">
+          <canvas id="oled" width="384" height="192" aria-label="OLED display"></canvas>
+        </div>
+      </section>
+
+      <section class="panel mocute-panel">
         <div class="panel-head">
           <h2>Mocute</h2>
-          <span id="pad-mode-label">GAME</span>
         </div>
-        <div class="pad" id="pad">
-          <div class="pad-top">
-            <button class="shoulder" type="button" data-btn="ok" title="Моргнуть · пробел">OK / blink</button>
-            <label class="mode-switch" title="KEY / GAME">
-              <span>KEY</span>
-              <input id="mode" type="checkbox" checked>
-              <i></i>
-              <span>GAME</span>
-            </label>
-          </div>
-          <div class="pad-body">
-            <div class="stick" id="stick" role="application" aria-label="Аналоговый стик WASD">
-              <div class="stick-cross"></div>
-              <div class="knob" id="knob"></div>
-            </div>
-            <div class="pad-mid">
-              <button class="small-btn" type="button" data-btn="esc" title="Назад из настроек · Q">ESC</button>
-              <span class="led" id="led"></span>
-              <button class="small-btn" type="button" data-btn="select" title="Коротко: BT → Frame → меню. Удержание: сразу меню · E">MENU<span>settings</span></button>
-            </div>
-            <div class="diamond">
-              <button class="face x" type="button" data-btn="x" title="Набор лиц 1 · ↑">X<span>set 1</span></button>
-              <button class="face a" type="button" data-btn="a" title="Набор лиц 2 · ←">A<span>set 2</span></button>
-              <button class="face y" type="button" data-btn="y" title="Набор лиц 3 · →">Y<span>set 3</span></button>
-              <button class="face b" type="button" data-btn="b" title="Автосмена лиц · ↓">B<span>auto</span></button>
-            </div>
-          </div>
-          <p class="kbd-hint">WASD стик · WA/WD/AS/DS диагонали · Q ESC · E MENU · ↑X ←A →Y ↓B · пробел морг</p>
+        <button class="shoulder" type="button" data-btn="ok" title="blink · пробел">OK / blink</button>
+        <div class="stick" id="stick" role="application" aria-label="Аналоговый стик WASD">
+          <div class="stick-cross"></div>
+          <div class="knob" id="knob"></div>
         </div>
-      </article>
-
-      <article class="panel ble">
-        <div class="panel-head">
-          <h2>HID терминал</h2>
-          <span>Mocute BLE report</span>
+        <div class="pad-mid">
+          <button class="small-btn" type="button" data-btn="esc" title="Назад · дважды ESC — игры · Q">ESC</button>
+          <span class="led" id="led"></span>
+          <button class="small-btn" type="button" data-btn="select" title="Коротко: BT → Frame → меню. Удержание: сразу меню · E">MENU<span>settings</span></button>
         </div>
-        <pre id="log"></pre>
-        <p class="legal">
-          kotoproto-os · AGPL-3.0 · source is this repository ·
-          inspired by <a href="https://github.com/diodeface/ToasterBlaster">Toaster Blaster</a>
-        </p>
-      </article>
-    </section>
+        <div class="diamond">
+          <button class="face x" type="button" data-btn="x" title="Набор лиц 1 · ↑">X<span>set 1</span></button>
+          <button class="face a" type="button" data-btn="a" title="Набор лиц 2 · ←">A<span>set 2</span></button>
+          <button class="face y" type="button" data-btn="y" title="Набор лиц 3 · →">Y<span>set 3</span></button>
+          <button class="face b" type="button" data-btn="b" title="Автосмена лиц · ↓">B<span>auto</span></button>
+        </div>
+        <p class="kbd-hint">WASD стик · WA/WD/AS/DS диагонали · Q ESC · E MENU · ↑X ←A →Y ↓B · пробел blink</p>
+      </section>
+    </div>
   </main>
   <script src="/app.js"></script>
 </body>

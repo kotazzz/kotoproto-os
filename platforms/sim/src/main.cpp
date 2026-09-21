@@ -16,6 +16,8 @@
 #include "koto/assets/emotions.hpp"
 #include "koto/color.hpp"
 #include "koto/config.hpp"
+#include "koto/face/transition.hpp"
+#include "koto/gfx/pix.hpp"
 #include "koto/sim/hal_sim.hpp"
 #include "koto/sim/http_server.hpp"
 #include "koto/version.hpp"
@@ -184,7 +186,8 @@ int main(int argc, char** argv) {
   server.set_static_dir(www_dir);
 
   server.get("/api/state", [&](const koto::sim::HttpRequest&) {
-    std::vector<std::uint8_t> rgb;
+    std::vector<std::uint8_t> rgb_left;
+    std::vector<std::uint8_t> rgb_right;
     std::vector<std::uint8_t> bits;
     std::vector<std::uint8_t> ring_rgb;
     std::vector<std::string> log;
@@ -196,7 +199,8 @@ int main(int argc, char** argv) {
 
     {
       std::lock_guard<std::mutex> lock(mu);
-      matrix.copy_rgb(rgb);
+      matrix.copy_rgb(rgb_left, 0);
+      matrix.copy_rgb(rgb_right, 1);
       oled.copy_bits(bits);
       ring.copy_rgb(ring_rgb);
       log = hid.log_copy();
@@ -262,7 +266,8 @@ int main(int argc, char** argv) {
          << "\"select\":" << (pad.select() ? "true" : "false")
          << "},"
          << "\"matrix\":{\"w\":" << koto::kMatrixW << ",\"h\":" << koto::kMatrixH
-         << ",\"rgb\":\"" << koto::sim::base64_encode(rgb.data(), rgb.size()) << "\"},"
+         << ",\"left\":\"" << koto::sim::base64_encode(rgb_left.data(), rgb_left.size()) << "\""
+         << ",\"right\":\"" << koto::sim::base64_encode(rgb_right.data(), rgb_right.size()) << "\"},"
          << "\"oled\":{\"w\":" << koto::kOledW << ",\"h\":" << koto::kOledH
          << ",\"bits\":\"" << koto::sim::base64_encode(bits.data(), bits.size()) << "\"},"
          << "\"ring\":{\"n\":" << koto::hal::kLedRingCount
@@ -290,6 +295,19 @@ int main(int argc, char** argv) {
       if (i != 0) {
         json << ",";
       }
+      std::vector<std::uint8_t> preview(
+          static_cast<std::size_t>(koto::kFaceW * koto::kFaceH * 3), 0);
+      if (e->frame_count > 0 && e->frames[0].pix != nullptr) {
+        koto::gfx::pix_each(e->frames[0].pix, e->frames[0].size, koto::kFaceW, koto::kFaceH,
+                            [&](int x, int y, koto::Color c) {
+                              const std::size_t o =
+                                  static_cast<std::size_t>((y * koto::kFaceW + x) * 3);
+                              preview[o] = c.r;
+                              preview[o + 1] = c.g;
+                              preview[o + 2] = c.b;
+                              return true;
+                            });
+      }
       json << "{\"id\":\"" << koto::sim::json_escape(e->id) << "\","
            << "\"short\":\"" << koto::sim::json_escape(e->short_label) << "\","
            << "\"kind\":\"" << koto::assets::kind_name(e->kind) << "\","
@@ -300,7 +318,9 @@ int main(int argc, char** argv) {
            << "\"loop\":" << (e->loop ? "true" : "false") << ","
            << "\"allow_blink\":" << (e->allow_blink ? "true" : "false") << ","
            << "\"allow_boop\":" << (e->allow_boop ? "true" : "false") << ","
-           << "\"frames\":" << e->frame_count << "}";
+           << "\"mirror\":" << (e->mirror ? "true" : "false") << ","
+           << "\"frames\":" << e->frame_count << ","
+           << "\"preview\":\"" << koto::sim::base64_encode(preview.data(), preview.size()) << "\"}";
     }
     json << "]}";
     return koto::sim::HttpResponse{200, "application/json; charset=utf-8", json.str()};

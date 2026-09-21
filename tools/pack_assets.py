@@ -539,6 +539,7 @@ def emit_cpp(catalog: dict) -> None:
             f'{"true" if emo.get("loop", True) else "false"}, '
             f'{"true" if emo.get("allow_blink", emo["kind"] == "classic") else "false"}, '
             f'{"true" if emo.get("allow_boop", emo["kind"] == "classic") else "false"}, '
+            f'{"true" if emo.get("mirror", True) else "false"}, '
             f"{table_name}, {len(frames)}, {hud_name}, sizeof({hud_name})"
             "}"
         )

@@ -263,6 +263,7 @@
       "loop": true,
       "allow_blink": true,
       "allow_boop": true,
+      "mirror": false,
       "frames": [
         {
           "file": "Questioning_0.png",
@@ -284,6 +285,7 @@
       "loop": true,
       "allow_blink": true,
       "allow_boop": true,
+      "mirror": false,
       "frames": [
         {
           "file": "Exclamation_0.png",

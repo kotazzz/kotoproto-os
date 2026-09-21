@@ -15,25 +15,37 @@ namespace sim {
 
 Matrix::Matrix(int width, int height)
     : width_(width),
-      height_(height),
-      rgb_(static_cast<std::size_t>(width * height * 3), 0) {}
+      height_(height) {
+  const std::size_t bytes = static_cast<std::size_t>(width * height * 3);
+  for (int i = 0; i < kMatrixPanels; ++i) {
+    rgb_[i].assign(bytes, 0);
+  }
+}
 
-void Matrix::present(const Color* pixels, int width, int height) {
+void Matrix::present(const Color* pixels, int width, int height, int panel) {
+  if (panel < 0 || panel >= kMatrixPanels || pixels == nullptr) {
+    return;
+  }
   const int w = std::min(width, width_);
   const int h = std::min(height, height_);
+  std::vector<std::uint8_t>& rgb = rgb_[panel];
   for (int y = 0; y < h; ++y) {
     for (int x = 0; x < w; ++x) {
       const Color c = pixels[y * width + x];
       const std::size_t i = static_cast<std::size_t>((y * width_ + x) * 3);
-      rgb_[i] = c.r;
-      rgb_[i + 1] = c.g;
-      rgb_[i + 2] = c.b;
+      rgb[i] = c.r;
+      rgb[i + 1] = c.g;
+      rgb[i + 2] = c.b;
     }
   }
 }
 
-void Matrix::copy_rgb(std::vector<std::uint8_t>& out) const {
-  out = rgb_;
+void Matrix::copy_rgb(std::vector<std::uint8_t>& out, int panel) const {
+  if (panel < 0 || panel >= kMatrixPanels) {
+    out.clear();
+    return;
+  }
+  out = rgb_[panel];
 }
 
 Oled::Oled(int width, int height)
