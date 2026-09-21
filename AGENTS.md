@@ -5,7 +5,7 @@ Reply to the user in Russian unless they write in another language.
 
 ## What this is
 
-C++17 visor firmware: `koto::App` is shared by a **PC browser simulator** and a **stub ESP32 target**. Real hardware is not chosen yet. Do not claim the visor was flashed or tested on a panel.
+C++17 visor firmware: `koto::App` is shared by a **PC browser simulator** and an **ESP32 target**. Hardware is LILYGO T8 V1.8 (PlatformIO `env:t8`). Do not claim a visual panel test unless it was actually run. The IDF tree in `platforms/esp32` is still a log stub.
 
 Upstream inspiration: [Toaster Blaster](https://github.com/diodeface/ToasterBlaster) (AGPL-3.0). This tree must stay AGPL-3.0. Credit Kotaz + diodeface in user-facing docs. Do not strip `LICENSE` / `NOTICE`.
 
@@ -13,13 +13,14 @@ Upstream inspiration: [Toaster Blaster](https://github.com/diodeface/ToasterBlas
 
 | Path | Role |
 | --- | --- |
-| `firmware/include/koto/config.hpp` | Sizes, timings, placeholder GPIO (`pins::*` = -1) |
+| `firmware/include/koto/config.hpp` | Sizes, timings, T8 GPIO from `esp32-tools/docs/t8_visor_wiring.html` |
 | `firmware/include/koto/app.hpp` + `firmware/src/app.cpp` | Scenes, pad, OLED HUD, blink/boop/mouth, effect hooks |
 | `assets/` | Flat authored tree: `emotions.json`, RGB `Name_N.png` faces, BW `visor`/`splash1`/`logo`, settings/games icon atlases, classic face-component sheet |
 | `firmware/src/assets/emotions.cpp` | Generated KPIX face blobs + Emotion table |
 | `firmware/src/assets/bitmaps.cpp` | Generated OLED 1bpp sprites from `assets/*.png` |
 | `firmware/include/koto/settings.hpp` | 16-byte settings blob, magic `0x13371337`; default flags include mouth |
 | `platforms/sim/` | HTTP on `:8080`, `www/` UI, `/atlas.html` |
+| `platforms/pio/` | PlatformIO Arduino HAL: HUB75, SSD1306, MPU6050, MAX9814, TCRT5000, WS2812, fan PWM |
 | `platforms/esp32/` | IDF skeleton; `hal_esp32.cpp` logs only |
 | `tools/pack_assets.py` | PNG + `emotions.json` → KPIX faces in `emotions.cpp` / OLED 1bpp `bitmaps.cpp`; also refreshes icon and face-component sheets |
 | `tools/pix_pack.py` | RGB tile → KPIX blob (palette + packed bits or RLE; RAW RGB if that is smaller) |
@@ -106,6 +107,7 @@ One object per face in `assets/emotions.json`. Codegen emits `Emotion(id, Kind, 
 - Default **Blink** face transition: the new eye, mouth and nose appear immediately; then a lid wipe plays over the left eye `32×16` only
 - Face pixels are RGB. Accent color is for the LED ring. Long-hold boop tints lit pixels of the Boop face with a left-to-right hue cycle (black stays black).
 - Mouth flip is baked into PNG, not a runtime flag
+- **mirror** (default true): firmware X-flips the left 64×32 onto the right P3 panel. Set `"mirror": false` for glyph faces (`Questioning`, `Exclamation`). Arcade games always copy without flip.
 - HUD thumbs are generated 42×16 1bpp from the first RGB frame
 - A frame may omit `file` for a black hold (PowerOff, None, flash-off of NOPE). Do not author empty PNGs.
 - `Startup` is one visor sprite; the boot splash then switches to `kBootFaces`
@@ -136,8 +138,8 @@ The default **Blink** emotion transition uses the same eye rectangle: the new ey
 ## Controls (parity notes)
 
 - Startup (~3 s, or any button/stick) ends on **FaceSet** with Neutral — not Settings. OLED fills, then draws the Toaster Blaster visor/logo (no text) until 50% of `kStartupMs`, then KOTOPROTO / by Kotaz / version / bar
-- X/A/Y = face sets 1/2/3; B = auto; ESC tap leaves settings or the games list (no boop cal on the main page)
-- Hold ESC (~600 ms) opens the games list (Snake, Casino, Dino, Apple, Flappy, Tetris, DVD, BSOD, Spectrum). OLED: inverted 16px yellow header (title + chevrons) and a 32×32 icon in the blue band; do not invert the full 1bpp panel. Blink starts a game; left/right switch titles. In a game, ESC returns to the list.
+- X/A/Y = face sets 1/2/3; B = auto; ESC tap leaves settings or the games list; double ESC from FaceSet/Auto opens games (no boop cal on the main page)
+- Double ESC opens the games list (Snake, Casino, Dino, Apple, Flappy, Tetris, DVD, BSOD, Spectrum). OLED: inverted 16px yellow header (title + chevrons) and a 32×32 icon in the blue band; do not invert the full 1bpp panel. Blink starts a game; left/right switch titles. In a game, ESC returns to the list.
 - Snake: visor cells are 2×2 with a 1px border (left edge at x=0). OLED header shows the score, or `DEAD` on game over; the visor shows only the field.
 - Dino: Chromium T-Rex sprites on the visor. Blink / stick up / Y jumps; stick down / A ducks. Visor HUD is `GO` / score / `DEAD`. OLED header is a 5-digit score, or `DEAD` after a crash.
 - Flappy: original bird/pipe tiles on the visor. Blink / stick up / Y flaps. Wide gap, slower gravity. Visor HUD is `GO` / score / `DEAD`. OLED header is a 5-digit score, or `DEAD` after a crash.
@@ -147,7 +149,7 @@ The default **Blink** emotion transition uses the same eye rectangle: the new ey
 - Spectrum: 16 Goertzel bands from the 256-sample mic PCM on the visor (hue from cyan to orange, peak-hold caps). OLED shows RMS percent; blink resets the peak markers. ESC returns to the list.
 - Bad Apple: 64×32 1-bit BA1P clip at 25 fps on the visor (`assets/badapple.ba1p`, patch / `0xFE` mask / raw). Loops. Blink toggles 2.5× playback; ESC returns to the games list. Third-party PV, not original art.
 - MENU/SELECT short: BT → Frame → settings pages → BT. Stick does **not** open BT/Frame. Hold (~600 ms) jumps to the settings pages from any screen
-- Settings pages (OLED): inverted 16px header with 9×9 page icon + short name; selecting a control swaps the header to that parameter's icon and title. Controls are icons. Horizontal stick on the header flips pages with a slide. Down selects a control; OK/blink toggles or runs a button; left/right on a slider nudges it. CAL/SENSE: B-CAL / M-CAL, then B-SNS / M-SNS (boop threshold and mouth gain). Games live in a separate list (hold ESC), not in settings.
+- Settings pages (OLED): inverted 16px header with 9×9 page icon + short name; selecting a control swaps the header to that parameter's icon and title. Controls are icons. Horizontal stick on the header flips pages with a slide. Down selects a control; OK/blink toggles or runs a button; left/right on a slider nudges it. CAL/SENSE: B-CAL / M-CAL, then B-SNS / M-SNS (boop threshold and mouth gain). Games live in a separate list (double ESC), not in settings.
 - KEY-mode Esc is `kBtnEsc` only (not B). KEY Enter is still OK|A
 - Stick dead zone for activity and octant: ±64 (`kStickDeadzone`); apply face on return to center **unless OK is held**
 - OK starts blink only if stick is near center; displaced stick + OK = cancel pending face, no blink
@@ -156,9 +158,9 @@ The default **Blink** emotion transition uses the same eye rectangle: the new ey
 - Microphone default **on** (`mouth_enabled` / `kFlagMouth`); bars only, never changes the Emotion. Mouth gain is `mouth_sensitivity` (default 192) on CAL/SENSE as M-SNS, next to boop B-SNS.
 - Auto HUD: original `visor` 54×38 at (4,26) plus generated thumb at (12,42)
 - Blink covers **left eye 32×16 only**; do not paint over the nose
-- Right P3 panel is not drawn in firmware; atlas UI mirrors the left half in CSS
+- Right P3 panel is composed in firmware after overlays: X-mirror of the left 64×32 unless `Emotion::mirror` is false or the scene is arcade (copy). Atlas draws both buffers from `/api/state`; no CSS flip. Sim header toggles which panel fills the P3 canvas.
 - Gyro nudge always translates the full 64×32 (pitch/roll; yaw unused). Dizzy spins a 16×16 patch at `(8,0)`
-- HID disconnect (`connected()` falling edge) enters Settings. ESP32 stub keeps `connected()` true
+- HID disconnect (`connected()` falling edge) enters Settings. PIO BLE host reports the Mocute link; IDF stub keeps `connected()` true
 
 ## Face layout on P3
 
@@ -178,14 +180,15 @@ Finished sprites for games, HUD, apps, and similar UI go on an **authoring sprit
 - Visor faces and game tiles pack as **KPIX** (`tools/pix_pack.py`): palette + 1/2/4/8-bit indices or RLE; `w`/`h` stay in the C++ sprite table. OLED icons, visor/splash/logo, and HUD thumbs stay **1bpp**.
 - Icon/game **list** tiles themselves stay as they appear on the OLED (usually white on black).
 - PNG + JSON in `assets/` (e.g. `dino_sprites.png`, `casino_sprites.png`, `flappy_sprites.png`, `tetris_sprites.png`, `dvd_sprites.png`, `bsod_sprites.png`, `games_icons.png`, `settings_icons.png`). A `tools/*_atlas.py` script extracts tiles and emits firmware tables.
-- Show the sheet on `/atlas.html`. Pack embeds the tiles the visor actually blits.
+- Authoring sheets stay in `assets/`. `/atlas.html` shows the two firmware panels and an emotion gallery with overlay holds; do not put purple sprite sheets on that page.
+- Pack embeds the tiles the visor actually blits.
 - Do not leave a new game or app with sprites that exist only in C++ drawing code or in an unreadable source atlas. Split them out like Dino and Casino.
 
 ## Style
 
 - C++17, includes only at the top of the file (no local Python or C++ imports mid-function)
 - Atlas labels (not packed into firmware) are black on `#FF00FF` for contrast; OLED icon tiles stay white-on-black
-- Do not invent hardware pin numbers; keep `pins::*` at -1 until the user names the board
+- Do not invent extra GPIO; T8 wiring lives in `pins::*`. Keep GPIO2 unused (SD-MISO / strapping).
 - Do not run `check-update.sh` / em-corp version scripts
 - Prefer editing existing files over new layers of abstraction
 

@@ -62,7 +62,7 @@ Stop an old `koto_sim` process before relinking the `.exe` on Windows.
 
 ## Firmware config
 
-Tunable sizes, timings, and **placeholder** GPIO numbers live in `firmware/include/koto/config.hpp`.
+Tunable sizes, timings, and T8 GPIO numbers live in `firmware/include/koto/config.hpp`.
 
 | Symbol | Meaning | Default |
 | --- | --- | --- |
@@ -74,7 +74,7 @@ Tunable sizes, timings, and **placeholder** GPIO numbers live in `firmware/inclu
 | `kStartupMs` | Splash length | 3000 |
 | `kBoopTriggerCount` / `kBoopTriggersMax` | Boop hysteresis 4/6 | 4 / 6 |
 | `kTickMs` | Sim / task period | 33 |
-| `pins::*` | ESP32 GPIO | `-1` until hardware is chosen |
+| `pins::*` | LILYGO T8 V1.8 GPIO | `esp32-tools/docs/t8_visor_wiring.html` |
 
 Other knobs:
 
@@ -103,9 +103,13 @@ Regenerate firmware tables after editing PNG or `assets/emotions.json`:
 python tools/pack_assets.py
 ```
 
-## ESP32 (not ready)
+## ESP32 (T8)
 
-`platforms/esp32` links the same `koto::App` but `hal_esp32.cpp` does not drive a panel, OLED, BLE, or LEDs yet. Do not expect a visor to light up.
+The live HAL is PlatformIO `env:t8` at the repo root (`platforms/pio`). The IDF tree in `platforms/esp32` is still a log stub.
+
+```bash
+pio run -e t8 -t upload
+```
 
 When ESP-IDF is installed and HAL is filled in:
 

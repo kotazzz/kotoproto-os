@@ -62,7 +62,7 @@ $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 
 ## Конфиг прошивки
 
-Размеры, тайминги и **заглушки GPIO** — в `firmware/include/koto/config.hpp`.
+Размеры, тайминги и GPIO T8 — в `firmware/include/koto/config.hpp`.
 
 | Символ | Смысл | По умолчанию |
 | --- | --- | --- |
@@ -74,7 +74,7 @@ $zig = ".\.tools\venv\Lib\site-packages\ziglang\zig.exe"
 | `kStartupMs` | заставка | 3000 |
 | `kBoopTriggerCount` / `kBoopTriggersMax` | гистерезис бупа 4/6 | 4 / 6 |
 | `kTickMs` | период тика | 33 |
-| `pins::*` | GPIO ESP32 | `-1`, пока нет железа |
+| `pins::*` | GPIO LILYGO T8 V1.8 | схема `esp32-tools/docs/t8_visor_wiring.html` |
 
 Ещё:
 
@@ -103,9 +103,13 @@ PNG в `assets/` — готовые RGB-лица (`Name_N.png`) и спрайт�
 python tools/pack_assets.py
 ```
 
-## ESP32 (не готово)
+## ESP32 (T8)
 
-`platforms/esp32` линкует тот же `koto::App`, но `hal_esp32.cpp` пока не управляет панелью, OLED, BLE и лентой. На визор это прошивать рано.
+Живой HAL — PlatformIO `env:t8` в корне (`platforms/pio`). IDF-скелет `platforms/esp32` по-прежнему заглушка.
+
+```bash
+pio run -e t8 -t upload
+```
 
 Когда появится ESP-IDF и живой HAL:
 
