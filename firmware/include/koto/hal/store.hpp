@@ -6,8 +6,7 @@
 namespace koto {
 namespace hal {
 
-// Settings blob: file on the simulator, RAM in tests.
-// ESP32 HAL is a RAM stub until NVS is wired; nvs_flash init in app_main is unused.
+// Settings blob: file on the simulator, RAM in tests, NVS on the PIO HAL.
 class IStore {
  public:
   virtual ~IStore() = default;

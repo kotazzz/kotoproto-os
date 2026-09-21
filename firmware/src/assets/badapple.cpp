@@ -3,7 +3,7 @@
 namespace koto {
 namespace assets {
 
-#ifndef ESP_PLATFORM
+#if defined(KOTO_BA1P_SYMBOLS) || !defined(ESP_PLATFORM)
 extern "C" {
 extern const std::uint8_t kBadAppleBlob[];
 extern const std::uint8_t kBadAppleBlobEnd[];

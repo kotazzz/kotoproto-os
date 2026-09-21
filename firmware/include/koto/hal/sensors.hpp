@@ -10,9 +10,9 @@ struct GyroSample {
 };
 
 // Microphone, IMU, and proximity (boop). Simulator feeds a PCM window
-// (slider sine or live mic); ESP32 stub returns zeros. Firmware uses
-// pitch/roll for dizzy and gyro nudge; yaw is stored and forwarded to
-// /api/state but does not move pixels.
+// (slider sine or live mic). PIO HAL reads MAX9814, MPU6050, TCRT5000.
+// Firmware uses pitch/roll for dizzy and gyro nudge; yaw is stored and
+// forwarded to /api/state but does not move pixels.
 class ISensors {
  public:
   virtual ~ISensors() = default;

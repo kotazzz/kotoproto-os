@@ -6,7 +6,7 @@ namespace koto {
 namespace hal {
 
 // Monochrome SSD1306-compatible frame: 1 bit/pixel, MSB left, row-major.
-// ESP32 present() is a log stub.
+// PIO HAL writes I2C SSD1306. IDF stub logs only.
 class IOled {
  public:
   virtual ~IOled() = default;

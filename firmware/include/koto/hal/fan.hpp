@@ -6,7 +6,7 @@ namespace koto {
 namespace hal {
 
 // PWM fan 25 kHz, 8-bit duty. Settings menu writes it. Simulator stores duty
-// only (no /api/fan). ESP32 HAL keeps RAM duty, no PWM yet.
+// only (no /api/fan). PIO HAL drives GPIO PWM; IDF stub keeps RAM duty.
 class IFan {
  public:
   virtual ~IFan() = default;

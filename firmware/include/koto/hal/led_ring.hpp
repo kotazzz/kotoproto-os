@@ -10,8 +10,8 @@ namespace hal {
 inline constexpr int kLedRingCount = 12;
 inline constexpr int kLedRingCopies = 2;
 
-// One logical WS2812 ring of 12 LEDs. On hardware present() should be written
-// twice so the second ring copies the first. ESP32 present() is a log stub.
+// One logical WS2812 ring of 12 LEDs. On hardware present() is written
+// kLedRingCopies times so a second ring on DOUT copies the first.
 class ILedRing {
  public:
   virtual ~ILedRing() = default;
