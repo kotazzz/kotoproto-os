@@ -4,7 +4,7 @@
 
 Personal LED visor firmware for a Protogen-style helmet. Development is simulator-first: faces render on a P3 RGB 64×32 panel, the HUD on an SSD1306, and input comes from a Mocute pad. The same logic drives the WS2812 ring, microphone mouth bars, and the boop sensor. The ESP32 HAL remains a stub.
 
-> **Roadmap / current status.** There is a working PC simulator with a browser UI. The ESP32 HAL is a stub. The firmware has not been adapted or tested on real hardware. The exact board, panel, and wiring will be documented later.
+> **Roadmap / current status.** There is a working PC simulator with a browser UI. The ESP32 HAL is a stub. The firmware has not been adapted or tested on real hardware. The board is a LILYGO T8 V1.8. Wiring is in the [pinout](#pinout).
 
 ## License and authorship
 
@@ -87,7 +87,7 @@ Tunable sizes, timings, and T8 GPIO numbers live in `firmware/include/koto/confi
 | `kStartupMs` | Splash length | 3000 |
 | `kBoopTriggerCount` / `kBoopTriggersMax` | Boop hysteresis | 4 / 6 |
 | `kTickMs` | Sim / task period | 33 |
-| `pins::*` | LILYGO T8 V1.8 GPIO | `esp32-tools/docs/t8_visor_wiring.html` |
+| `pins::*` | LILYGO T8 V1.8 GPIO | [Pinout](#pinout) |
 
 Face sets, the auto-cycle pool, and HUD labels are defined in `assets/emotions.json`. After packing they are embedded as KPIX through `firmware/src/assets/emotions.cpp`.
 
@@ -117,6 +117,35 @@ Regenerate firmware tables after editing PNG or `assets/emotions.json`:
 ```bash
 python tools/pack_assets.py
 ```
+
+## Pinout
+
+The visor uses a LILYGO T8 V1.8. Pin numbers are `koto::pins` in `firmware/include/koto/config.hpp`, taken from `esp32-tools/docs/t8_visor_wiring.html`. Two 64×32 P3 panels share one HUB75 chain (`kMatrixChain` is 2, brightness is 77). GPIO2 stays unused, and the TF card slot stays empty. GPIO34, GPIO35, and GPIO36 are input-only.
+
+| GPIO | Symbol | Connection |
+| --- | --- | --- |
+| 0 | `kFanPwm` | Fan PWM, 25 kHz. Strap pin: pull-up until PWM attaches, then duty starts at 0 |
+| 2 | — | Unused (strapping / SD-MISO) |
+| 4 | `kMatrixB2` | HUB75 blue, lower half |
+| 5 | `kMatrixC` | HUB75 address C |
+| 12 | `kLedDin` | WS2812 DIN. 12 LEDs; the frame is written twice so a second ring on DOUT copies the first |
+| 13 | `kMatrixG2` | HUB75 green, lower half |
+| 14 | `kMatrixR2` | HUB75 red, lower half |
+| 15 | `kMatrixLat` | HUB75 latch |
+| 18 | `kMatrixD` | HUB75 address D |
+| 19 | `kMatrixB` | HUB75 address B |
+| 21 | `kOledSda` | I2C SDA. SSD1306 at `0x3C`, MPU6050 at `0x68` |
+| 22 | `kOledScl` | I2C SCL, 400 kHz |
+| 23 | `kMatrixA` | HUB75 address A |
+| 25 | `kMatrixR1` | HUB75 red, upper half |
+| 26 | `kMatrixG1` | HUB75 green, upper half |
+| 27 | `kMatrixB1` | HUB75 blue, upper half |
+| 32 | `kMatrixClk` | HUB75 clock |
+| 33 | `kMatrixOe` | HUB75 output enable |
+| 34 | `kFanRpm` | Fan tachometer |
+| 35 | `kMicAdc` | MAX9814 analog out, ADC1 channel 7 |
+| 36 | `kBoopAdc` | TCRT5000 analog out, ADC1 channel 0 |
+| — | `kMatrixE` | HUB75 address E is not wired |
 
 ## ESP32 (T8)
 
