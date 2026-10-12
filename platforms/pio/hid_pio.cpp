@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include <freertos/task.h>
 #include <string>
 #include <utility>
 
@@ -247,7 +248,7 @@ bool connectTarget() {
   if (gClient == nullptr) {
     gClient = NimBLEDevice::createClient();
     gClient->setClientCallbacks(&gClientCb, false);
-    gClient->setConnectTimeout(15);
+    gClient->setConnectTimeout(5);
   }
   if (!gClient->connect(gTargetAddr)) {
     Serial.println("BLE connect failed");
@@ -257,7 +258,7 @@ bool connectTarget() {
     return false;
   }
   gClient->getMTU();
-  delay(150);
+  vTaskDelay(pdMS_TO_TICKS(150));
   if (!subscribeHid(gClient)) {
     Serial.println("HID subscribe failed");
     gClient->disconnect();
@@ -268,6 +269,15 @@ bool connectTarget() {
   gConnected = true;
   Serial.println("HID ready");
   return true;
+}
+
+void hidConnectTask(void*) {
+  for (;;) {
+    if (gHaveTarget && !gConnected && !gConnecting) {
+      connectTarget();
+    }
+    vTaskDelay(pdMS_TO_TICKS(20));
+  }
 }
 
 }  // namespace
@@ -285,6 +295,7 @@ void HidHost::start() {
   scan->setWindow(80);
   scan->setDuplicateFilter(true);
   scan->start(0, nullptr, false);
+  xTaskCreatePinnedToCore(hidConnectTask, "hid_conn", 8192, nullptr, 1, nullptr, 0);
   Serial.println("BLE scan MOCUTE");
 }
 
@@ -295,16 +306,6 @@ void HidHost::set_report_handler(ReportHandler handler) {
 bool HidHost::connected() const { return gConnected; }
 
 void HidHost::pump() {
-  if (gHaveTarget && !gConnected && !gConnecting) {
-    connectTarget();
-  }
-  if (!gConnected && !gConnecting && (millis() - gLastScanKickMs) > 15000) {
-    gLastScanKickMs = millis();
-    NimBLEScan* scan = NimBLEDevice::getScan();
-    if (scan != nullptr && !scan->isScanning()) {
-      scan->start(0, nullptr, false);
-    }
-  }
   if (handler_ == nullptr || gMux == nullptr) {
     return;
   }
@@ -321,6 +322,16 @@ void HidHost::pump() {
   xSemaphoreGive(gMux);
   if (len > 0) {
     handler_(local, len);
+  }
+}
+
+void HidHost::pump_idle() {
+  if (!gConnected && !gConnecting && (millis() - gLastScanKickMs) > 15000) {
+    gLastScanKickMs = millis();
+    NimBLEScan* scan = NimBLEDevice::getScan();
+    if (scan != nullptr && !scan->isScanning()) {
+      scan->start(0, nullptr, false);
+    }
   }
 }
 

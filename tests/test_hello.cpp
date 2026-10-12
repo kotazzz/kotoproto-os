@@ -987,6 +987,12 @@ int main() {
     }
     require(hits == 0, "second blink turns off 2.5X");
   }
+  {
+    const int before = app.badapple_frame_index();
+    clock.advance(500);
+    app.tick();
+    require(app.badapple_frame_index() - before <= 3, "bad apple drops catch-up frames");
+  }
   app.handle_report(koto::encode_mocute_report(press_esc_settings).data(), koto::kReportSize);
   app.handle_report(center_report.data(), center_report.size());
   require(app.state().scene == "games", "ESC from bad apple returns to games");

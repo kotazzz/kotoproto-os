@@ -23,6 +23,9 @@ class ISensors {
     (void)max;
     return 0;
   }
+  virtual void set_microphone_window(int n) {
+    (void)n;
+  }
   virtual GyroSample gyro() const = 0;
   virtual float proximity() const = 0;  // 0 = far, 1 = against the snout
 };

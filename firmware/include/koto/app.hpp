@@ -52,6 +52,7 @@ class App {
   const gfx::Framebuffer& matrix_buffer() const { return matrix_fb_; }
   const gfx::OledCanvas& oled_buffer() const { return oled_fb_; }
   const assets::Emotion* emotion() const { return emotion_; }
+  int badapple_frame_index() const { return badapple_.frame_index; }
 
  private:
   enum class Mode {
@@ -451,6 +452,7 @@ class App {
 
   assets::BaPlayer badapple_{};
   std::uint32_t badapple_accum_ms_ = 0;
+  std::uint32_t badapple_last_ms_ = 0;
   bool badapple_fast_ = false;
   Color present_dim_[kMatrixW * kMatrixH]{};
   Color present_right_[kMatrixW * kMatrixH]{};

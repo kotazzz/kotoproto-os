@@ -22,6 +22,9 @@ class Clock final : public hal::IClock {
   std::uint32_t millis() const override;
 };
 
+using PresentYield = void (*)();
+void set_present_yield(PresentYield fn);
+
 class Matrix final : public hal::IMatrix {
  public:
   bool begin();
@@ -50,7 +53,8 @@ class HidHost final : public hal::IHidHost {
   void start() override;
   void set_report_handler(ReportHandler handler) override;
   bool connected() const override;
-  void pump();
+  void pump() override;
+  void pump_idle();
 
  private:
   ReportHandler handler_;
@@ -69,12 +73,14 @@ class Sensors final : public hal::ISensors {
   void pump();
   float microphone() const override;
   int copy_microphone_pcm(float* out, int max) const override;
+  void set_microphone_window(int n) override;
   hal::GyroSample gyro() const override;
   float proximity() const override;
 
  private:
   float pcm_[kMicPcmSize]{};
   int pcm_count_ = 0;
+  int pcm_window_ = kMicMouthPcmSize;
   float mic_ = 0;
   float prox_ = 0;
   hal::GyroSample gyro_{};
@@ -90,7 +96,7 @@ class Fan final : public hal::IFan {
   std::uint8_t speed() const override;
 
  private:
-  std::uint8_t duty_ = 255;
+  std::uint8_t duty_ = 0;
 };
 
 }  // namespace pio

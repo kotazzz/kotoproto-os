@@ -85,6 +85,7 @@ inline constexpr int kSpectrumBarW = 4;
 inline constexpr int kSpectrumPlotH = 29;
 // Signed PCM window from the microphone HAL (-1..1). Mouth still uses RMS.
 inline constexpr int kMicPcmSize = 256;
+inline constexpr int kMicMouthPcmSize = 64;
 
 // Red 3×3 on the left panel while the Mocute pad is missing.
 inline constexpr int kHidLostX = 1;

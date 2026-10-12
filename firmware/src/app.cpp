@@ -98,6 +98,7 @@ constexpr std::uint32_t kDinoBlinkEveryMs = 2200;
 constexpr std::uint32_t kBadAppleFrameMs = 40;
 constexpr std::uint32_t kBadAppleSpeedNum = 5;
 constexpr std::uint32_t kBadAppleSpeedDen = 2;
+constexpr int kBadAppleMaxFramesPerTick = 3;
 
 constexpr int kFlappyX = 12;
 constexpr int kFlappyGroundY = 28;
@@ -880,6 +881,7 @@ void App::enter_games() {
   if (state_.game_index < 0 || state_.game_index >= kGameCount) {
     state_.game_index = 0;
   }
+  sensors_.set_microphone_window(kMicMouthPcmSize);
 }
 
 void App::enter_snake() {
@@ -912,6 +914,7 @@ void App::enter_badapple() {
   mode_ = Mode::BadApple;
   state_.scene = "badapple";
   badapple_accum_ms_ = 0;
+  badapple_last_ms_ = clock_.millis();
   badapple_fast_ = false;
   if (!assets::ba_init(badapple_, assets::badapple_blob(),
                        static_cast<std::uint32_t>(assets::badapple_blob_size()))) {
@@ -949,6 +952,7 @@ void App::enter_spectrum() {
   mode_ = Mode::Spectrum;
   state_.scene = "spectrum";
   spectrum_ = Spectrum{};
+  sensors_.set_microphone_window(kMicPcmSize);
 }
 
 void App::handle_spectrum_pad(const PadState& pad, const PadState& prev) {
@@ -2417,22 +2421,31 @@ void App::handle_badapple_pad(const PadState& pad, const PadState& prev) {
 }
 
 void App::update_badapple(std::uint32_t now_ms) {
-  (void)now_ms;
   if (mode_ != Mode::BadApple) {
     return;
   }
   if (badapple_.base == nullptr) {
     return;
   }
+  std::uint32_t dt = 0;
+  if (badapple_last_ms_ != 0 && now_ms >= badapple_last_ms_) {
+    dt = now_ms - badapple_last_ms_;
+  }
+  badapple_last_ms_ = now_ms;
   const std::uint32_t num = badapple_fast_ ? kBadAppleSpeedNum : 1;
   const std::uint32_t den = badapple_fast_ ? kBadAppleSpeedDen : 1;
-  badapple_accum_ms_ += (kTickMs * num) / den;
-  while (badapple_accum_ms_ >= kBadAppleFrameMs) {
+  badapple_accum_ms_ += (dt * num) / den;
+  int steps = 0;
+  while (badapple_accum_ms_ >= kBadAppleFrameMs && steps < kBadAppleMaxFramesPerTick) {
     badapple_accum_ms_ -= kBadAppleFrameMs;
+    ++steps;
     if (!assets::ba_next(badapple_)) {
       assets::ba_rewind(badapple_);
       assets::ba_next(badapple_);
     }
+  }
+  if (badapple_accum_ms_ >= kBadAppleFrameMs) {
+    badapple_accum_ms_ = 0;
   }
 }
 
@@ -2692,12 +2705,16 @@ void App::render_dino(std::uint32_t now_ms) {
 }
 
 void App::render_badapple() {
-  matrix_fb_.clear(Color::black());
+  Color* px = matrix_fb_.data();
   const Color on = Color::white();
+  const Color off = Color::black();
+  const int w = matrix_fb_.width();
   for (int y = 0; y < assets::kBaHeight; ++y) {
-    for (int x = 0; x < assets::kBaWidth; ++x) {
-      if (assets::ba_pixel(badapple_, x, y) != 0) {
-        matrix_fb_.set_pixel(x, y, on);
+    Color* row = px + y * w;
+    for (int bx = 0; bx < 8; ++bx) {
+      const std::uint8_t b = badapple_.pixels[static_cast<std::size_t>(y) * 8u + static_cast<std::uint8_t>(bx)];
+      for (int bit = 0; bit < 8; ++bit) {
+        row[bx * 8 + bit] = (b & static_cast<std::uint8_t>(0x80 >> bit)) != 0 ? on : off;
       }
     }
   }
@@ -3712,6 +3729,7 @@ void App::tick() {
   const std::uint32_t now = clock_.millis();
   ++tick_count_;
 
+  sensors_.set_microphone_window(mode_ == Mode::Spectrum ? kMicPcmSize : kMicMouthPcmSize);
   update_hid_link();
   poll_menu_hold();
   update_sensors(now);
@@ -3795,8 +3813,10 @@ void App::present_matrix() {
     }
   }
   matrix_.present(out, w, h, 0);
+  hid_.pump();
   if (copy_right_panel()) {
     matrix_.present(out, w, h, 1);
+    hid_.pump();
     return;
   }
   for (int y = 0; y < h; ++y) {
@@ -3805,6 +3825,7 @@ void App::present_matrix() {
     }
   }
   matrix_.present(present_right_, w, h, 1);
+  hid_.pump();
 }
 
 }  // namespace koto

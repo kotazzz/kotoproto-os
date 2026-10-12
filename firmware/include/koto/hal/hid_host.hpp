@@ -17,6 +17,8 @@ class IHidHost {
   virtual void start() = 0;
   virtual void set_report_handler(ReportHandler handler) = 0;
   virtual bool connected() const = 0;
+  // Drain queued HID reports. Default is a no-op (sim / tests).
+  virtual void pump() {}
 };
 
 }  // namespace hal
